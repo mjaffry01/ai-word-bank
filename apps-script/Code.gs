@@ -14,6 +14,9 @@
 // The OAuth client ID of the website's "Sign in with Google" button.
 const CLIENT_ID = '767661169096-4l07sksuk11vfs4frk9s83jon9dc0cbe.apps.googleusercontent.com';
 
+// How long a student stays signed in after a Google sign-in.
+const SESSION_HOURS = 48;
+
 const HEADERS = {
   Students: ['Email', 'Name', 'Status', 'Signed up', 'Last seen'],
   Attempts: ['Attempt ID', 'Date', 'Email', 'Name', 'Ring', 'Level', 'Score', 'Total', 'Percent'],
@@ -71,8 +74,14 @@ function doGet() {
 function doPost(e) {
   try {
     const req = JSON.parse((e && e.postData && e.postData.contents) || '{}');
-    const who = verifyGoogleToken(req.token);
-    if (req.action === 'me') return json(me(who));
+    // A fresh Google sign-in starts a 48-hour session; later requests send the session instead.
+    const fromGoogle = !req.session;
+    const who = fromGoogle ? verifyGoogleToken(req.token) : verifySession(req.session);
+    if (req.action === 'me') {
+      const res = me(who);
+      if (fromGoogle) Object.assign(res, makeSession(who));
+      return json(res);
+    }
     if (req.action === 'saveAttempt') return json(saveAttempt(who, req.result));
     return json({ ok: false, error: 'unknown_action' });
   } catch (err) {
@@ -104,6 +113,37 @@ function verifyGoogleToken(token) {
   const who = { email: String(p.email).toLowerCase(), name: String(p.name || '') };
   cache.put(key, JSON.stringify(who), Math.min(secondsLeft, 3000));
   return who;
+}
+
+/** A signed session: who the student is and when it expires, sealed with a secret only this script knows. */
+function makeSession(who) {
+  const exp = Date.now() + SESSION_HOURS * 3600 * 1000;
+  const body = Utilities.base64EncodeWebSafe(JSON.stringify({ e: who.email, n: who.name, x: exp }), Utilities.Charset.UTF_8);
+  return { session: body + '.' + sign(body), sessionExpires: exp };
+}
+
+function verifySession(session) {
+  if (typeof session !== 'string' || session.indexOf('.') < 0) throw new Error('signed_out');
+  const parts = session.split('.');
+  if (parts.length !== 2 || sign(parts[0]) !== parts[1]) throw new Error('signed_out');
+  const p = JSON.parse(Utilities.newBlob(Utilities.base64DecodeWebSafe(parts[0])).getDataAsString('UTF-8'));
+  if (!(Number(p.x) > Date.now())) throw new Error('signed_out');
+  return { email: String(p.e).toLowerCase(), name: String(p.n || '') };
+}
+
+function sign(text) {
+  return Utilities.base64EncodeWebSafe(Utilities.computeHmacSha256Signature(text, sessionSecret()));
+}
+
+/** Created once and kept in the script's private properties. Changing it signs everyone out. */
+function sessionSecret() {
+  const props = PropertiesService.getScriptProperties();
+  let secret = props.getProperty('SESSION_SECRET');
+  if (!secret) {
+    secret = Utilities.getUuid() + Utilities.getUuid();
+    props.setProperty('SESSION_SECRET', secret);
+  }
+  return secret;
 }
 
 /** Signs a student in: adds them as "pending" the first time, and returns their status. */

@@ -39,7 +39,7 @@ The terms are in `docs/index.html` inside `<script type="text/plain" id="data">`
 
 ## Limits
 
-- **Sign-in lasts an hour.** Google sign-in tokens last one hour. If a student finishes a quiz after that, the site asks them to sign in again and then saves the result.
+- **Sign-in lasts 48 hours.** A Google sign-in starts a 48-hour session, signed by the Apps Script with a secret kept in its Script Properties. Students stay signed in on that device, even after closing the browser, until the 48 hours end or they click **Sign out**. If it ends mid-quiz, the site asks them to sign in again and then saves the result. To sign everyone out at once, delete `SESSION_SECRET` under **Project Settings → Script Properties**. Approval is still checked on every request, so setting a student to `rejected` locks them out straight away.
 - **The word list is public.** It is part of the page, so anyone with the address can read it. The sign-in gate protects the quizzes and results.
 - **Scores can be faked.** They are worked out in the student's browser, so a technically skilled student could fake one.
 - **Free quotas.** Apps Script's free quotas (about 20,000 URL checks and 90 minutes of run time a day) are plenty for a class.

@@ -1497,20 +1497,23 @@ renderChips();render();
 <script src="config.js"></script>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <script>
-// Google sign-in, teacher approval (in the Google Sheet), and saving quiz results through Apps Script
+// Google sign-in, teacher approval (in the Google Sheet), and saving quiz results through Apps Script.
+// A Google sign-in starts a 48-hour session with the server, kept in this browser until it expires or the student signs out.
 (function () {
   const cfg = window.WB_CONFIG || {};
   const ready = cfg.clientId && !/^PASTE_/.test(cfg.clientId) && cfg.api && !/^PASTE_/.test(cfg.api);
   const gate = document.getElementById("gate"), gateBody = document.getElementById("gateBody");
   const appEl = document.getElementById("app"), who = document.getElementById("who");
-  const TOKEN_KEY = "wb-token";
-  let token = null, profile = null, pollTimer = null, waitingSave = null;
+  const SESSION_KEY = "wb-session";
+  let token = null, sess = null, pollTimer = null, waitingSave = null;
 
   const escHTML = (s) => String(s == null ? "" : s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
   function decode(t) {
     try { return JSON.parse(decodeURIComponent(escape(atob(t.split(".")[1].replace(/-/g, "+").replace(/_/g, "/"))))); } catch (e) { return null; }
   }
-  const fresh = (t) => { const p = t && decode(t); return !!p && p.exp * 1000 > Date.now() + 60000; };
+  const sessionValid = () => !!sess && sess.expires > Date.now() + 60000;
+  function storeSession(s) { sess = s; try { localStorage.setItem(SESSION_KEY, JSON.stringify(s)); } catch (e) {} }
+  function clearSession() { sess = null; try { localStorage.removeItem(SESSION_KEY); } catch (e) {} }
 
   function showGate(html) { appEl.hidden = true; gate.hidden = false; gateBody.innerHTML = html; bindSignOut(); }
   function showApp() { gate.hidden = true; appEl.hidden = false; window.WB.refresh(); }
@@ -1519,25 +1522,27 @@ renderChips();render();
 
   function renderButton(el) {
     if (!window.google || !google.accounts) { setTimeout(() => renderButton(el), 200); return; }
+    el.style.colorScheme = "light";
     google.accounts.id.renderButton(el, { theme: "outline", size: "large", shape: "pill", text: "signin_with" });
   }
   function signInView(err) {
     stopPolling();
-    showGate(`<p>Sign in with your Google account to use the course. Your teacher approves each student before the lessons and quizzes open.</p>
+    showGate(`<p>Sign in with your Google account to use the course. Your teacher approves each student before the lessons and quizzes open. You stay signed in on this device for 48 hours.</p>
       <div id="gbtn"></div>${err ? `<p class="gerr">${escHTML(err)}</p>` : ""}`);
     renderButton(document.getElementById("gbtn"));
   }
   function signOut() {
-    token = null; profile = null;
-    try { sessionStorage.removeItem(TOKEN_KEY); } catch (e) {}
+    token = null; clearSession();
     if (window.google && google.accounts) google.accounts.id.disableAutoSelect();
     who.innerHTML = "";
     window.WB.onQuizDone = null; window.WB.setBest({});
     signInView();
   }
+  function expired() { clearSession(); signInView("Your 48-hour sign-in has ended. Please sign in again."); }
 
   async function api(action, extra) {
-    const res = await fetch(cfg.api, { method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify(Object.assign({ action, token }, extra || {})) });
+    const auth = sess ? { session: sess.token } : { token };
+    const res = await fetch(cfg.api, { method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify(Object.assign({ action }, auth, extra || {})) });
     if (!res.ok) throw new Error("The server did not answer (" + res.status + ").");
     return res.json();
   }
@@ -1551,11 +1556,19 @@ renderChips();render();
       if (!quiet) showGate(`<p class="gerr">Can't reach the course server. Check your internet connection and reload the page.</p>${signOutLink}`);
       return;
     }
-    if (!r.ok) { if (r.error === "signed_out") return signInView("Your sign-in expired. Please sign in again."); return showGate(`<p class="gerr">Sign-in problem: ${escHTML(r.error)}</p>${signOutLink}`); }
-    const name = escHTML(profile.name || profile.email);
+    if (!r.ok) {
+      if (r.error === "signed_out") return expired();
+      return showGate(`<p class="gerr">Sign-in problem: ${escHTML(r.error)}</p>${signOutLink}`);
+    }
+    if (r.session) {
+      const p = decode(token) || {};
+      storeSession({ token: r.session, expires: r.sessionExpires, email: p.email || "", name: p.name || "", picture: p.picture || "" });
+      token = null;
+    }
+    const name = escHTML(sess.name || sess.email);
     if (r.status === "approved") {
       stopPolling();
-      who.innerHTML = `${profile.picture ? `<img src="${escHTML(profile.picture)}" alt="" referrerpolicy="no-referrer">` : ""}<div><b>${name}</b>${signOutLink}</div>`;
+      who.innerHTML = `${sess.picture ? `<img src="${escHTML(sess.picture)}" alt="" referrerpolicy="no-referrer">` : ""}<div><b>${name}</b>${signOutLink}</div>`;
       bindSignOut();
       window.WB.onQuizDone = save;
       window.WB.setBest(r.best || {});
@@ -1568,19 +1581,19 @@ renderChips();render();
       showGate(`<p>Hi ${name}. Your teacher has not approved this account for the course. If you think this is a mistake, ask your teacher.</p>${signOutLink}`);
     } else {
       showGate(`<p>Hi ${name}. Your account is waiting for your teacher's approval. This page checks every 30 seconds and opens by itself once you're approved.</p>
-        <p style="font-size:.9rem">Signed in as ${escHTML(profile.email)}.</p>${signOutLink}`);
-      if (!pollTimer) pollTimer = setInterval(() => { if (fresh(token)) checkAccess(true); else signInView("Your sign-in expired. Please sign in again."); }, 30000);
+        <p style="font-size:.9rem">Signed in as ${escHTML(sess.email)}.</p>${signOutLink}`);
+      if (!pollTimer) pollTimer = setInterval(() => { if (sessionValid()) checkAccess(true); else expired(); }, 30000);
     }
   }
 
-  // Saves a finished quiz. If the one-hour Google sign-in has expired, asks the student to sign in again first.
+  // Saves a finished quiz. If the 48-hour sign-in has ended, asks the student to sign in again first.
   function save(result) {
     return new Promise((resolve, reject) => {
       const attempt = async () => {
         try {
           const r = await api("saveAttempt", { result });
           if (r.ok) { window.WB.setBest(r.best || {}); resolve(); return; }
-          if (r.error === "signed_out") { askAgain(); return; }
+          if (r.error === "signed_out") { clearSession(); askAgain(); return; }
           if (r.error === "not_approved") { reject(r); checkAccess(); return; }
           reject(r);
         } catch (e) { reject(e); }
@@ -1590,38 +1603,34 @@ renderChips();render();
         const box = document.createElement("div");
         box.className = "gate"; box.id = "resign";
         box.style.cssText = "position:fixed;inset:0;z-index:20;background:color-mix(in srgb,var(--bg) 88%,transparent)";
-        box.innerHTML = `<div class="gatecard"><h2>Sign in again to save</h2><p>Your Google sign-in lasts one hour and has expired. Sign in again and your result will be saved.</p><div id="gbtn2"></div></div>`;
+        box.innerHTML = `<div class="gatecard"><h2>Sign in again to save</h2><p>Your 48-hour sign-in has ended. Sign in again and your result will be saved.</p><div id="gbtn2"></div></div>`;
         document.body.appendChild(box);
         renderButton(document.getElementById("gbtn2"));
       };
-      if (fresh(token)) attempt(); else askAgain();
+      if (sessionValid()) attempt(); else askAgain();
     });
   }
 
-  function onCredential(resp) {
-    const p = decode(resp.credential);
-    if (!p) return signInView("Google sign-in did not work. Please try again.");
+  async function onCredential(resp) {
+    if (!decode(resp.credential)) return signInView("Google sign-in did not work. Please try again.");
     token = resp.credential;
-    profile = { email: p.email, name: p.name || "", picture: p.picture || "" };
-    try { sessionStorage.setItem(TOKEN_KEY, token); } catch (e) {}
+    clearSession();
     const box = document.getElementById("resign");
     if (box) box.remove();
-    if (waitingSave) { const go = waitingSave; waitingSave = null; go(); return; }
-    checkAccess();
+    await checkAccess(!!waitingSave);
+    if (waitingSave && sessionValid()) { const go = waitingSave; waitingSave = null; go(); }
   }
 
   if (!ready) {
     showGate(`<p>This site is not connected yet. Fill in <code>config.js</code> as described in the README.</p>`);
     return;
   }
+  try { sess = JSON.parse(localStorage.getItem(SESSION_KEY) || "null"); } catch (e) { sess = null; }
+  if (sessionValid()) checkAccess(); else clearSession();
   function start() {
     if (!window.google || !google.accounts) { setTimeout(start, 100); return; }
     google.accounts.id.initialize({ client_id: cfg.clientId, callback: onCredential, auto_select: true, cancel_on_tap_outside: false });
-    let saved = null;
-    try { saved = sessionStorage.getItem(TOKEN_KEY); } catch (e) {}
-    if (fresh(saved)) { onCredential({ credential: saved }); return; }
-    signInView();
-    google.accounts.id.prompt();
+    if (!sess) { signInView(); google.accounts.id.prompt(); }
   }
   start();
 })();
