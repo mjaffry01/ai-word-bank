@@ -1,0 +1,1630 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>AI Word Bank</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Familjen+Grotesk:wght@500;600;700&family=Source+Sans+3:wght@400;500;600&family=JetBrains+Mono:wght@500;600&display=swap">
+<style>
+/* Layout: masthead, sticky search/filter bar, A–Z sections of term + definition rows; flashcard mode swaps the list for one card */
+:root{
+  --bg:#f4f7f7;--surface:#ffffff;--fg:#131a1c;--muted:#56656b;--line:#d8e0e2;--accent:#0b6e69;--accent-ink:#ffffff;
+  --display:"Familjen Grotesk",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --body:"Source Sans 3",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:"JetBrains Mono",ui-monospace,Consolas,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0e1415;--surface:#161f21;--fg:#e4ecec;--muted:#98a8ac;--line:#28363a;--accent:#5cc6bd;--accent-ink:#0e1415;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#0e1415;--surface:#161f21;--fg:#e4ecec;--muted:#98a8ac;--line:#28363a;--accent:#5cc6bd;--accent-ink:#0e1415;color-scheme:dark}
+body{background:var(--bg);color:var(--fg);font:16px/1.55 var(--body)}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--bg)}
+.wrap{max-width:1040px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.mast{padding-block:40px 18px}
+.eyebrow{font:600 .74rem var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--accent);margin:0 0 10px}
+h1{font-family:var(--display);font-weight:700;font-size:clamp(2.2rem,6vw,3.4rem);line-height:1.02;letter-spacing:-.015em;margin:0 0 12px;text-wrap:balance}
+.lede{color:var(--muted);max-width:62ch;margin:0;font-size:1.05rem}
+.bar{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);border-bottom:1px solid var(--line);padding-block:12px 10px}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+#q{flex:1 1 240px;min-width:0;font:inherit;padding:10px 12px;border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--fg)}
+#q::placeholder{color:var(--muted)}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden;background:var(--surface)}
+.seg button{font:600 .88rem var(--body);padding:9px 14px;border:0;background:transparent;color:var(--fg);cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink)}
+.count{font:500 .78rem var(--mono);color:var(--muted);font-variant-numeric:tabular-nums;white-space:nowrap}
+.chips{display:flex;gap:6px;overflow-x:auto;padding-block:10px 4px;scrollbar-width:thin}
+.chip{flex:none;font:500 .84rem var(--body);padding:5px 11px;border-radius:999px;border:1px solid var(--line);background:var(--surface);color:var(--fg);cursor:pointer}
+.chip .n{font:500 .72rem var(--mono);color:var(--muted);margin-left:5px}
+.chip[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.chip[aria-pressed="true"] .n{color:var(--accent-ink);opacity:.8}
+.az{display:flex;flex-wrap:wrap;gap:2px;margin-top:6px}
+.az button{font:600 .78rem var(--mono);min-width:28px;height:26px;border:0;background:transparent;color:var(--accent);border-radius:4px;cursor:pointer}
+.az button:hover:not(:disabled){background:var(--surface)}
+.az button:disabled{color:var(--line);cursor:default}
+main{padding-block:8px 48px}
+.letter{padding-top:22px}
+h2{font-family:var(--display);font-weight:700;font-size:1.7rem;color:var(--accent);margin:0 0 4px}
+dl{margin:0}
+.entry{display:grid;grid-template-columns:minmax(0,17rem) minmax(0,1fr);gap:2px 28px;padding-block:12px;border-top:1px solid var(--line)}
+.entry dt{min-width:0}
+.term{font-family:var(--display);font-weight:600;font-size:1.04rem;line-height:1.3}
+.tag{display:block;font:500 .68rem var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-top:3px}
+.entry dd{margin:0;max-width:65ch;min-width:0}
+mark{background:transparent;color:var(--accent);font-weight:600}
+.empty{color:var(--muted);padding-block:40px;text-align:center}
+.deck{max-width:660px;margin:28px auto 0}
+.card{width:100%;min-height:280px;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:14px;text-align:center;padding:36px 24px;background:var(--surface);color:var(--fg);border:1px solid var(--line);border-radius:14px;cursor:pointer;font:inherit}
+.card .big{font-family:var(--display);font-weight:700;font-size:clamp(1.7rem,5vw,2.5rem);line-height:1.1;text-wrap:balance}
+.card .def{font-size:1.15rem;max-width:46ch}
+.card .hint{font:500 .74rem var(--mono);color:var(--muted);letter-spacing:.04em}
+.controls{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:16px;align-items:center}
+.btn{font:600 .9rem var(--body);padding:9px 16px;border-radius:8px;border:1px solid var(--line);background:var(--surface);color:var(--fg);cursor:pointer}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.pos{font:500 .8rem var(--mono);color:var(--muted);min-width:7ch;text-align:center;font-variant-numeric:tabular-nums}
+:root{--t0:#0b6e69;--t1:#2f8f5c;--t2:#7a861a;--t3:#b56d12;--t4:#b23f2e}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--t0:#5cc6bd;--t1:#6fcf97;--t2:#c6d160;--t3:#f0a64a;--t4:#f27c68}}
+:root[data-theme="dark"]{--t0:#5cc6bd;--t1:#6fcf97;--t2:#c6d160;--t3:#f0a64a;--t4:#f27c68}
+.ringlink{font:500 .68rem var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--accent);background:none;border:0;padding:0;margin-top:3px;cursor:pointer;display:block;text-align:left}
+.ringlink:hover{text-decoration:underline}
+.web{display:grid;grid-template-columns:minmax(0,1fr) 330px;gap:16px;margin-top:16px;align-items:start}
+.stage{position:relative;border:1px solid var(--line);border-radius:12px;background:var(--surface);height:min(78vh,780px);min-height:420px;overflow:hidden}
+.stage svg{display:block;width:100%;height:100%;touch-action:none;cursor:grab;user-select:none}
+.stage svg.panning{cursor:grabbing}
+.zoom{position:absolute;top:10px;right:10px;display:flex;flex-direction:column;gap:6px}
+.btn.sq{width:38px;height:38px;padding:0;font-size:1rem}
+.btn.sq.fit{font-size:.74rem}
+.legend{position:absolute;left:10px;bottom:10px;display:flex;flex-wrap:wrap;gap:4px 12px;font:500 .74rem var(--mono);color:var(--muted);background:var(--surface);padding:6px 8px;border-radius:8px;max-width:calc(100% - 20px)}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.dot{display:inline-block;width:10px;height:10px;border-radius:50%;background:var(--t0);flex:none}
+.dot.t1{background:var(--t1)}.dot.t2{background:var(--t2)}.dot.t3{background:var(--t3)}.dot.t4{background:var(--t4)}
+.panel{border:1px solid var(--line);border-radius:12px;background:var(--surface);padding:18px;min-width:0}
+.panel h3{font-family:var(--display);font-size:1.4rem;line-height:1.15;margin:0 0 6px;text-wrap:balance}
+.panel h4{font:600 .72rem var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:18px 0 8px}
+.panel p{margin:0}
+.badge{display:inline-flex;align-items:center;gap:6px;font:500 .74rem var(--mono);color:var(--muted);margin-bottom:10px}
+.chipwrap{display:flex;flex-wrap:wrap;gap:6px}
+.wchip{display:inline-flex;align-items:center;gap:6px;font:500 .84rem var(--body);padding:4px 10px;border-radius:999px;border:1px solid var(--line);background:var(--bg);color:var(--fg);cursor:pointer;text-align:left}
+.wchip::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--t0);flex:none}
+.wchip.t1::before{background:var(--t1)}.wchip.t2::before{background:var(--t2)}.wchip.t3::before{background:var(--t3)}.wchip.t4::before{background:var(--t4)}
+.wchip:hover{border-color:var(--accent)}
+.crumbs{display:flex;flex-wrap:wrap;gap:4px;align-items:center;font-size:.86rem}
+.crumbs .sep{color:var(--muted)}
+.crumbs button{font:inherit;background:none;border:0;padding:0;color:var(--accent);cursor:pointer}
+.crumbs b{font-weight:600}
+.none{color:var(--muted);font-size:.92rem}
+.ring{fill:none;stroke:var(--line);stroke-width:1;vector-effect:non-scaling-stroke;stroke-dasharray:3 4}
+.ring.tb{stroke:var(--muted);stroke-dasharray:none;opacity:.55}
+.edge{stroke:var(--line);stroke-width:1;vector-effect:non-scaling-stroke}
+.hl line{stroke-width:2;vector-effect:non-scaling-stroke}
+.hl .up{stroke:var(--accent)}
+.hl .down{stroke:var(--muted);stroke-dasharray:4 3}
+.s{transform:scale(var(--inv,1))}
+.node{cursor:pointer}
+.node circle{fill:var(--t0);stroke:var(--surface);stroke-width:2}
+.node.t1 circle{fill:var(--t1)}.node.t2 circle{fill:var(--t2)}.node.t3 circle{fill:var(--t3)}.node.t4 circle{fill:var(--t4)}
+.node text{display:none;fill:var(--fg);font:500 11px var(--body);paint-order:stroke;stroke:var(--surface);stroke-width:3px;stroke-linejoin:round}
+.node.root text{display:block;font:700 13px var(--display)}
+.zoomed .node text,.node.sel text,.node.nbr text,.node.hov text{display:block}
+.node.sel circle{stroke:var(--fg);stroke-width:2.5}
+.node.sel text{font-weight:700}
+.dimmed .node:not(.sel):not(.nbr):not(.hov){opacity:.28}
+.dimmed .edge{opacity:.35}
+.node.off{opacity:.08!important;pointer-events:none}
+.rl{fill:var(--muted);font:600 10px var(--mono);letter-spacing:.08em;text-transform:uppercase;paint-order:stroke;stroke:var(--surface);stroke-width:3px}
+.pathview{padding-top:8px}
+.tierhead{display:flex;gap:14px;align-items:baseline;flex-wrap:wrap;margin-top:34px;padding-bottom:8px;border-bottom:2px solid var(--t0)}
+.tierhead.t1{border-color:var(--t1)}.tierhead.t2{border-color:var(--t2)}.tierhead.t3{border-color:var(--t3)}.tierhead.t4{border-color:var(--t4)}
+.tierhead h2{color:var(--fg);margin:0}
+.tierhead p{margin:0;color:var(--muted);max-width:60ch}
+.ringrow{display:grid;grid-template-columns:7rem minmax(0,1fr);gap:8px 20px;padding-block:14px;border-bottom:1px solid var(--line)}
+.ringrow h3{margin:0;font:600 .95rem var(--display)}
+.ringrow h3 span{display:block;font:500 .72rem var(--mono);color:var(--muted);margin-top:2px}
+@media (max-width:860px){.web{grid-template-columns:1fr}.stage{height:62vh}}
+@media (max-width:560px){.ringrow{grid-template-columns:1fr}.seg{flex-wrap:wrap}}
+:root{--good:#1d7a3e;--bad:#b3261e}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--good:#6fd08f;--bad:#ff8a80}}
+:root[data-theme="dark"]{--good:#6fd08f;--bad:#ff8a80}
+.quiz{max-width:780px;margin:24px auto 0}
+.quiz>p{color:var(--muted);margin:0 0 16px;max-width:62ch}
+.lenpick{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:16px;font-size:.92rem;color:var(--muted)}
+.rings{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px}
+.rbtn{display:flex;flex-direction:column;gap:3px;text-align:left;font:inherit;padding:12px 14px;border:1px solid var(--line);border-radius:10px;background:var(--surface);color:var(--fg);cursor:pointer}
+.rbtn:hover{border-color:var(--accent)}
+.rbtn b{display:flex;align-items:center;gap:8px;font:700 1.05rem var(--display)}
+.rbtn small{font:500 .74rem var(--mono);color:var(--muted)}
+.rbtn .best{color:var(--good)}
+.qhead{display:flex;flex-wrap:wrap;gap:8px 16px;align-items:center;justify-content:space-between;font:500 .8rem var(--mono);color:var(--muted);font-variant-numeric:tabular-nums}
+.qhead .linkbtn{font:inherit;background:none;border:0;color:var(--accent);cursor:pointer;padding:0}
+.bar2{height:4px;border-radius:2px;background:var(--line);margin-top:10px;overflow:hidden}
+.bar2 i{display:block;height:100%;background:var(--accent)}
+.qcard{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:22px;margin-top:14px}
+.qkind{font:600 .7rem var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--accent);margin:0 0 8px}
+.qprompt{font-size:1.15rem;line-height:1.45;margin:0 0 16px}
+.qprompt blockquote{margin:10px 0 0;padding:10px 14px;border-left:3px solid var(--accent);background:var(--bg);font-size:1.05rem}
+.opts{display:grid;gap:8px}
+.opt{display:flex;gap:12px;align-items:flex-start;text-align:left;font:inherit;padding:12px 14px;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--fg);cursor:pointer}
+.opt .k{font:600 .8rem var(--mono);color:var(--muted);min-width:1.2em;padding-top:2px}
+.opt:hover:not(:disabled){border-color:var(--accent)}
+.opt:disabled{cursor:default}
+.opt.right{border-color:var(--good);box-shadow:inset 0 0 0 1px var(--good)}
+.opt.right .k{color:var(--good)}
+.opt.wrong{border-color:var(--bad);box-shadow:inset 0 0 0 1px var(--bad)}
+.opt.wrong .k{color:var(--bad)}
+.verdict{margin-top:14px;padding:12px 14px;border-radius:10px;background:var(--bg)}
+.verdict .v{font-weight:700;margin-right:6px}
+.v.good{color:var(--good)}.v.bad{color:var(--bad)}
+.verdict p{margin:6px 0 0}
+.qfoot{display:flex;justify-content:flex-end;gap:8px;margin-top:14px;flex-wrap:wrap}
+.score{font:700 clamp(2.4rem,7vw,3.4rem) var(--display);line-height:1;margin:6px 0}
+.missed{margin:16px 0 0;padding:0;list-style:none;display:grid;gap:8px}
+.missed li{padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:var(--bg)}
+.missed .q{color:var(--muted);font-size:.9rem}
+footer{border-top:1px solid var(--line);padding-block:20px 36px;color:var(--muted);font-size:.9rem}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+@media (max-width:640px){.entry{grid-template-columns:1fr}.mast{padding-block:28px 14px}}
+/* Standalone page base */
+*,*::before,*::after{box-sizing:border-box}
+html{color-scheme:light}
+body{margin:0}
+img{max-width:100%}
+[hidden]{display:none!important}
+:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+/* Sign-in gate and account chip */
+.gate{min-height:100vh;display:grid;place-items:center;padding-block:32px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.gatecard{width:100%;max-width:460px;background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:32px 28px}
+.gatecard h1{font-size:clamp(2rem,6vw,2.6rem)}
+.gatecard p{color:var(--muted);margin:0 0 18px}
+.gbtn{display:inline-flex;align-items:center;gap:10px;font:600 1rem var(--body);padding:11px 18px;border-radius:999px;border:1px solid var(--line);background:var(--bg);color:var(--fg);cursor:pointer}
+.gbtn:hover{border-color:var(--accent)}
+.gbtn svg{width:18px;height:18px;flex:none}
+.gerr{color:var(--bad);font-size:.92rem;margin-top:12px}
+.mastrow{display:flex;gap:16px;align-items:flex-start;justify-content:space-between;flex-wrap:wrap}
+.mastrow>div{min-width:0;flex:1 1 320px}
+.who{display:flex;align-items:center;gap:10px;font-size:.9rem;color:var(--muted)}
+.who img{width:32px;height:32px;border-radius:50%;flex:none}
+.who b{color:var(--fg);font-weight:600;display:block}
+.linkish{font:inherit;background:none;border:0;padding:0;color:var(--accent);cursor:pointer}
+.savestate{font:500 .8rem var(--mono);color:var(--muted);margin:4px 0 0}
+.savestate.bad{color:var(--bad)}
+</style>
+</head>
+<body>
+
+<section class="gate" id="gate">
+  <div class="gatecard">
+    <p class="eyebrow">AI course</p>
+    <h1>The AI Word Bank</h1>
+    <div id="gateBody"><p>Checking your sign-in…</p></div>
+  </div>
+</section>
+
+<div id="app" hidden>
+<div class="wrap">
+  <header class="mast">
+    <div class="mastrow"><div>
+    <p class="eyebrow">Course glossary</p>
+    <h1>The AI Word Bank</h1>
+    <p class="lede">The vocabulary of artificial intelligence as a learning web. The core words sit in the centre, and each ring outward holds words that build on the rings inside it. Teach from the centre out, ring by ring.</p>
+    </div><div class="who" id="who"></div></div>
+  </header>
+</div>
+
+<div class="bar">
+  <div class="wrap">
+    <div class="row">
+      <input id="q" type="search" placeholder="Search terms or definitions…" aria-label="Search terms" autocomplete="off">
+      <div class="seg" role="group" aria-label="View">
+        <button id="mWeb" data-mode="web" aria-pressed="true">Learning web</button>
+        <button id="mPath" data-mode="path" aria-pressed="false">Learning path</button>
+        <button id="mList" data-mode="list" aria-pressed="false">Glossary</button>
+        <button id="mCards" data-mode="cards" aria-pressed="false">Flashcards</button>
+        <button id="mQuiz" data-mode="quiz" aria-pressed="false">Ring quiz</button>
+      </div>
+      <span class="count" id="count"></span>
+    </div>
+    <div class="chips" id="chips" role="group" aria-label="Topic"></div>
+    <div class="az" id="az" aria-label="Jump to letter"></div>
+  </div>
+</div>
+
+<div class="wrap">
+  <main id="main"></main>
+  <footer>Teaching tip: start with Basics, Data and Prompting in week one, then move on to Training, LLMs and Apps &amp; agents, and finish with Ethics &amp; safety.</footer>
+</div>
+</div>
+
+<script type="text/plain" id="web">
+Artificial Intelligence (AI) > Machine Learning (ML); Narrow AI (Weak AI); Artificial General Intelligence (AGI); Symbolic AI; Intelligent Agent; Automation; Generative AI; Predictive AI; Conversational AI; AI Ethics; Pattern Recognition; Cognitive Computing; Robotics; Computer Vision; Natural Language Processing (NLP); AI Strategy; AI Literacy; Heuristic; Search Algorithm; Alan Turing; Dartmouth Conference (1956); AI Winter
+Algorithm > Machine Learning (ML); Heuristic; Search Algorithm; Rule-based System; Evolutionary Algorithm
+Data > Dataset; Machine Learning (ML); Structured Data; Unstructured Data; Semi-structured Data; Big Data; Metadata; Data Science; Feature; Label; Data Cleaning; Privacy; Web Scraping; Data Pipeline; Noise; Outlier; Missing Values; Sampling; Statistics; IoT (Internet of Things)
+Model > Prediction; Input / Output; Parameters; Architecture; Training; Inference; Deployment; Black Box; Baseline; API (Application Programming Interface); Open Source AI
+Machine Learning (ML) > Deep Learning; Neural Network; Supervised Learning; Unsupervised Learning; Reinforcement Learning (RL); Training; Training Data; Discriminative AI; Predictive AI; Self-supervised Learning; Transfer Learning; Online Learning; Batch Learning; Ensemble Learning; Data Science; Recommendation System; Linear Algebra; Calculus; Python; Scikit-learn
+Artificial General Intelligence (AGI) > Artificial Superintelligence (ASI); Singularity; Existential Risk
+Symbolic AI > Expert System; Rule-based System
+Rule-based System > Expert System
+Expert System > AI Winter
+Intelligent Agent > AI Agent; Agent (in RL)
+Conversational AI > Chatbot; Virtual Assistant
+Chatbot > ELIZA; ChatGPT; AI Customer Service; Custom GPT / Assistant
+Generative AI > Large Language Model (LLM); Image Generation; Audio Generation; Text-to-Image; Text-to-Video; Text-to-Code; Deepfake; Diffusion Model; GAN (Generative Adversarial Network)
+Prediction > Classification; Regression; Time Series Forecasting; Predictive Analytics; Accuracy; Error Analysis
+Pattern Recognition > Image Recognition; Speech Recognition (ASR); Anomaly Detection; Speaker Recognition
+Automation > Robotic Process Automation (RPA); Job Displacement; Augmentation; Low-code / No-code AI; Workflow; Digital Transformation
+Cognitive Computing > IBM Watson
+Alan Turing > Turing Test
+Turing Test > Chinese Room
+Dartmouth Conference (1956) > John McCarthy
+Statistics > Probability; Mean, Median, Mode; Variance; Correlation; Hypothesis Testing; Data Science; Sampling; R
+Dataset > Training Data; Validation Data; Test Data; Train/Test Split; Labeled Data; Unlabeled Data; Corpus; Imbalanced Data; Data Augmentation; Synthetic Data; ImageNet; Benchmark; Kaggle
+Train/Test Split > Cross-validation; Data Leakage
+Training Data > Data Leakage; Data Poisoning; Knowledge Cutoff
+Label > Labeled Data; Annotation; Data Labeling; Ground Truth; Target Variable
+Labeled Data > Supervised Learning; Semi-supervised Learning; Active Learning
+Unlabeled Data > Unsupervised Learning; Semi-supervised Learning; Self-supervised Learning
+Annotation > Data Labeling
+Feature > Feature Engineering; Feature Selection; Dimensionality; One-hot Encoding; Normalization; Standardization
+Dimensionality > Dimensionality Reduction
+Data Cleaning > Data Preprocessing; Imputation; Data Wrangling
+Missing Values > Imputation
+Data Preprocessing > Normalization; Standardization; One-hot Encoding; Tokenization
+Big Data > Data Lake; Data Warehouse; Data Mining; Distributed Training
+Data Pipeline > ETL (Extract, Transform, Load); Data Lake; Data Warehouse; MLOps
+Structured Data > Data Warehouse
+Data Mining > Association Rules
+Association Rules > Apriori
+Unstructured Data > Natural Language Processing (NLP); Computer Vision; Spectrogram
+Metadata > Content Provenance
+Privacy > Data Privacy; PII (Personally Identifiable Information); Consent; Anonymization; Differential Privacy; Surveillance; GDPR; Federated Learning
+Deployment > Data Drift; Model Monitoring; Model Serving; MLOps; On-premise; Versioning; Container (Docker); A/B Testing; Edge AI; Cloud AI
+Data Drift > Model Drift
+Supervised Learning > Classification; Regression; Ranking
+Classification > Binary Classification; Multi-class Classification; Multi-label Classification; Logistic Regression; Decision Tree; Naive Bayes; Support Vector Machine (SVM); K-Nearest Neighbors (KNN); Image Classification; Text Classification; Sentiment Analysis; Confusion Matrix
+Regression > Linear Regression; Polynomial Regression; Mean Squared Error (MSE); Mean Absolute Error (MAE); R-squared
+Unsupervised Learning > Clustering; Dimensionality Reduction; Anomaly Detection; Association Rules
+Clustering > K-Means Clustering; Hierarchical Clustering; DBSCAN
+Dimensionality Reduction > Principal Component Analysis (PCA); t-SNE / UMAP; Autoencoder
+Reinforcement Learning (RL) > Agent (in RL); Environment; State; Action; Reward; Policy; Markov Decision Process (MDP); Q-Learning; Exploration vs Exploitation; Simulation; AlphaGo; RLHF (Reinforcement Learning from Human Feedback)
+Transfer Learning > Fine-tuning; Pre-training; Zero-shot Learning; Few-shot Learning; One-shot Learning; Foundation Model
+Few-shot Learning > In-context Learning; Few-shot Prompting
+Zero-shot Learning > Zero-shot Prompting
+Ensemble Learning > Random Forest; Bagging; Boosting; Stacking
+Self-supervised Learning > Contrastive Learning; Next-token Prediction; Pre-training
+Training > Loss Function; Epoch; Batch; Hyperparameters; Overfitting; Underfitting; Generalization; Checkpoint; Training Run; Compute Budget; Pre-training; Fine-tuning; Optimizer; Convergence; Curriculum Learning; Multi-task Learning; Meta-learning; Compute
+Recommendation System > Collaborative Filtering; Content-based Filtering; Personalization
+Time Series Forecasting > ARIMA
+Ranking > Reranking
+Parameters > Weights; Bias (parameter); Parameter Count
+Hyperparameters > Learning Rate; Batch Size; Hyperparameter Tuning
+Hyperparameter Tuning > Grid Search; Random Search
+Batch > Batch Size; Iteration (Step); Stochastic Gradient Descent (SGD); Batch Normalization
+Epoch > Iteration (Step); Early Stopping
+Loss Function > Cost Function; Objective Function; Gradient; Log Loss (Cross-entropy); Mean Squared Error (MSE)
+Derivative > Gradient
+Gradient > Gradient Descent; Vanishing Gradient; Exploding Gradient; Backpropagation
+Optimization > Gradient Descent; Evolutionary Algorithm
+Gradient Descent > Stochastic Gradient Descent (SGD); Optimizer; Local Minimum; Convergence; Learning Rate
+Optimizer > Adam
+Learning Rate > Learning Rate Schedule; Warm-up
+Exploding Gradient > Gradient Clipping
+Overfitting > Regularization; Early Stopping; Dropout; Bias-Variance Tradeoff; Cross-validation
+Underfitting > Bias-Variance Tradeoff
+Regularization > L1 / L2 Regularization; Dropout
+Cross-validation > K-fold Cross-validation
+Validation Data > Early Stopping; Cross-validation; Hyperparameter Tuning
+Fine-tuning > Catastrophic Forgetting; Instruction Tuning; Supervised Fine-tuning (SFT); LoRA (Low-Rank Adaptation); PEFT (Parameter-Efficient Fine-Tuning)
+Pre-training > Base Model; Foundation Model
+Compute Budget > Scaling Laws
+Training Run > Checkpoint; Weights & Biases
+Neural Network > Neuron (Node); Layer; Perceptron; Activation Function; Feedforward Network; Deep Learning
+Neuron (Node) > Perceptron; Activation Function; Spiking Neural Network
+Layer > Input Layer; Hidden Layer; Output Layer; Fully Connected (Dense) Layer; Embedding Layer; Layer Normalization
+Activation Function > ReLU; Sigmoid; Tanh; Softmax
+Output Layer > Softmax; Logit
+Perceptron > Multilayer Perceptron (MLP)
+Hidden Layer > Multilayer Perceptron (MLP)
+Feedforward Network > Multilayer Perceptron (MLP); Forward Propagation
+Forward Propagation > Backpropagation
+Deep Learning > Convolutional Neural Network (CNN); Recurrent Neural Network (RNN); Autoencoder; GAN (Generative Adversarial Network); Graph Neural Network (GNN); Capsule Network; Residual Connection (Skip Connection); Batch Normalization; Dropout; Latent Space; Vanishing Gradient; Diffusion Model; Deep Q-Network (DQN); TensorFlow; PyTorch; JAX; Godfathers of AI; AlphaFold
+Convolutional Neural Network (CNN) > Convolution; Pooling; Feature Map; ResNet; AlexNet; YOLO
+Convolution > Kernel (Filter); Feature Map
+Residual Connection (Skip Connection) > ResNet
+Recurrent Neural Network (RNN) > LSTM (Long Short-Term Memory); Attention Mechanism
+LSTM (Long Short-Term Memory) > GRU (Gated Recurrent Unit)
+Attention Mechanism > Self-attention; Transformer
+Self-attention > Multi-head Attention
+Transformer > Encoder; Decoder; Positional Encoding; Multi-head Attention; Layer Normalization; Vision Transformer (ViT); "Attention Is All You Need"; Large Language Model (LLM); BERT; GPT (Generative Pre-trained Transformer); Mixture of Experts (MoE); Transformers (library)
+Encoder > Encoder-Decoder; BERT
+Decoder > Encoder-Decoder
+Autoencoder > Variational Autoencoder (VAE); Latent Space
+GAN (Generative Adversarial Network) > Generator; Discriminator; Deepfake
+Latent Space > Latent Diffusion
+Noise > Diffusion Model
+Diffusion Model > Stable Diffusion; Latent Diffusion; Inpainting; Outpainting; Guidance Scale (CFG)
+Linear Regression > Polynomial Regression; Logistic Regression
+Decision Tree > Random Forest; Gradient Boosting
+Boosting > Gradient Boosting; AdaBoost
+Gradient Boosting > XGBoost; LightGBM / CatBoost
+Bagging > Random Forest
+Probability > Naive Bayes; Bayes' Theorem; Probability Distribution; Markov Chain; Bayesian Network; Stochastic; Deterministic; Entropy
+Bayes' Theorem > Naive Bayes; Bayesian Network
+Markov Chain > Hidden Markov Model (HMM); Markov Decision Process (MDP)
+Search Algorithm > A* Search; Minimax; Monte Carlo Tree Search (MCTS)
+Heuristic > A* Search
+Minimax > Deep Blue
+Search Algorithm > Deep Blue
+Evolutionary Algorithm > Genetic Algorithm
+Monte Carlo Tree Search (MCTS) > AlphaGo
+Euclidean Distance > K-Nearest Neighbors (KNN); K-Means Clustering
+Mean, Median, Mode > Variance; Imputation
+Variance > Standard Deviation; Principal Component Analysis (PCA); Bias-Variance Tradeoff
+Standard Deviation > Normal Distribution; Standardization
+Probability Distribution > Normal Distribution
+Correlation > Causation
+Hypothesis Testing > P-value; A/B Testing
+Linear Algebra > Vector; Matrix; Dot Product
+Matrix > Tensor
+Vector > Tensor; Dot Product; Cosine Similarity; Euclidean Distance; Word Embedding; Embedding
+Dot Product > Cosine Similarity; Attention Mechanism
+Calculus > Derivative; Optimization
+Entropy > Log Loss (Cross-entropy)
+Accuracy > Precision; Recall (Sensitivity); Specificity; Confusion Matrix
+Confusion Matrix > True Positive / True Negative; False Positive (Type I Error); False Negative (Type II Error)
+True Positive / True Negative > Precision; Recall (Sensitivity); Specificity
+False Positive (Type I Error) > Precision; Specificity; ROC Curve
+False Negative (Type II Error) > Recall (Sensitivity)
+Precision > F1 Score
+Recall (Sensitivity) > F1 Score; ROC Curve
+ROC Curve > AUC (Area Under the Curve)
+Mean Squared Error (MSE) > RMSE (Root Mean Squared Error)
+Log Loss (Cross-entropy) > Perplexity
+Language Model > Perplexity; Large Language Model (LLM); Next-token Prediction; Small Language Model (SLM)
+Machine Translation > BLEU Score
+Summarization > ROUGE Score
+Benchmark > MMLU; Leaderboard; Evals
+Evals > Human Evaluation; LLM-as-a-Judge; Safety Evaluations
+Natural Language Processing (NLP) > Natural Language Understanding (NLU); Natural Language Generation (NLG); Language Model; Tokenization; Bag of Words; N-gram; Stop Words; Stemming / Lemmatization; Part-of-Speech Tagging; Named Entity Recognition (NER); Sentiment Analysis; Machine Translation; Summarization; Text Classification; Question Answering; Corpus; Word Embedding; ELIZA; spaCy / NLTK
+Bag of Words > TF-IDF
+Word Embedding > Word2Vec; Embedding
+Large Language Model (LLM) > Token; Context Window; Prompt; Hallucination; Foundation Model; Frontier Model; Chat Model; Base Model; Reasoning Model; Multimodal; Knowledge Cutoff; Temperature; Parameter Count; Emergent Abilities; Open-weight Model; Closed (Proprietary) Model; AI Agent; Instruction Tuning; Sycophancy; Jailbreak; Prompt Injection; Grounding; LLMOps; Coding Assistant; Copilot; LLM-as-a-Judge; Generative Engine Optimization (GEO); OpenAI / Anthropic / Google DeepMind; ChatGPT Launch (2022)
+Tokenization > Token; Tokenizer
+Tokenizer > Vocabulary (model)
+Token > Context Window; Input Tokens / Output Tokens; Max Tokens; Cost per Token; Next-token Prediction; Stop Sequence
+Context Window > Context Length; Prompt Caching; Chunking; Context Engineering; Memory (AI)
+Next-token Prediction > Autoregressive; Temperature; Completion
+Temperature > Top-k Sampling; Top-p (Nucleus) Sampling
+Inference > Completion; Model Serving; Batch Inference; Real-time Inference; Test-time Compute; Quantization
+Hallucination > Confabulation; Grounding
+Grounding > RAG (Retrieval-Augmented Generation)
+Instruction Tuning > Chat Model; Supervised Fine-tuning (SFT)
+Supervised Fine-tuning (SFT) > RLHF (Reinforcement Learning from Human Feedback)
+RLHF (Reinforcement Learning from Human Feedback) > RLAIF; Reward Model; DPO (Direct Preference Optimization); Constitutional AI; Sycophancy
+Reward > Reward Model; Reward Hacking; Value Function; Q-Learning
+Reasoning Model > Extended Thinking; Test-time Compute
+Chain-of-Thought (CoT) > Reasoning Model; Tree of Thoughts; Self-consistency
+Multimodal > Vision-Language Model (VLM); CLIP
+Scaling Laws > Emergent Abilities; Frontier Model
+Parameter Count > Scaling Laws; Quantization; Pruning; Distillation; Small Language Model (SLM)
+Open Source AI > Open-weight Model; Hugging Face
+Open-weight Model > Llama; Mistral; DeepSeek; Ollama
+Closed (Proprietary) Model > Claude; Gemini; ChatGPT; Grok
+Llama > Ollama
+Image Generation > Text-to-Image; Inpainting; Outpainting; Upscaling; Style Transfer; Midjourney; DALL·E
+Text-to-Image > Stable Diffusion; Negative Prompt; Guidance Scale (CFG); Seed; Midjourney; DALL·E
+GPT (Generative Pre-trained Transformer) > ChatGPT
+ChatGPT > ChatGPT Launch (2022)
+Prompt > Prompt Engineering; System Prompt; User Prompt; Prompt Template; Negative Prompt; Custom Instructions; Output Format; Persona
+Prompt Engineering > Zero-shot Prompting; Few-shot Prompting; Chain-of-Thought (CoT); Role Prompting; Prompt Chaining; Prompt Template; Meta-prompting; Iterative Prompting; Context Engineering; Delimiter; Prefill; Output Format
+Output Format > Structured Output
+System Prompt > Persona; Custom Instructions; Guardrails
+Role Prompting > Persona
+Prompt Chaining > Workflow
+Few-shot Prompting > In-context Learning
+API (Application Programming Interface) > API Key; SDK (Software Development Kit); Endpoint; Rate Limit; Streaming; Webhook; Tool Use (Function Calling); Wrapper; Cost per Token
+Embedding > Vector Database; Semantic Search; Similarity Search; Embedding Layer; CLIP
+Cosine Similarity > Similarity Search
+Similarity Search > Vector Database; Semantic Search
+Vector Database > Pinecone / Chroma / Weaviate; RAG (Retrieval-Augmented Generation)
+Semantic Search > RAG (Retrieval-Augmented Generation); Retriever
+RAG (Retrieval-Augmented Generation) > Retriever; Chunking; Reranking; Knowledge Base; LlamaIndex; Perplexity AI
+Knowledge Base > Knowledge Graph
+AI Agent > Agentic AI; Multi-agent System; Tool Use (Function Calling); Agent Loop; Planning; Memory (AI); Computer Use; Browser Agent; Coding Assistant; Human-in-the-Loop (HITL); Orchestration; Workflow; Fallback; Intelligent Automation
+Tool Use (Function Calling) > MCP (Model Context Protocol); Plugin / Connector; Computer Use; Browser Agent
+MCP (Model Context Protocol) > Plugin / Connector
+Agent Loop > ReAct
+Memory (AI) > Short-term / Long-term Memory
+Orchestration > Multi-agent System; LangChain
+Coding Assistant > Vibe Coding; Microsoft / GitHub Copilot
+Copilot > Microsoft / GitHub Copilot
+Computer Vision > Image Recognition; Image Classification; Object Detection; Image Segmentation; Face Detection; OCR (Optical Character Recognition); Pose Estimation; Pixel; Video Analytics; Depth Estimation; Image Captioning; Medical Imaging AI; OpenCV
+Pixel > Image Segmentation
+Image Recognition > Image Classification; Facial Recognition
+Object Detection > Bounding Box; YOLO; Instance Segmentation
+Image Segmentation > Semantic Segmentation; Instance Segmentation
+Face Detection > Facial Recognition
+Image Classification > ImageNet
+ImageNet > AlexNet
+Vision-Language Model (VLM) > Visual Question Answering; Image Captioning
+Image Captioning > Visual Question Answering
+Video Analytics > Optical Flow
+Facial Recognition > Surveillance
+Deepfake > Watermarking; AI Detection; Disinformation
+Spectrogram > Speech Recognition (ASR)
+Speech Recognition (ASR) > Speech-to-Text (STT); Whisper; Speaker Diarization; Voice Assistant; Real-time Voice AI
+Audio Generation > Speech Synthesis; Voice Cloning
+Speech Synthesis > Text-to-Speech (TTS); Voice Cloning
+Text-to-Speech (TTS) > Real-time Voice AI; Voice Assistant
+Speaker Recognition > Speaker Diarization
+Virtual Assistant > Voice Assistant
+Voice Assistant > Wake Word
+Robotics > Industrial Robot; Humanoid Robot; Drone; Autonomous Vehicle; Embodied AI; Sensor Fusion; SLAM; Lidar; Simulation; Three Laws of Robotics
+Industrial Robot > Cobot
+Lidar > Sensor Fusion; SLAM; Autonomous Vehicle
+Sensor Fusion > Autonomous Vehicle
+Embodied AI > Humanoid Robot
+Simulation > Sim-to-Real; Digital Twin
+Agent (in RL) > Policy; Action
+State > Value Function; Markov Decision Process (MDP)
+Action > Policy
+Value Function > Q-Learning
+Q-Learning > Deep Q-Network (DQN)
+Compute > GPU (Graphics Processing Unit); TPU (Tensor Processing Unit); CPU; FLOPS; Compute Budget; Data Center; Cloud Computing; Supercomputer; Moore's Law
+CPU > GPU (Graphics Processing Unit)
+GPU (Graphics Processing Unit) > CUDA; VRAM; Parallelism
+Parallelism > Distributed Training
+Data Center > Cloud Computing; Supercomputer
+Cloud Computing > Cloud AI; Serverless; Container (Docker); On-premise
+Container (Docker) > Kubernetes
+Edge AI > On-device AI; NPU (Neural Processing Unit)
+Model Serving > Latency; Throughput; Scalability; Rate Limit; Real-time Inference; Batch Inference; Serverless
+MLOps > LLMOps; Model Monitoring; Model Registry; Versioning; MLflow; Weights & Biases
+Model Monitoring > Model Drift
+Versioning > Model Registry; GitHub
+Python > Jupyter Notebook; NumPy; Pandas; Matplotlib / Seaborn; Scikit-learn; TensorFlow; PyTorch; JAX; spaCy / NLTK; OpenCV; LangChain; LlamaIndex
+Data Science > Python; R; Kaggle; Business Intelligence (BI); Predictive Analytics
+Jupyter Notebook > Google Colab
+NumPy > Pandas; JAX
+TensorFlow > Keras
+Hugging Face > Transformers (library)
+Business Intelligence (BI) > Tableau / Power BI
+AI Ethics > Responsible AI; Bias (AI Bias); Fairness; Transparency; Accountability; AI Safety; Explainability (XAI); Misinformation; Dual-use; Copyright and AI; Surveillance; Consent
+Bias (AI Bias) > Algorithmic Bias; Discrimination; Fairness
+Imbalanced Data > Bias (AI Bias)
+Black Box > Explainability (XAI); Interpretability
+Explainability (XAI) > Interpretability
+Interpretability > Mechanistic Interpretability
+Transparency > Model Card; Explainability (XAI); Content Provenance
+AI Safety > AI Alignment; Guardrails; Red Teaming; Safety Evaluations; Control Problem; Existential Risk; Adversarial Attack
+AI Alignment > Value Alignment; Control Problem; Sycophancy; Reward Hacking; Constitutional AI
+Guardrails > Content Moderation; Content Filter
+Content Moderation > Content Filter
+Red Teaming > Jailbreak; Prompt Injection; Adversarial Attack
+Adversarial Attack > Data Poisoning; Model Inversion; Prompt Injection
+Misinformation > Disinformation; AI Detection; Watermarking
+Content Provenance > Watermarking
+Responsible AI > Model Card; AI Governance; Responsible Scaling Policy
+Model Card > System Card
+Safety Evaluations > System Card; Responsible Scaling Policy
+Copyright and AI > Intellectual Property (IP)
+AI Strategy > AI Adoption; AI Transformation; Use Case; AI-first; AI Governance
+Digital Transformation > AI Transformation
+Use Case > ROI (Return on Investment); Proof of Concept (PoC); Fraud Detection; AI in Healthcare; FinTech AI; EdTech AI; AI Customer Service; Smart City; Personalization; Predictive Analytics
+Proof of Concept (PoC) > Pilot; MVP (Minimum Viable Product)
+AI Governance > AI Regulation; AI Policy; Acceptable Use Policy; Responsible Scaling Policy
+AI Regulation > EU AI Act; GDPR
+AI Literacy > Upskilling / Reskilling; AI Hype
+AI Adoption > Upskilling / Reskilling; Future of Work; Digital Divide; AI Hype
+Job Displacement > Future of Work; Upskilling / Reskilling
+Augmentation > Future of Work; Copilot
+AI Hype > AI Washing; AI Winter
+Anomaly Detection > Fraud Detection
+AI in Healthcare > Medical Imaging AI; AlphaFold
+Robotic Process Automation (RPA) > Intelligent Automation
+IoT (Internet of Things) > Smart City; Digital Twin; Edge AI
+Question Answering > IBM Watson
+</script>
+
+<script type="text/plain" id="data">
+Artificial Intelligence (AI)|b|Computers doing tasks that normally need human intelligence, such as understanding language, recognising images or making decisions.
+Machine Learning (ML)|b|A branch of AI where systems learn patterns from data instead of following hand-written rules.
+Deep Learning|b|Machine learning that uses neural networks with many layers.
+Neural Network|b|A model made of connected units (neurons), loosely inspired by the brain.
+Algorithm|b|A step-by-step set of instructions for solving a problem.
+Model|b|The trained system that takes an input and produces a prediction or output.
+Narrow AI (Weak AI)|b|AI built for one specific task, such as spam filtering or playing chess.
+Artificial General Intelligence (AGI)|b|A hypothetical AI that can match humans across almost any intellectual task.
+Artificial Superintelligence (ASI)|b|A hypothetical AI that far exceeds human intelligence in every area.
+Generative AI|b|AI that creates new content such as text, images, audio, video or code.
+Discriminative AI|b|AI that classifies or predicts rather than generating new content.
+Predictive AI|b|AI that forecasts future outcomes from past data.
+Conversational AI|b|AI designed to hold conversations with people, such as chatbots and voice assistants.
+Chatbot|b|A program that talks with users in text or voice.
+Data Science|b|The field of extracting insights from data using statistics, programming and subject knowledge.
+Cognitive Computing|b|Systems that try to simulate human thought processes.
+Expert System|b|Early AI that makes decisions using if-then rules written by human experts.
+Symbolic AI|b|AI based on explicit rules and logic rather than learning from data.
+Rule-based System|b|A system that makes decisions using fixed if-then rules.
+Heuristic|b|A rule of thumb that finds a good-enough answer quickly.
+Input / Output|b|What goes into a model and what comes out of it.
+Prediction|b|A model's best guess about an unknown value or outcome.
+Pattern Recognition|b|Finding regularities in data, such as faces in photos or trends in sales.
+Automation|b|Using technology to perform tasks without human effort.
+Intelligent Agent|b|Anything that perceives its environment and takes actions to reach a goal.
+Data|d|Facts, numbers, text, images or other information used by AI.
+Dataset|d|An organised collection of data used to train or test a model.
+Training Data|d|The data a model learns from.
+Validation Data|d|Data used during training to tune settings and check progress.
+Test Data|d|Data kept aside until the end to measure performance on unseen examples.
+Train/Test Split|d|Dividing a dataset into separate parts for training and testing.
+Label|d|The correct answer attached to an example, such as "cat" on a photo of a cat.
+Labeled Data|d|Data that includes the correct answers.
+Unlabeled Data|d|Data without answers attached.
+Annotation|d|Adding labels or notes to data, often done by people.
+Ground Truth|d|The real, verified answer used to judge a model.
+Feature|d|A measurable input property, like a house's size or age.
+Feature Engineering|d|Creating or choosing useful features to help a model learn.
+Feature Selection|d|Keeping only the most useful features.
+Target Variable|d|The value the model is trying to predict.
+Structured Data|d|Data organised in tables with rows and columns.
+Unstructured Data|d|Data without a fixed format, like text, images, audio and video.
+Semi-structured Data|d|Data with some organisation but no strict table, such as JSON or XML.
+Big Data|d|Data too large or fast-moving for traditional tools to handle.
+Data Cleaning|d|Fixing or removing incorrect, missing or duplicate data.
+Data Preprocessing|d|Preparing raw data so a model can use it.
+Data Wrangling|d|Transforming messy raw data into a usable shape.
+Normalization|d|Rescaling numbers to a common range, often 0 to 1.
+Standardization|d|Rescaling data so it has a mean of 0 and a standard deviation of 1.
+Missing Values|d|Empty entries in a dataset that need handling.
+Imputation|d|Filling in missing values with estimates.
+Outlier|d|A data point very different from the rest.
+Noise|d|Random errors or irrelevant information in data.
+Data Augmentation|d|Creating extra training examples by changing existing ones, such as flipping or rotating images.
+Synthetic Data|d|Artificially generated data that imitates real data.
+Data Pipeline|d|Automated steps that move and transform data from its source to a model.
+ETL (Extract, Transform, Load)|d|Pulling data from sources, cleaning it and loading it into storage.
+Data Lake|d|Storage that holds large amounts of raw data in any format.
+Data Warehouse|d|Storage for cleaned, structured data ready for analysis.
+Data Mining|d|Discovering patterns in large datasets.
+Data Labeling|d|The work of tagging data with correct answers.
+Imbalanced Data|d|A dataset where some classes have far more examples than others.
+Sampling|d|Choosing a subset of data to work with.
+One-hot Encoding|d|Turning categories into columns of 0s and 1s so a model can use them.
+Dimensionality|d|The number of features in the data.
+Data Leakage|d|When information from test data slips into training and makes results look better than they are.
+Corpus|d|A large collection of text used to train language models.
+Web Scraping|d|Automatically collecting data from websites.
+Metadata|d|Data that describes other data, such as a file's date or author.
+Data Drift|d|When incoming real-world data changes compared with the training data.
+Supervised Learning|l|Learning from labeled examples with known answers.
+Unsupervised Learning|l|Finding patterns in data without labels.
+Semi-supervised Learning|l|Learning from a small amount of labeled data plus lots of unlabeled data.
+Self-supervised Learning|l|The model creates its own labels from the data, for example by predicting the next word.
+Reinforcement Learning (RL)|l|Learning by trial and error using rewards and penalties.
+Transfer Learning|l|Reusing knowledge from one task to help with another.
+Online Learning|l|Updating a model continuously as new data arrives.
+Batch Learning|l|Training on the whole dataset at once.
+Active Learning|l|The model asks for labels on the examples it is least sure about.
+Federated Learning|l|Training across many devices without moving the raw data off them.
+Multi-task Learning|l|Training one model on several tasks at the same time.
+Meta-learning|l|"Learning to learn": models that adapt quickly to new tasks.
+Zero-shot Learning|l|Handling a task without seeing any examples of it.
+One-shot Learning|l|Learning from a single example.
+Few-shot Learning|l|Learning from just a few examples.
+Contrastive Learning|l|Learning by comparing pairs of similar and different examples.
+Curriculum Learning|l|Training on easy examples first, then harder ones.
+Ensemble Learning|l|Combining several models to get better results.
+Classification|l|Predicting a category, such as spam or not spam.
+Binary Classification|l|Classification with exactly two possible classes.
+Multi-class Classification|l|Classification with more than two possible classes.
+Multi-label Classification|l|Classification where each item can belong to several classes at once.
+Regression|l|Predicting a number, such as a price or a temperature.
+Clustering|l|Grouping similar items together without labels.
+Anomaly Detection|l|Finding unusual data points, such as fraudulent transactions.
+Dimensionality Reduction|l|Reducing the number of features while keeping the important information.
+Association Rules|l|Finding items that often occur together, like bread and butter.
+Recommendation System|l|A system that suggests items a user may like, as on Netflix or Amazon.
+Time Series Forecasting|l|Predicting future values from data ordered in time.
+Ranking|l|Ordering items by relevance, as search engines do.
+Training|t|Teaching a model by showing it data and adjusting it to reduce errors.
+Parameters|t|The internal values a model learns during training.
+Weights|t|Numbers that set how strongly each input affects the output.
+Bias (parameter)|t|An extra learned value that shifts a neuron's output up or down.
+Hyperparameters|t|Settings chosen before training, such as the learning rate or number of layers.
+Hyperparameter Tuning|t|Searching for the best hyperparameter values.
+Grid Search|t|Trying every combination of chosen hyperparameter values.
+Random Search|t|Trying random combinations of hyperparameter values.
+Learning Rate|t|How big a step the model takes each time it adjusts its weights.
+Epoch|t|One full pass through the training data.
+Batch|t|A group of examples processed together.
+Batch Size|t|The number of examples in one batch.
+Iteration (Step)|t|One update of the model's weights.
+Loss Function|t|A formula that measures how wrong the model's predictions are.
+Cost Function|t|The overall error a model tries to minimise; often used to mean the same as loss function.
+Objective Function|t|The quantity that training tries to minimise or maximise.
+Gradient|t|The direction and size of change needed to reduce the error.
+Gradient Descent|t|An optimisation method that adjusts weights step by step to reduce the loss.
+Stochastic Gradient Descent (SGD)|t|Gradient descent that uses small random batches of data.
+Optimizer|t|The algorithm that updates the weights, such as SGD or Adam.
+Adam|t|A popular optimiser that adapts the learning rate automatically.
+Convergence|t|When training settles down and the loss stops improving.
+Local Minimum|t|A low point in the loss that is not the lowest possible point.
+Overfitting|t|The model memorises the training data and performs poorly on new data.
+Underfitting|t|The model is too simple to learn the pattern in the data.
+Generalization|t|How well a model performs on new, unseen data.
+Bias-Variance Tradeoff|t|The balance between a model that is too simple and one that is too sensitive to its training data.
+Regularization|t|Techniques that discourage overly complex models to prevent overfitting.
+L1 / L2 Regularization|t|Penalties on large weights that keep a model simpler.
+Early Stopping|t|Stopping training when performance on validation data stops improving.
+Cross-validation|t|Testing a model on several different splits of the data.
+K-fold Cross-validation|t|Splitting data into k parts and rotating which part is used for testing.
+Checkpoint|t|A saved copy of a model partway through training.
+Pre-training|t|The first, large-scale training of a model on general data.
+Fine-tuning|t|Extra training of a pre-trained model for a specific task or style.
+Warm-up|t|Starting training with a small learning rate and gradually increasing it.
+Learning Rate Schedule|t|A plan for changing the learning rate during training.
+Vanishing Gradient|t|When gradients become too small for the early layers of a network to learn.
+Exploding Gradient|t|When gradients become too large and training becomes unstable.
+Gradient Clipping|t|Capping the size of gradients to keep training stable.
+Catastrophic Forgetting|t|When a model forgets old knowledge after being trained on something new.
+Training Run|t|One complete training session of a model.
+Compute Budget|t|The amount of computing power available for training.
+Neuron (Node)|n|A small unit that takes inputs, weighs them and produces an output.
+Perceptron|n|The simplest neural network: a single artificial neuron.
+Layer|n|A group of neurons that process data at the same stage.
+Input Layer|n|The first layer, which receives the data.
+Hidden Layer|n|The layers between input and output, where most learning happens.
+Output Layer|n|The final layer, which produces the result.
+Activation Function|n|A function that sets a neuron's output and lets the network learn non-linear patterns.
+ReLU|n|A common activation function: it outputs the input if positive, otherwise zero.
+Sigmoid|n|An activation function that squashes values into the range 0 to 1.
+Tanh|n|An activation function that squashes values into the range -1 to 1.
+Softmax|n|Turns a list of scores into probabilities that add up to 1.
+Forward Propagation|n|Passing input through the network to get an output.
+Backpropagation|n|Sending the error backward through the network to work out how to update each weight.
+Feedforward Network|n|A network where data flows in one direction only, from input to output.
+Multilayer Perceptron (MLP)|n|A feedforward network with one or more hidden layers.
+Fully Connected (Dense) Layer|n|A layer where every neuron connects to every neuron in the previous layer.
+Convolutional Neural Network (CNN)|n|A network specialised for images that scans them with small filters.
+Convolution|n|Sliding a small filter over data to detect features such as edges.
+Kernel (Filter)|n|A small grid of weights used in a convolution.
+Pooling|n|Shrinking a feature map by summarising regions, for example by taking the maximum value.
+Feature Map|n|The output of a convolution layer, showing where features appear.
+Recurrent Neural Network (RNN)|n|A network for sequences that keeps a memory of earlier steps.
+LSTM (Long Short-Term Memory)|n|A type of RNN that remembers information over longer sequences.
+GRU (Gated Recurrent Unit)|n|A simpler alternative to the LSTM.
+Transformer|n|An architecture that uses attention to process whole sequences in parallel; the basis of modern LLMs.
+Attention Mechanism|n|Lets a model focus on the most relevant parts of its input.
+Self-attention|n|Attention where each word looks at every other word in the same input.
+Multi-head Attention|n|Several attention operations running in parallel to capture different relationships.
+Encoder|n|The part of a model that turns input into an internal representation.
+Decoder|n|The part of a model that turns an internal representation into output.
+Encoder-Decoder|n|An architecture with both parts, used for tasks like translation and summarisation.
+Positional Encoding|n|Information added to the input so a transformer knows the order of words.
+Autoencoder|n|A network that compresses data and then reconstructs it.
+Variational Autoencoder (VAE)|n|An autoencoder that can also generate new data.
+GAN (Generative Adversarial Network)|n|Two networks that compete: a generator makes fakes and a discriminator tries to spot them.
+Generator|n|The part of a GAN that creates new data.
+Discriminator|n|The part of a GAN that judges whether data is real or fake.
+Diffusion Model|n|A model that generates images by learning to remove noise step by step.
+Residual Connection (Skip Connection)|n|A shortcut that lets data skip layers, making very deep networks easier to train.
+ResNet|n|A well-known deep image network built with residual connections.
+Dropout|n|Randomly switching off neurons during training to reduce overfitting.
+Batch Normalization|n|Normalising the inputs to a layer to make training faster and more stable.
+Layer Normalization|n|Normalisation across the features of each example, used in transformers.
+Embedding Layer|n|A layer that turns words or IDs into lists of numbers (vectors).
+Latent Space|n|The hidden internal space where a model represents data.
+Mixture of Experts (MoE)|n|A model made of many specialist sub-networks, only some of which are used for each input.
+Graph Neural Network (GNN)|n|A network that works on graph data, such as social networks or molecules.
+Capsule Network|n|An experimental network design that tracks spatial relationships between parts.
+Spiking Neural Network|n|A network that imitates the way biological neurons fire in spikes.
+Architecture|n|The overall design and structure of a model.
+Linear Regression|a|Fits a straight line through data to predict a number.
+Logistic Regression|a|Predicts the probability of a yes/no outcome.
+Polynomial Regression|a|Fits a curved line through data.
+Decision Tree|a|A flowchart of questions that leads to a prediction.
+Random Forest|a|Many decision trees that vote together for a better answer.
+Gradient Boosting|a|Builds trees one after another, each correcting the previous one's mistakes.
+XGBoost|a|A fast and popular gradient boosting library.
+LightGBM / CatBoost|a|Other widely used gradient boosting libraries.
+AdaBoost|a|An early boosting method that focuses on the hardest examples.
+Bagging|a|Training models on random samples of the data and averaging their predictions.
+Boosting|a|Combining weak models in sequence to make a strong one.
+Stacking|a|Using one model to combine the predictions of several others.
+Support Vector Machine (SVM)|a|Finds the best boundary that separates classes.
+K-Nearest Neighbors (KNN)|a|Makes predictions by looking at the most similar examples.
+Naive Bayes|a|A probability-based classifier often used for spam filtering.
+K-Means Clustering|a|Groups data into k clusters around centre points.
+Hierarchical Clustering|a|Builds a tree of nested clusters.
+DBSCAN|a|A clustering method that finds dense groups and ignores noise.
+Principal Component Analysis (PCA)|a|Reduces the number of features while keeping the most variation.
+t-SNE / UMAP|a|Techniques for picturing high-dimensional data in 2D or 3D.
+Apriori|a|An algorithm for finding items that are often bought together.
+Collaborative Filtering|a|Recommends items based on what similar users liked.
+Content-based Filtering|a|Recommends items similar to ones a user already liked.
+Markov Chain|a|A model where the next state depends only on the current state.
+Hidden Markov Model (HMM)|a|A Markov model with hidden states, once common in speech recognition.
+Genetic Algorithm|a|Optimisation inspired by evolution, using selection, mutation and crossover.
+Evolutionary Algorithm|a|A family of methods that evolve better solutions over many generations.
+Search Algorithm|a|A method for exploring possible solutions, such as breadth-first search.
+A* Search|a|A pathfinding algorithm used in maps and games.
+Minimax|a|A game-playing algorithm that assumes the opponent always plays their best move.
+Monte Carlo Tree Search (MCTS)|a|A search method that uses random simulations; used by AlphaGo.
+Bayesian Network|a|A graph of variables and the probabilities that link them.
+ARIMA|a|A classic statistical model for time series forecasting.
+Accuracy|e|The percentage of predictions that are correct.
+Precision|e|Of everything predicted positive, how much was actually positive.
+Recall (Sensitivity)|e|Of all actual positives, how many the model found.
+F1 Score|e|A single score that balances precision and recall.
+Specificity|e|Of all actual negatives, how many the model correctly identified.
+Confusion Matrix|e|A table showing correct and incorrect predictions for each class.
+True Positive / True Negative|e|A correct "yes" and a correct "no" prediction.
+False Positive (Type I Error)|e|The model said yes, but the right answer was no.
+False Negative (Type II Error)|e|The model said no, but the right answer was yes.
+ROC Curve|e|A graph of the true positive rate against the false positive rate.
+AUC (Area Under the Curve)|e|A single number summarising the ROC curve; higher is better.
+Mean Squared Error (MSE)|e|The average of the squared prediction errors in regression.
+RMSE (Root Mean Squared Error)|e|The square root of MSE, in the same units as the target.
+Mean Absolute Error (MAE)|e|The average size of the prediction errors.
+R-squared|e|How much of the variation in the data the model explains.
+Log Loss (Cross-entropy)|e|Measures how far predicted probabilities are from the true answers.
+Perplexity|e|How surprised a language model is by a text; lower is better.
+BLEU Score|e|Measures translation quality by comparing with reference translations.
+ROUGE Score|e|Measures summary quality by comparing with reference summaries.
+Benchmark|e|A standard test used to compare models.
+MMLU|e|A popular benchmark that tests knowledge across dozens of subjects.
+Evals|e|Tests designed to measure how well an AI system performs a task.
+Baseline|e|A simple reference model to compare against.
+A/B Testing|e|Comparing two versions with real users to see which performs better.
+Human Evaluation|e|People rating the quality of a model's outputs.
+LLM-as-a-Judge|e|Using one AI model to grade another model's outputs.
+Leaderboard|e|A ranked list of models by benchmark score.
+Error Analysis|e|Studying a model's mistakes to find out how to improve it.
+Statistics|m|The science of collecting, analysing and interpreting data.
+Probability|m|How likely something is to happen, from 0 (never) to 1 (certain).
+Probability Distribution|m|A description of how likely each possible value is.
+Normal Distribution|m|The bell-shaped curve that many natural measurements follow.
+Mean, Median, Mode|m|The average, the middle value and the most common value.
+Variance|m|How spread out values are from the mean.
+Standard Deviation|m|The typical distance of values from the mean.
+Correlation|m|How strongly two variables move together.
+Causation|m|When one thing actually causes another; correlation alone does not prove it.
+Bayes' Theorem|m|A rule for updating probabilities when new evidence arrives.
+Linear Algebra|m|The mathematics of vectors and matrices that underlies AI.
+Vector|m|An ordered list of numbers.
+Matrix|m|A grid of numbers arranged in rows and columns.
+Tensor|m|A multi-dimensional array of numbers; the basic data structure of deep learning.
+Dot Product|m|Multiplying two vectors element by element and adding up the results.
+Calculus|m|The mathematics of change, used to compute gradients.
+Derivative|m|How fast a function's output changes as its input changes.
+Optimization|m|Finding the values that minimise or maximise something.
+Cosine Similarity|m|Measures how similar two vectors are by the angle between them.
+Euclidean Distance|m|The straight-line distance between two points.
+Hypothesis Testing|m|A statistical method for checking whether a result is real or due to chance.
+P-value|m|The probability of seeing a result at least this strong by chance alone.
+Entropy|m|A measure of uncertainty or randomness.
+Logit|m|A model's raw score before it is turned into a probability.
+Stochastic|m|Involving randomness.
+Deterministic|m|Always giving the same output for the same input.
+Large Language Model (LLM)|g|An AI trained on huge amounts of text to understand and generate language, such as Claude, GPT or Gemini.
+Small Language Model (SLM)|g|A lighter language model that can run on phones or laptops.
+Language Model|g|A model that predicts how likely sequences of words are.
+Natural Language Processing (NLP)|g|The field of AI that works with human language.
+Natural Language Understanding (NLU)|g|AI that grasps the meaning of text.
+Natural Language Generation (NLG)|g|AI that produces human-like text.
+Foundation Model|g|A large, general-purpose model that many applications are built on.
+Frontier Model|g|One of the most advanced AI models available at a given time.
+GPT (Generative Pre-trained Transformer)|g|OpenAI's family of language models, named after the architecture behind them.
+BERT|g|Google's influential 2018 model for understanding text.
+Token|g|A chunk of text, often part of a word, that a model reads or writes.
+Tokenization|g|Splitting text into tokens.
+Tokenizer|g|The tool that converts text into tokens and back.
+Vocabulary (model)|g|The full set of tokens a model knows.
+Context Window|g|The maximum amount of text a model can consider at one time.
+Context Length|g|How many tokens fit into the context window.
+Next-token Prediction|g|How LLMs work: predicting the most likely next token, one at a time.
+Autoregressive|g|Generating output one piece at a time, each piece based on the ones before.
+Inference|g|Running a trained model to get outputs.
+Completion|g|The text a model generates in response to an input.
+Input Tokens / Output Tokens|g|Tokens the model reads versus tokens it writes; they are often priced differently.
+Temperature|g|A setting that controls randomness: low is focused and predictable, high is more creative.
+Top-k Sampling|g|Choosing the next token from only the k most likely options.
+Top-p (Nucleus) Sampling|g|Choosing from the smallest set of tokens whose probabilities add up to p.
+Max Tokens|g|A limit on how long a response can be.
+Stop Sequence|g|Text that tells the model to stop generating.
+Hallucination|g|When AI confidently produces false or made-up information.
+Confabulation|g|Another word for hallucination.
+Grounding|g|Tying a model's answers to reliable sources or data.
+Knowledge Cutoff|g|The date after which a model has no training data.
+Instruction Tuning|g|Fine-tuning a model so it follows instructions.
+Supervised Fine-tuning (SFT)|g|Fine-tuning on example prompts paired with ideal answers.
+RLHF (Reinforcement Learning from Human Feedback)|g|Training a model using people's ratings of its answers.
+RLAIF|g|Like RLHF, but using feedback from an AI instead of from people.
+Reward Model|g|A model that scores outputs to guide reinforcement learning.
+DPO (Direct Preference Optimization)|g|A simpler alternative to RLHF that learns directly from preferred answers.
+Constitutional AI|g|Anthropic's method of training AI to follow a written set of principles.
+Base Model|g|A pre-trained model before any instruction tuning.
+Chat Model|g|A model tuned for back-and-forth conversation.
+Reasoning Model|g|A model that works through problems step by step before answering.
+Extended Thinking|g|Giving a model extra time and tokens to reason before it replies.
+Test-time Compute|g|Using more computation while answering to improve the quality of answers.
+Multimodal|g|Able to handle more than one type of data, such as text, images and audio.
+Vision-Language Model (VLM)|g|A model that understands both images and text.
+Parameter Count|g|A model's size, such as 7B (7 billion) parameters.
+Scaling Laws|g|The finding that more data, compute and parameters improve models in predictable ways.
+Emergent Abilities|g|Skills that appear only once models reach a certain size.
+In-context Learning|g|A model learning a task from examples in the prompt, without retraining.
+LoRA (Low-Rank Adaptation)|g|An efficient fine-tuning method that trains only small added weights.
+PEFT (Parameter-Efficient Fine-Tuning)|g|Fine-tuning methods that update only a small part of a model.
+Quantization|g|Storing a model's numbers with less precision so it is smaller and faster.
+Distillation|g|Training a small "student" model to copy a large "teacher" model.
+Pruning|g|Removing unneeded weights to shrink a model.
+Open-weight Model|g|A model whose trained weights anyone can download, such as Llama.
+Closed (Proprietary) Model|g|A model available only through its company's products or API.
+Open Source AI|g|AI whose code, and often weights, are freely available.
+Sentiment Analysis|g|Detecting whether text is positive, negative or neutral.
+Named Entity Recognition (NER)|g|Finding the names of people, places and organisations in text.
+Machine Translation|g|Automatically translating from one language to another.
+Summarization|g|Producing a shorter version of a text.
+Text Classification|g|Assigning categories to pieces of text.
+Question Answering|g|Answering questions from a text or from knowledge.
+Text-to-Image|g|Generating images from text descriptions.
+Text-to-Video|g|Generating video from text descriptions.
+Text-to-Code|g|Generating program code from plain-language descriptions.
+Stable Diffusion|g|A popular open image-generation model.
+Latent Diffusion|g|Diffusion carried out in a compressed space to save computing power.
+Image Generation|g|Creating new images with AI.
+Inpainting|g|Filling in or replacing part of an image with AI.
+Outpainting|g|Extending an image beyond its original borders.
+Upscaling|g|Increasing an image's resolution with AI.
+Style Transfer|g|Applying the style of one image to another.
+Seed|g|A number that controls randomness so a result can be reproduced.
+Guidance Scale (CFG)|g|How closely an image generator follows the prompt.
+Negative Prompt|g|Telling an image generator what to leave out.
+Word Embedding|g|Representing words as vectors so that words with similar meanings sit close together.
+Word2Vec|g|An early, influential method for creating word embeddings.
+Bag of Words|g|Representing text by counting its words and ignoring their order.
+TF-IDF|g|A score for how important a word is to one document within a collection.
+N-gram|g|A sequence of n words or characters.
+Stemming / Lemmatization|g|Reducing words to their root form, such as "running" to "run".
+Stop Words|g|Very common words like "the" and "is" that are often removed in text processing.
+Part-of-Speech Tagging|g|Labelling words as nouns, verbs, adjectives and so on.
+Prompt|p|The input, question or instruction you give to an AI.
+Prompt Engineering|p|The skill of writing prompts that get better results.
+System Prompt|p|Background instructions that set the AI's role, rules and behaviour.
+User Prompt|p|The message a user types to the AI.
+Zero-shot Prompting|p|Asking a model to do a task without giving examples.
+Few-shot Prompting|p|Including a few examples in the prompt to show what you want.
+Chain-of-Thought (CoT)|p|Asking the model to reason step by step before answering.
+Tree of Thoughts|p|Having a model explore several reasoning paths before choosing one.
+Self-consistency|p|Generating several answers and choosing the most common one.
+Role Prompting|p|Telling the AI to act in a specific role, such as "You are a teacher".
+Prompt Template|p|A reusable prompt with blanks to fill in.
+Prompt Chaining|p|Breaking a task into steps where each prompt uses the previous output.
+Meta-prompting|p|Using AI to write or improve prompts.
+Context Engineering|p|Choosing and arranging all the information a model sees to get good results.
+Persona|p|A character or identity the AI is asked to adopt.
+Output Format|p|Telling the model how to structure its answer, such as JSON, a table or bullet points.
+Structured Output|p|Model responses in a strict, machine-readable format.
+Delimiter|p|Symbols or tags that separate the parts of a prompt.
+Prefill|p|Writing the start of the model's reply yourself to steer the answer.
+Iterative Prompting|p|Refining a prompt over several attempts.
+Custom Instructions|p|Saved preferences that apply to all of your chats.
+API (Application Programming Interface)|x|A way for software to talk to an AI model or service.
+API Key|x|A secret code that gives access to an API.
+SDK (Software Development Kit)|x|Tools and libraries for building on a platform.
+Endpoint|x|A specific web address where an API receives requests.
+Embedding|x|A list of numbers that captures the meaning of text, images or other data.
+Vector Database|x|A database that stores embeddings and quickly finds similar items.
+Semantic Search|x|Searching by meaning rather than by exact keywords.
+Similarity Search|x|Finding the items whose embeddings are closest to a query.
+RAG (Retrieval-Augmented Generation)|x|The AI looks up relevant documents first and uses them to answer.
+Retriever|x|The part of a RAG system that finds relevant documents.
+Chunking|x|Splitting documents into smaller pieces for search and RAG.
+Reranking|x|Re-ordering search results so the most relevant come first.
+Knowledge Base|x|A collection of documents or facts an AI can draw on.
+Knowledge Graph|x|A network of facts that links things and their relationships.
+AI Agent|x|An AI that plans and takes actions with tools to reach a goal.
+Agentic AI|x|AI systems that act on their own over many steps.
+Multi-agent System|x|Several AI agents working together.
+Orchestration|x|Coordinating models, tools and steps in an AI workflow.
+Tool Use (Function Calling)|x|The AI calls external tools such as web search, calculators or APIs.
+MCP (Model Context Protocol)|x|An open standard for connecting AI to tools and data sources.
+Plugin / Connector|x|An add-on that gives an AI new abilities or access to another app.
+Workflow|x|A defined sequence of steps, some of them done by AI.
+Agent Loop|x|The cycle an agent repeats: think, act, observe the result.
+ReAct|x|An agent pattern that alternates between reasoning and acting.
+Planning|x|An agent breaking a goal into smaller steps.
+Memory (AI)|x|An AI keeping information across turns or sessions.
+Short-term / Long-term Memory|x|Information kept within one conversation versus across many conversations.
+Computer Use|x|AI controlling a computer by looking at the screen and clicking and typing.
+Browser Agent|x|An AI that navigates and acts on websites.
+Coding Assistant|x|AI that helps write, explain and fix code.
+Copilot|x|An AI assistant built into an app to help you while you work.
+Virtual Assistant|x|A voice or text assistant such as Siri or Alexa.
+Vibe Coding|x|Building software mostly by describing what you want to an AI.
+Low-code / No-code AI|x|Tools that let people build AI apps with little or no programming.
+Custom GPT / Assistant|x|A chatbot set up with its own instructions and knowledge.
+Streaming|x|Showing the AI's response word by word as it is generated.
+Webhook|x|An automatic message one app sends to another when something happens.
+Prompt Caching|x|Reusing input the model has already processed to save time and cost.
+Wrapper|x|A product built mainly on top of another company's AI model.
+Human-in-the-Loop (HITL)|x|A person reviews or approves the AI's decisions.
+Fallback|x|A backup plan for when the AI fails or is unsure.
+Computer Vision|v|AI that interprets images and video.
+Image Classification|v|Assigning one label to a whole image.
+Object Detection|v|Finding and labelling objects within an image.
+Bounding Box|v|A rectangle drawn around a detected object.
+Image Segmentation|v|Labelling every pixel in an image.
+Semantic Segmentation|v|Labelling each pixel by category, such as road, car or sky.
+Instance Segmentation|v|Separating each individual object, even objects of the same type.
+Facial Recognition|v|Identifying or verifying people from their faces.
+Face Detection|v|Finding faces in an image without identifying who they are.
+OCR (Optical Character Recognition)|v|Reading text from images or scanned documents.
+Pose Estimation|v|Detecting the positions of a body's joints.
+Image Recognition|v|Identifying what is in an image.
+Pixel|v|The smallest dot of colour in a digital image.
+YOLO|v|"You Only Look Once": a fast, real-time object detection model.
+Vision Transformer (ViT)|v|A transformer applied to small patches of an image.
+CLIP|v|A model that links images and text, used in image search and generation.
+Video Analytics|v|AI analysis of video footage.
+Optical Flow|v|Tracking motion between video frames.
+Depth Estimation|v|Working out how far away things are in an image.
+Image Captioning|v|Generating a text description of an image.
+Visual Question Answering|v|Answering questions about an image.
+Deepfake|v|Realistic fake video, images or audio made with AI.
+Medical Imaging AI|v|AI that reads X-rays, MRI scans and other medical images.
+Speech Recognition (ASR)|s|Converting spoken words into text.
+Speech-to-Text (STT)|s|Another name for speech recognition.
+Text-to-Speech (TTS)|s|Converting text into spoken audio.
+Voice Cloning|s|Copying a person's voice with AI.
+Speech Synthesis|s|Artificially producing human speech.
+Wake Word|s|A trigger phrase such as "Hey Siri" or "Alexa".
+Speaker Recognition|s|Identifying who is speaking.
+Speaker Diarization|s|Working out who spoke when in a recording.
+Voice Assistant|s|An assistant you control by speaking.
+Audio Generation|s|Creating music, sound effects or speech with AI.
+Whisper|s|OpenAI's widely used speech recognition model.
+Spectrogram|s|A picture of sound frequencies over time.
+Real-time Voice AI|s|AI you can talk with naturally, with very little delay.
+Robotics|r|Designing machines that sense, decide and act in the physical world.
+Agent (in RL)|r|The learner that takes actions in reinforcement learning.
+Environment|r|The world a reinforcement learning agent interacts with.
+State|r|The current situation the agent observes.
+Action|r|A choice the agent makes.
+Reward|r|Feedback that tells the agent how good an action was.
+Policy|r|The agent's strategy for choosing actions.
+Value Function|r|An estimate of how good a state is in the long run.
+Q-Learning|r|A reinforcement learning method that learns the value of each action in each state.
+Deep Q-Network (DQN)|r|Q-learning combined with a neural network; famous for learning to play Atari games.
+Exploration vs Exploitation|r|Trying new actions versus repeating what already works.
+Markov Decision Process (MDP)|r|The mathematical framework behind reinforcement learning.
+Reward Hacking|r|An agent finding a loophole to earn reward without doing the intended task.
+Simulation|r|A virtual environment for training or testing AI safely.
+Sim-to-Real|r|Transferring skills learned in simulation to real robots.
+Autonomous Vehicle|r|A self-driving car or other vehicle.
+Lidar|r|A laser sensor that maps the surroundings in 3D.
+Sensor Fusion|r|Combining data from several sensors.
+SLAM|r|Simultaneous Localization and Mapping: a robot mapping a space while tracking its own position.
+Humanoid Robot|r|A robot shaped like a human.
+Embodied AI|r|AI that has a physical body or acts in the physical world.
+Drone|r|An unmanned flying vehicle, often assisted by AI.
+Industrial Robot|r|A robot used in manufacturing.
+Cobot|r|A collaborative robot designed to work safely alongside people.
+GPU (Graphics Processing Unit)|i|A chip that does many calculations in parallel; the workhorse of AI.
+TPU (Tensor Processing Unit)|i|Google's chip designed specifically for AI.
+NPU (Neural Processing Unit)|i|An AI chip built into phones and laptops.
+CPU|i|The general-purpose processor in every computer.
+CUDA|i|NVIDIA's platform for programming GPUs.
+VRAM|i|Memory on a GPU; it limits how big a model can run.
+Compute|i|The computing power used for training and running AI.
+FLOPS|i|Floating-point operations per second; a measure of computing power.
+Data Center|i|A building full of servers that run AI and other services.
+Cloud Computing|i|Renting computing power over the internet.
+Cloud AI|i|AI services delivered from the cloud, such as AWS, Azure or Google Cloud.
+Edge AI|i|Running AI directly on local devices instead of in the cloud.
+On-device AI|i|AI that runs on your own phone or laptop.
+On-premise|i|Running systems on a company's own servers.
+Deployment|i|Putting a model into real use.
+Model Serving|i|Making a model available to answer requests.
+MLOps|i|Practices for deploying, monitoring and maintaining machine learning models.
+LLMOps|i|MLOps adapted for large language models.
+Model Monitoring|i|Watching a model's performance after it is deployed.
+Model Drift|i|A model's performance getting worse as the world changes.
+Model Registry|i|A catalogue of trained models and their versions.
+Versioning|i|Tracking changes to models, data and code.
+Latency|i|The time it takes to get a response.
+Throughput|i|How many requests a system can handle in a given time.
+Scalability|i|The ability to handle more users or data.
+Rate Limit|i|A cap on how many requests you can make in a period of time.
+Distributed Training|i|Training a model across many machines at once.
+Parallelism|i|Splitting work so many processors run at the same time.
+Container (Docker)|i|A package that bundles software so it runs the same anywhere.
+Kubernetes|i|A system for managing many containers.
+Serverless|i|Running code without managing servers yourself.
+Batch Inference|i|Running predictions on many inputs at once.
+Real-time Inference|i|Running predictions instantly as requests arrive.
+Cost per Token|i|How AI APIs usually charge: a price per token of input and output.
+Supercomputer|i|An extremely powerful computer, often used to train large models.
+Python|o|The most popular programming language for AI.
+R|o|A programming language popular for statistics.
+Jupyter Notebook|o|An interactive document for writing and running code.
+Google Colab|o|Free online Jupyter notebooks with access to GPUs.
+NumPy|o|A Python library for numerical computing.
+Pandas|o|A Python library for working with tables of data.
+Matplotlib / Seaborn|o|Python libraries for drawing charts and graphs.
+Scikit-learn|o|A Python library for classic machine learning.
+TensorFlow|o|Google's deep learning framework.
+Keras|o|An easy-to-use, high-level deep learning library.
+PyTorch|o|Meta's popular deep learning framework.
+JAX|o|Google's library for fast numerical computing and research.
+Hugging Face|o|A platform and community for sharing models and datasets.
+Transformers (library)|o|Hugging Face's library for using pre-trained models.
+LangChain|o|A framework for building applications with LLMs.
+LlamaIndex|o|A framework for connecting LLMs to your own data.
+OpenCV|o|A library for computer vision.
+spaCy / NLTK|o|Python libraries for natural language processing.
+Kaggle|o|A website for data science competitions and datasets.
+GitHub|o|A platform for storing and sharing code.
+Ollama|o|A tool for running language models on your own computer.
+ChatGPT|o|OpenAI's chatbot.
+Claude|o|Anthropic's AI assistant.
+Gemini|o|Google's AI model family and assistant.
+Llama|o|Meta's family of open-weight language models.
+Microsoft / GitHub Copilot|o|Microsoft's AI assistants for Office, Windows and coding.
+Midjourney|o|A popular AI image generator.
+DALL·E|o|OpenAI's image generator.
+Perplexity AI|o|An AI answer engine that cites its sources.
+Mistral|o|A French AI company and its models.
+DeepSeek|o|A Chinese AI company known for efficient open models.
+Grok|o|xAI's chatbot.
+Pinecone / Chroma / Weaviate|o|Popular vector databases.
+Weights & Biases|o|A tool for tracking machine learning experiments.
+MLflow|o|An open-source tool for managing the machine learning lifecycle.
+Tableau / Power BI|o|Business tools for visualising data, now with AI features.
+AI Ethics|k|The study of moral questions in building and using AI.
+Responsible AI|k|Developing AI that is fair, transparent, safe and accountable.
+AI Safety|k|Research and practice aimed at preventing harm from AI.
+AI Alignment|k|Making AI systems pursue the goals and values people intend.
+Bias (AI Bias)|k|Unfair or skewed results, often caused by unbalanced data.
+Algorithmic Bias|k|Systematic unfairness built into an algorithm's outcomes.
+Fairness|k|Making sure AI treats individuals and groups equitably.
+Discrimination|k|AI treating people unfairly because of race, gender, age or similar traits.
+Explainability (XAI)|k|Making it understandable why an AI made a particular decision.
+Interpretability|k|Understanding how a model works on the inside.
+Mechanistic Interpretability|k|Reverse-engineering the internal circuits of neural networks.
+Black Box|k|A model whose inner workings are hard to understand.
+Transparency|k|Being open about how an AI system works and how it is used.
+Accountability|k|Being clear about who is responsible for an AI's actions.
+Guardrails|k|Rules and filters that keep AI behaviour safe and on topic.
+Content Moderation|k|Filtering harmful or inappropriate content.
+Content Filter|k|An automatic block on unsafe inputs or outputs.
+Red Teaming|k|Deliberately attacking an AI system to find its weaknesses.
+Jailbreak|k|Tricking an AI into ignoring its safety rules.
+Prompt Injection|k|Hidden malicious instructions that hijack an AI's behaviour.
+Adversarial Attack|k|Inputs crafted to fool a model, such as a slightly altered image.
+Data Poisoning|k|Corrupting training data to manipulate a model.
+Model Inversion|k|An attack that recovers private training data from a model.
+Privacy|k|Protecting personal information.
+Data Privacy|k|Protecting the personal data that AI systems use.
+Differential Privacy|k|Adding noise to data so that individuals cannot be identified.
+PII (Personally Identifiable Information)|k|Information that can identify a person, such as a name or phone number.
+Anonymization|k|Removing identifying details from data.
+Consent|k|Permission from people to use their data.
+Misinformation|k|False information, which AI can spread or create.
+Disinformation|k|False information spread on purpose.
+Watermarking|k|Hidden marks that show content was made by AI.
+Content Provenance|k|Tracking where a piece of content came from and how it was made.
+AI Detection|k|Tools that try to tell whether content was generated by AI.
+Sycophancy|k|AI telling users what they want to hear instead of the truth.
+Existential Risk|k|The concern that very advanced AI could threaten humanity.
+Control Problem|k|The challenge of keeping powerful AI under human control.
+Value Alignment|k|Matching an AI's behaviour to human values.
+Safety Evaluations|k|Tests that check an AI for dangerous capabilities or behaviours.
+Model Card|k|A document describing a model's purpose, performance and limits.
+System Card|k|A safety and capability report published alongside a model.
+Responsible Scaling Policy|k|A commitment to add safety measures as models become more capable.
+Dual-use|k|Technology that can be used both for good and for harm.
+Copyright and AI|k|Legal questions about training on copyrighted work and owning AI-made work.
+Surveillance|k|Monitoring people, which AI can make easier and larger in scale.
+AI Strategy|z|A plan for how an organisation will use AI.
+AI Adoption|z|How organisations and people start using AI.
+AI Transformation|z|Reshaping a business around AI.
+Digital Transformation|z|Using digital technology to change how a business works.
+ROI (Return on Investment)|z|The value gained from AI compared with what it costs.
+Use Case|z|A specific problem that AI is used to solve.
+Proof of Concept (PoC)|z|A small test to show that an AI idea can work.
+Pilot|z|A limited trial of an AI system before full rollout.
+MVP (Minimum Viable Product)|z|The simplest version of a product that can be tested with real users.
+AI-first|z|A company or product designed around AI from the start.
+AI Governance|z|The policies and oversight that guide how AI is used.
+AI Regulation|z|Laws that control how AI is built and used.
+EU AI Act|z|The European Union's law that regulates AI according to its level of risk.
+GDPR|z|Europe's data protection law, which affects how AI uses personal data.
+AI Policy|z|Government or company rules about AI.
+Acceptable Use Policy|z|Rules for what users may and may not do with an AI product.
+AI Literacy|z|A basic understanding of what AI is and how to use it well.
+Upskilling / Reskilling|z|Training workers in new skills for an AI-driven world.
+Job Displacement|z|Jobs lost or changed because of automation.
+Augmentation|z|AI helping people do their jobs better rather than replacing them.
+Future of Work|z|How AI will change jobs and workplaces.
+Digital Divide|z|The gap between people who have access to technology and those who do not.
+AI Washing|z|Exaggerating how much AI a product really uses.
+AI Hype|z|Inflated expectations about what AI can do.
+Intellectual Property (IP)|z|Legal ownership of creations, now complicated by AI-generated content.
+Generative Engine Optimization (GEO)|z|Making content easy for AI assistants to find and cite.
+Personalization|z|Tailoring products or content to each individual user.
+Predictive Analytics|z|Using data and AI to forecast business outcomes.
+Business Intelligence (BI)|z|Tools and methods for turning business data into decisions.
+AI Customer Service|z|Using chatbots and voice AI to handle customer questions.
+Robotic Process Automation (RPA)|z|Software bots that automate repetitive computer tasks.
+Intelligent Automation|z|RPA combined with AI to handle more complex work.
+Fraud Detection|z|Using AI to spot suspicious transactions.
+AI in Healthcare|z|AI for diagnosis, drug discovery and patient care.
+FinTech AI|z|AI used in banking, payments and finance.
+EdTech AI|z|AI used in teaching and learning.
+Smart City|z|A city that uses data and AI to improve its services.
+IoT (Internet of Things)|z|Everyday devices connected to the internet, often feeding data to AI.
+Digital Twin|z|A virtual copy of a real object or system, used for simulation.
+Turing Test|h|Alan Turing's 1950 test: can a machine fool a person into thinking it is human?
+Alan Turing|h|British mathematician regarded as a founder of computer science and AI.
+Dartmouth Conference (1956)|h|The summer workshop that launched AI as a field of research.
+John McCarthy|h|The computer scientist who coined the term "artificial intelligence".
+AI Winter|h|Periods when funding and interest in AI collapsed, notably in the 1970s and late 1980s.
+ELIZA|h|A 1960s chatbot that imitated a therapist.
+Deep Blue|h|IBM's computer that beat world chess champion Garry Kasparov in 1997.
+IBM Watson|h|IBM's AI system that won the quiz show Jeopardy! in 2011.
+ImageNet|h|A huge image dataset whose yearly competition helped spark the deep learning boom.
+AlexNet|h|The 2012 neural network that won the ImageNet competition and showed the power of deep learning.
+AlphaGo|h|DeepMind's AI that beat Go champion Lee Sedol in 2016.
+AlphaFold|h|DeepMind's AI that predicts protein structures; its creators shared the 2024 Nobel Prize in Chemistry.
+"Attention Is All You Need"|h|The 2017 research paper that introduced the transformer.
+ChatGPT Launch (2022)|h|The release that brought generative AI into the mainstream.
+Godfathers of AI|h|Geoffrey Hinton, Yann LeCun and Yoshua Bengio, pioneers of deep learning.
+Moore's Law|h|The observation that the number of transistors on a chip doubled about every two years.
+Singularity|h|A hypothetical future point when AI progress becomes uncontrollable and irreversible.
+Chinese Room|h|A thought experiment arguing that following rules is not the same as understanding.
+Three Laws of Robotics|h|Isaac Asimov's fictional rules for how robots should behave.
+OpenAI / Anthropic / Google DeepMind|h|Leading AI research companies building frontier models.
+</script>
+
+<script>
+const CATS=[["b","Basics"],["d","Data"],["l","Types of learning"],["t","Training"],["n","Neural networks"],["a","Classic algorithms"],["e","Evaluation"],["m","Math & statistics"],["g","LLMs & generative AI"],["p","Prompting"],["x","Apps & agents"],["v","Computer vision"],["s","Speech & audio"],["r","Robotics & RL"],["i","Infrastructure"],["o","Tools & products"],["k","Ethics & safety"],["z","Business & society"],["h","History & milestones"]];
+const catName=Object.fromEntries(CATS);
+const catOrder=Object.fromEntries(CATS.map(([k],i)=>[k,i]));
+// Tiers group rings: [name, first ring, last ring, description]
+const TIERS=[
+  ["Core",0,1,"Start here. The centre words have no prerequisites, and ring 1 builds on them directly. Everything else grows out of these."],
+  ["Foundations",2,3,"Words that build on the core. Students need these before any technique makes sense."],
+  ["Intermediate",4,5,"Concepts that combine several foundation words: how models are built, trained and used."],
+  ["Advanced",6,8,"Specialised ideas that rely on the intermediate layer."],
+  ["Expert",9,99,"The outer edge: terms that rest on many layers below them."]
+];
+const tierOf=d=>TIERS.findIndex(([,a,b])=>d>=a&&d<=b);
+const ROOTS=["Artificial Intelligence (AI)","Data","Algorithm","Model"];
+const ANCHOR={b:"Artificial Intelligence (AI)",d:"Data",l:"Machine Learning (ML)",t:"Training",n:"Neural Network",a:"Machine Learning (ML)",e:"Model",m:"Statistics",g:"Large Language Model (LLM)",p:"Prompt",x:"AI Agent",v:"Computer Vision",s:"Speech Recognition (ASR)",r:"Robotics",i:"Compute",o:"Python",k:"AI Ethics",z:"AI Strategy",h:"Artificial Intelligence (AI)"};
+
+const terms=document.getElementById("data").textContent.split("\n").map(s=>s.trim()).filter(Boolean).map(s=>{const [t,c,d]=s.split("|");return {t,c,d,key:t.replace(/^[^A-Za-z0-9]+/,"").toLowerCase(),parents:[],kids:[],pk:[]}}).sort((a,b)=>a.key.localeCompare(b.key));
+const byName=new Map(terms.map(x=>[x.t,x]));
+const missing=[];
+function link(pn,cn){const p=byName.get(pn),c=byName.get(cn);if(!p||!c){missing.push(p?cn:pn);return}if(p!==c&&!c.parents.includes(p))c.parents.push(p)}
+document.getElementById("web").textContent.split("\n").map(s=>s.trim()).filter(Boolean).forEach(line=>{const [p,rest]=line.split(" > ");rest.split(";").forEach(c=>link(p.trim(),c.trim()))});
+terms.forEach(x=>{if(!x.parents.length&&!ROOTS.includes(x.t)){const a=ANCHOR[x.c];link(a===x.t?ROOTS[0]:a,x.t)}});
+if(missing.length)console.warn("Learning web: unknown names",missing);
+// Ring = longest chain of prerequisites back to a centre word
+function depth(x,stack){if(x.depth!=null)return x.depth;if(stack.has(x))return 0;stack.add(x);let d=0;x.parents.forEach(p=>{d=Math.max(d,depth(p,stack)+1)});stack.delete(x);x.depth=d;return d}
+terms.forEach(x=>depth(x,new Set()));
+const byCat=(a,b)=>catOrder[a.c]-catOrder[b.c]||a.key.localeCompare(b.key);
+const byRing=(a,b)=>a.depth-b.depth||a.key.localeCompare(b.key);
+terms.forEach(x=>{x.tier=tierOf(x.depth);x.parents.forEach(p=>p.kids.push(x));x.pp=x.parents.slice().sort((a,b)=>b.depth-a.depth)[0]||null;if(x.pp)x.pp.pk.push(x)});
+terms.forEach(x=>{x.parents.sort(byRing);x.kids.sort(byRing);x.pk.sort(byCat)});
+const maxD=Math.max(...terms.map(x=>x.depth));
+
+// Radial layout: each word sits on its ring, inside the angular slice of the prerequisite it is drawn from
+const R0=70,GAP=88,R=d=>d===0?R0:R0+d*GAP;
+const leaves=x=>x._lc??(x._lc=x.pk.length?x.pk.reduce((s,k)=>s+leaves(k),0):1);
+function place(x,a0,a1){x.ang=(a0+a1)/2;const r=R(x.depth);x.x=+(r*Math.cos(x.ang-Math.PI/2)).toFixed(1);x.y=+(r*Math.sin(x.ang-Math.PI/2)).toFixed(1);let a=a0;x.pk.forEach(k=>{const s=(a1-a0)*leaves(k)/leaves(x);place(k,a,a+s);a+=s})}
+{const roots=ROOTS.map(n=>byName.get(n));const tot=roots.reduce((s,r)=>s+leaves(r),0);let a=0;roots.forEach(r=>{const s=2*Math.PI*leaves(r)/tot;place(r,a,a+s);a+=s})}
+const FULL=2*(R(maxD)+150);
+
+const LETTERS="ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("");
+const letterOf=x=>{const ch=x.key[0].toUpperCase();return /[A-Z]/.test(ch)?ch:"#"};
+const state={q:"",cat:"all",mode:"web",deck:null,idx:0,flipped:false,sel:null};
+const $=id=>document.getElementById(id);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const ringLabel=x=>`Ring ${x.depth} · ${TIERS[x.tier][0]}`;
+const chip=x=>`<button class="wchip t${x.tier}" data-n="${esc(x.t)}">${esc(x.t)}</button>`;
+function hl(s){const q=state.q.trim();const e=esc(s);if(!q)return e;const re=new RegExp("("+esc(q).replace(/[.*+?^${}()|[\]\\]/g,"\\$&")+")","gi");return e.replace(re,"<mark>$1</mark>")}
+function filtered(){const q=state.q.trim().toLowerCase();return terms.filter(x=>(state.cat==="all"||x.c===state.cat)&&(!q||x.t.toLowerCase().includes(q)||x.d.toLowerCase().includes(q)))}
+const isFiltering=()=>state.cat!=="all"||state.q.trim()!=="";
+
+function renderChips(){
+  const counts={};terms.forEach(x=>counts[x.c]=(counts[x.c]||0)+1);
+  const all=[["all","All topics",terms.length],...CATS.map(([k,n])=>[k,n,counts[k]||0])];
+  $("chips").innerHTML=all.map(([k,n,c])=>`<button class="chip" data-cat="${k}" aria-pressed="${state.cat===k}">${esc(n)}<span class="n">${c}</span></button>`).join("");
+}
+function render(){
+  const list=filtered();
+  $("count").textContent=`${list.length} of ${terms.length} terms`;
+  document.querySelectorAll(".chip").forEach(b=>b.setAttribute("aria-pressed",b.dataset.cat===state.cat));
+  document.querySelectorAll(".seg button").forEach(b=>b.setAttribute("aria-pressed",b.dataset.mode===state.mode));
+  $("az").hidden=state.mode!=="list";
+  const quiz=state.mode==="quiz";
+  $("q").hidden=quiz;$("chips").hidden=quiz;$("count").hidden=quiz;
+  if(quiz)renderQuiz();
+  else if(state.mode==="list")renderList(list);
+  else if(state.mode==="cards")renderCards();
+  else if(state.mode==="path")renderPath(list);
+  else renderWeb(list);
+}
+
+/* Glossary */
+function renderList(list){
+  const groups={};list.forEach(x=>(groups[letterOf(x)]=groups[letterOf(x)]||[]).push(x));
+  $("az").innerHTML=["#",...LETTERS].map(L=>`<button data-l="${L}" ${groups[L]?"":"disabled"} aria-label="Jump to ${L}">${L}</button>`).join("");
+  if(!list.length){$("main").innerHTML=`<p class="empty">No terms match “${esc(state.q)}”. Try a shorter word or choose All topics.</p>`;return}
+  $("main").innerHTML=["#",...LETTERS].filter(L=>groups[L]).map(L=>`<section class="letter" id="L-${L==="#"?"num":L}"><h2>${L}</h2><dl>${groups[L].map(x=>`<div class="entry"><dt><span class="term">${hl(x.t)}</span><span class="tag">${esc(catName[x.c])}</span><button class="ringlink" data-n="${esc(x.t)}" title="Show in the learning web">${ringLabel(x)} ↗</button></dt><dd>${hl(x.d)}</dd></div>`).join("")}</dl></section>`).join("");
+}
+
+/* Learning path: ring by ring, centre outward */
+function renderPath(list){
+  const set=new Set(list);let html=`<div class="pathview">`,cur=-1,any=false;
+  for(let d=0;d<=maxD;d++){
+    const items=terms.filter(x=>x.depth===d&&set.has(x)).sort(byCat);
+    if(!items.length)continue;any=true;
+    const t=tierOf(d);
+    if(t!==cur){cur=t;html+=`<div class="tierhead t${t}"><h2>${TIERS[t][0]}</h2><p>${TIERS[t][3]}</p></div>`}
+    html+=`<section class="ringrow"><h3>Ring ${d}<span>${items.length} ${items.length===1?"term":"terms"}</span></h3><div class="chipwrap">${items.map(chip).join("")}</div></section>`;
+  }
+  $("main").innerHTML=any?html+`</div>`:`<p class="empty">No terms match. Clear the search or choose All topics.</p>`;
+}
+
+/* Learning web */
+let webEl=null,svg=null,nodeEls=[],view={cx:0,cy:0,w:FULL},drag=null,wasDrag=false;
+function buildWeb(){
+  webEl=document.createElement("div");webEl.className="web";
+  webEl.innerHTML=`<div class="stage"><svg preserveAspectRatio="xMidYMid meet" role="img" aria-label="Learning web: AI terms arranged in rings from the core words outward"></svg>
+    <div class="zoom"><button class="btn sq" id="zin" aria-label="Zoom in">+</button><button class="btn sq" id="zout" aria-label="Zoom out">−</button><button class="btn sq fit" id="zfit" aria-label="Show the whole web">Fit</button></div>
+    <div class="legend">${TIERS.map((t,i)=>`<span><i class="dot t${i}"></i>${t[0]}</span>`).join("")}</div></div>
+    <aside class="panel" id="panel" aria-live="polite"></aside>`;
+  svg=webEl.querySelector("svg");
+  let s="";
+  for(let d=1;d<=maxD;d++)s+=`<circle class="ring${TIERS.some(t=>t[1]===d)?" tb":""}" r="${R(d)}"/>`;
+  s+=`<g>${terms.filter(x=>x.pp).map(x=>`<line class="edge" x1="${x.pp.x}" y1="${x.pp.y}" x2="${x.x}" y2="${x.y}"/>`).join("")}</g><g class="hl" id="hl"></g>`;
+  s+=TIERS.slice(1).map(t=>t[1]<=maxD?`<g transform="translate(0,${R(t[1])})"><g class="s"><text class="rl" text-anchor="middle" dy="1.2em">${t[0]}</text></g></g>`:"").join("");
+  s+=`<g>${terms.map((x,i)=>{
+    const root=x.depth===0,th=x.ang-Math.PI/2,left=Math.cos(th)<-0.0001;
+    const deg=(th*180/Math.PI+(left?180:0)).toFixed(1);
+    const name=x.t.length>26?x.t.slice(0,25)+"…":x.t;
+    const label=root?`<text text-anchor="middle" dy="2.1em">${esc(x.t)}</text>`:`<text transform="rotate(${deg})" x="${left?-9:9}" dy="0.35em" text-anchor="${left?"end":"start"}">${esc(name)}</text>`;
+    return `<g class="node t${x.tier}${root?" root":""}" data-i="${i}" transform="translate(${x.x},${x.y})"><g class="s"><circle r="${root?10:5.5}"/>${label}</g><title>${esc(x.t)} (${ringLabel(x)})</title></g>`}).join("")}</g>`;
+  svg.innerHTML=s;
+  nodeEls=[...svg.querySelectorAll(".node")];
+  svg.addEventListener("pointerdown",e=>{if(e.button!==0)return;drag={x:e.clientX,y:e.clientY,cx:view.cx,cy:view.cy,moved:false,id:e.pointerId}});
+  svg.addEventListener("pointermove",e=>{
+    if(!drag)return;const dx=e.clientX-drag.x,dy=e.clientY-drag.y;
+    if(!drag.moved&&Math.hypot(dx,dy)>5){drag.moved=true;svg.setPointerCapture(drag.id);svg.classList.add("panning")}
+    if(drag.moved){const k=scale();view.cx=drag.cx-dx/k;view.cy=drag.cy-dy/k;setView()}
+  });
+  const end=()=>{if(drag){wasDrag=drag.moved;svg.classList.remove("panning")}drag=null};
+  svg.addEventListener("pointerup",end);svg.addEventListener("pointercancel",end);
+  svg.addEventListener("click",e=>{if(wasDrag){wasDrag=false;return}const g=e.target.closest(".node");select(g?terms[+g.dataset.i]:null,!!g)});
+  svg.addEventListener("pointerover",e=>{const g=e.target.closest(".node");if(g)g.classList.add("hov")});
+  svg.addEventListener("pointerout",e=>{const g=e.target.closest(".node");if(g)g.classList.remove("hov")});
+  svg.addEventListener("wheel",e=>{e.preventDefault();zoomAt(e.deltaY>0?1.18:1/1.18,svgPoint(e.clientX,e.clientY))},{passive:false});
+  webEl.querySelector("#zin").addEventListener("click",()=>zoomAt(1/1.5));
+  webEl.querySelector("#zout").addEventListener("click",()=>zoomAt(1.5));
+  webEl.querySelector("#zfit").addEventListener("click",()=>{view={cx:0,cy:0,w:FULL};setView()});
+  window.addEventListener("resize",()=>{if(state.mode==="web")setView()});
+}
+function scale(){return Math.min(svg.clientWidth,svg.clientHeight)/view.w||0.2}
+function svgPoint(x,y){const p=svg.createSVGPoint();p.x=x;p.y=y;return p.matrixTransform(svg.getScreenCTM().inverse())}
+function zoomAt(f,p){p=p||{x:view.cx,y:view.cy};const nw=Math.min(FULL,Math.max(FULL/16,view.w*f));view.cx=p.x-(p.x-view.cx)*nw/view.w;view.cy=p.y-(p.y-view.cy)*nw/view.w;view.w=nw;setView()}
+function setView(){
+  svg.setAttribute("viewBox",`${view.cx-view.w/2} ${view.cy-view.w/2} ${view.w} ${view.w}`);
+  const k=scale();svg.style.setProperty("--inv",(1/k).toFixed(4));svg.classList.toggle("zoomed",k>=1.15);
+}
+function select(x,center){
+  state.sel=x;
+  nodeEls.forEach(g=>g.classList.remove("sel","nbr"));
+  const hlG=svg.querySelector("#hl");hlG.innerHTML="";
+  svg.classList.toggle("dimmed",!!x);
+  if(x){
+    const i=terms.indexOf(x);nodeEls[i].classList.add("sel");
+    let s="";
+    x.parents.forEach(p=>{nodeEls[terms.indexOf(p)].classList.add("nbr");s+=`<line class="up" x1="${p.x}" y1="${p.y}" x2="${x.x}" y2="${x.y}"/>`});
+    x.kids.forEach(k=>{nodeEls[terms.indexOf(k)].classList.add("nbr");s+=`<line class="down" x1="${x.x}" y1="${x.y}" x2="${k.x}" y2="${k.y}"/>`});
+    hlG.innerHTML=s;
+    if(center){view.cx=x.x;view.cy=x.y;view.w=Math.min(view.w,FULL/2.6);setView()}
+  }
+  $("panel").innerHTML=panelHTML(x);
+}
+function panelHTML(x){
+  if(!x){
+    const counts=TIERS.map((t,i)=>terms.filter(y=>y.tier===i).length);
+    return `<h3>How to read the web</h3><p>The four words in the centre are the core of AI. Each ring outward holds words that build on the rings inside it, so a word on ring 5 needs words from rings 0 to 4 first.</p>
+    <h4>Start in the centre</h4><div class="chipwrap">${ROOTS.map(n=>chip(byName.get(n))).join("")}</div>
+    <h4>Rings, inside to out</h4><div class="chipwrap" style="flex-direction:column;gap:8px">${TIERS.map((t,i)=>`<span class="badge" style="margin:0"><i class="dot t${i}"></i>${t[0]} · rings ${t[1]}${t[2]>=maxD?"+":"–"+t[2]} · ${counts[i]} terms</span>`).join("")}</div>
+    <h4>Using it</h4><p class="none">Click a dot to see what to learn first and what it unlocks. Scroll or use + and − to zoom, and drag to move around. Labels appear as you zoom in.</p>`;
+  }
+  const path=[];for(let c=x;c;c=c.pp)path.unshift(c);
+  return `<span class="badge"><i class="dot t${x.tier}"></i>${ringLabel(x)} · ${esc(catName[x.c])}</span>
+  <h3>${esc(x.t)}</h3><p>${esc(x.d)}</p>
+  <h4>Learn these first · connecting words</h4>${x.parents.length?`<div class="chipwrap">${x.parents.map(chip).join("")}</div>`:`<p class="none">Nothing. This is a core word, so start here.</p>`}
+  <h4>Unlocks next · ${x.kids.length}</h4>${x.kids.length?`<div class="chipwrap">${x.kids.map(chip).join("")}</div>`:`<p class="none">No other word in this list builds on it.</p>`}
+  <h4>Path from the centre</h4><div class="crumbs">${path.map((c,i)=>(i?`<span class="sep">→</span>`:"")+(c===x?`<b>${esc(c.t)}</b>`:`<button data-n="${esc(c.t)}">${esc(c.t)}</button>`)).join("")}</div>`;
+}
+function renderWeb(list){
+  if(!webEl)buildWeb();
+  if(!$("main").contains(webEl))$("main").replaceChildren(webEl);
+  const on=new Set(list),f=isFiltering();
+  nodeEls.forEach((g,i)=>g.classList.toggle("off",f&&!on.has(terms[i])));
+  setView();
+  if(!$("panel").innerHTML)select(state.sel,false);
+}
+function goWeb(name){const x=byName.get(name);if(!x)return;if(isFiltering()&&!filtered().includes(x)){state.q="";$("q").value="";state.cat="all";resetDeck()}state.mode="web";render();select(x,true);window.scrollTo({top:$("main").offsetTop-120,behavior:"auto"})}
+
+/* Flashcards, ordered from the core outward */
+function deck(){if(!state.deck){state.deck=filtered().sort(byRing);state.idx=0;state.flipped=false}return state.deck}
+function renderCards(){
+  const d=deck();
+  if(!d.length){$("main").innerHTML=`<p class="empty">No terms to practise. Clear the search or choose All topics.</p>`;return}
+  const x=d[state.idx];
+  $("main").innerHTML=`<div class="deck">
+    <button class="card" id="card" aria-live="polite">
+      ${state.flipped?`<span class="hint">${esc(x.t)}</span><span class="def">${esc(x.d)}</span>`:`<span class="hint">${ringLabel(x)} · ${esc(catName[x.c])}</span><span class="big">${esc(x.t)}</span><span class="hint">Tap to reveal the meaning</span>`}
+    </button>
+    <div class="controls">
+      <button class="btn" id="prev">Previous</button>
+      <span class="pos">${state.idx+1} / ${d.length}</span>
+      <button class="btn primary" id="next">Next</button>
+      <button class="btn" id="shuf">Shuffle</button>
+    </div></div>`;
+}
+function step(n){const d=deck();if(!d.length)return;state.idx=(state.idx+n+d.length)%d.length;state.flipped=false;renderCards()}
+function resetDeck(){state.deck=null}
+
+/* Ring quiz: multiple choice on meanings, terms and connecting words */
+const QZ={ring:null,len:10,qs:[],i:0,picked:null,score:0,missed:[],save:null};
+// Best scores come from the signed-in student's saved attempts (filled in by the Firebase module)
+const best={};
+const plain=h=>{const d=document.createElement("div");d.innerHTML=h.replace(/<\/?blockquote>/g," ");return d.textContent.replace(/\s+/g," ").trim()};
+window.WB={
+  onQuizDone:null,
+  setBest(map){Object.keys(best).forEach(k=>delete best[k]);Object.assign(best,map);if(state.mode==="quiz"&&QZ.ring===null)renderQuiz()},
+  refresh(){if(state.mode==="web")setView()}
+};
+function saveAttempt(){
+  if(!window.WB.onQuizDone){QZ.save=null;return}
+  const payload={ring:QZ.ring,level:TIERS[tierOf(QZ.ring)][0],score:QZ.score,total:QZ.qs.length,
+    answers:QZ.qs.map(q=>({term:q.x.t,kind:q.kind,question:plain(q.prompt),options:q.opts.map(o=>plain(o.html)),chosen:plain(q.opts[q.chosen].html),correct:plain(q.opts.find(o=>o.ok).html),ok:!!q.opts[q.chosen].ok}))};
+  QZ.save="saving";
+  const ring=QZ.ring,qs=QZ.qs;
+  Promise.resolve(window.WB.onQuizDone(payload)).then(()=>{if(QZ.qs===qs)QZ.save="saved"},()=>{if(QZ.qs===qs)QZ.save="failed"}).then(()=>{if(state.mode==="quiz"&&QZ.ring===ring&&QZ.qs===qs&&QZ.i>=qs.length)renderQuiz()});
+}
+const shuffle=a=>{for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a};
+const baseName=t=>t.replace(/\([^)]*\)/g," ").replace(/\s+/g," ").trim().toLowerCase();
+const mentions=(text,y)=>{const b=baseName(y.t);return b.length>2&&text.toLowerCase().includes(b)};
+const ringTerms=d=>terms.filter(x=>x.depth===d);
+// Distractors: closest first (same ring and topic, then same ring, then neighbouring rings)
+function distractors(x,n,ok){
+  const rank=y=>{const dd=Math.abs(y.depth-x.depth),sc=y.c===x.c;return dd===0?(sc?0:1):dd===1?(sc?2:3):dd<=3?4:5};
+  return shuffle(terms.filter(y=>y!==x&&ok(y))).sort((a,b)=>rank(a)-rank(b)).slice(0,n);
+}
+const clash=(x,y)=>mentions(x.d,y)||mentions(y.d,x);
+function makeQ(x,type){
+  if(type==="prereq"){
+    const right=shuffle(x.parents.slice())[0];
+    const ds=distractors(x,3,y=>y.depth>=x.depth);
+    return {type,x,kind:"Connecting words",prompt:`Which word do you need to understand before you can understand <b>${esc(x.t)}</b>?`,
+      opts:shuffle([right,...ds]).map(y=>({html:esc(y.t),ok:y===right})),
+      explain:`To understand <b>${esc(x.t)}</b>, first learn: ${x.parents.map(p=>esc(p.t)).join(", ")}.`,answer:right.t};
+  }
+  const ds=distractors(x,3,y=>!clash(x,y));
+  if(type==="term")return {type,x,kind:"Name the word",prompt:`Which word matches this meaning?<blockquote>${esc(x.d)}</blockquote>`,
+    opts:shuffle([x,...ds]).map(y=>({html:esc(y.t),ok:y===x})),explain:`<b>${esc(x.t)}</b>: ${esc(x.d)}`,answer:x.t};
+  return {type,x,kind:"What does it mean?",prompt:`What does <b>${esc(x.t)}</b> mean?`,
+    opts:shuffle([x,...ds]).map(y=>({html:esc(y.d),ok:y===x})),explain:`<b>${esc(x.t)}</b>: ${esc(x.d)}`,answer:x.d};
+}
+function startQuiz(d){
+  const pick=shuffle(ringTerms(d)).slice(0,QZ.len==="all"?undefined:QZ.len);
+  const kinds=["def","term","prereq"];
+  QZ.ring=d;QZ.i=0;QZ.picked=null;QZ.score=0;QZ.missed=[];QZ.save=null;
+  QZ.qs=pick.map((x,i)=>{let k=kinds[i%3];if(k==="prereq"&&!x.parents.length)k="def";return makeQ(x,k)});
+  renderQuiz();
+}
+function renderQuiz(){
+  const m=$("main");
+  if(QZ.ring===null){
+    m.innerHTML=`<div class="quiz"><h2>Revise one ring at a time</h2>
+      <p>Each quiz mixes three kinds of question: what a word means, which word fits a meaning, and which connecting word you need to learn first. Start in the centre and move outward.</p>
+      <div class="lenpick">Questions per quiz:<div class="seg" role="group" aria-label="Quiz length"><button data-qlen="10" aria-pressed="${QZ.len===10}">10</button><button data-qlen="20" aria-pressed="${QZ.len===20}">20</button><button data-qlen="all" aria-pressed="${QZ.len==="all"}">Every word in the ring</button></div></div>
+      <div class="rings">${Array.from({length:maxD+1},(_,d)=>{const n=ringTerms(d).length,t=tierOf(d),b=best[d];
+        return `<button class="rbtn" data-qring="${d}"><b><i class="dot t${t}"></i>Ring ${d}</b><small>${TIERS[t][0]} · ${n} words</small><small class="${b?"best":""}">${b?`Best ${b.s} / ${b.n}`:"Not tried yet"}</small></button>`}).join("")}</div></div>`;
+    return;
+  }
+  const n=QZ.qs.length,t=tierOf(QZ.ring);
+  const head=`<div class="qhead"><span><i class="dot t${t}"></i> Ring ${QZ.ring} · ${TIERS[t][0]}</span><span>${QZ.i<n?`Question ${QZ.i+1} of ${n} · `:""}Score ${QZ.score}</span><button class="linkbtn" data-qback>Choose another ring</button></div><div class="bar2"><i style="width:${Math.min(1,(QZ.i+(QZ.picked!==null?1:0))/n)*100}%"></i></div>`;
+  if(QZ.i>=n){
+    const pct=Math.round(QZ.score/n*100);
+    const msg=pct===100?"Perfect. This ring is solid; move outward.":pct>=80?"Strong result. Review the misses below, then move to the next ring.":pct>=50?"Getting there. Go over the misses and try this ring again.":"Spend more time on this ring, and on the connecting words it builds on, before moving on.";
+    m.innerHTML=`<div class="quiz">${head}<div class="qcard"><p class="qkind">Result</p><div class="score">${QZ.score} / ${n}</div>${QZ.save?`<p class="savestate${QZ.save==="failed"?" bad":""}">${{saving:"Saving your result…",saved:"Result saved. Your teacher can see it.",failed:"This result could not be saved. Check your connection and take the quiz again."}[QZ.save]}</p>`:""}<p>${msg}</p>
+      ${QZ.missed.length?`<p class="qkind" style="margin-top:20px">Review these</p><ul class="missed">${QZ.missed.map(q=>`<li><div class="q">${q.prompt.replace(/<blockquote>.*<\/blockquote>/,"")}</div><div>${q.explain}</div></li>`).join("")}</ul>`:""}
+      <div class="qfoot"><button class="btn" data-qring="${QZ.ring}">Retry ring ${QZ.ring}</button>${QZ.ring<maxD?`<button class="btn primary" data-qring="${QZ.ring+1}">Next: ring ${QZ.ring+1}</button>`:""}</div></div></div>`;
+    return;
+  }
+  const q=QZ.qs[QZ.i],done=QZ.picked!==null;
+  m.innerHTML=`<div class="quiz">${head}<div class="qcard"><p class="qkind">${q.kind}</p><p class="qprompt">${q.prompt}</p>
+    <div class="opts">${q.opts.map((o,j)=>{const cls=done?(o.ok?" right":j===QZ.picked?" wrong":""):"";return `<button class="opt${cls}" data-qopt="${j}" ${done?"disabled":""}><span class="k">${"ABCD"[j]}</span><span>${o.html}</span></button>`}).join("")}</div>
+    ${done?`<div class="verdict">${q.opts[QZ.picked].ok?`<span class="v good">Correct.</span>`:`<span class="v bad">Not quite.</span>`}<p>${q.explain}</p></div>
+    <div class="qfoot"><button class="btn primary" id="qnext">${QZ.i+1<n?"Next question":"See results"}</button></div>`:""}</div></div>`;
+  if(done)$("qnext").focus();
+}
+function answer(j){
+  const q=QZ.qs[QZ.i];if(QZ.picked!==null||!q.opts[j])return;QZ.picked=j;
+  if(q.opts[j].ok)QZ.score++;else QZ.missed.push(q);
+  q.chosen=j;
+  if(QZ.i===QZ.qs.length-1){const b=best[QZ.ring];if(!b||QZ.score/QZ.qs.length>b.s/b.n)best[QZ.ring]={s:QZ.score,n:QZ.qs.length};saveAttempt()}
+  renderQuiz();
+}
+$("main").addEventListener("click",e=>{
+  if(state.mode!=="quiz")return;
+  const r=e.target.closest("[data-qring]");if(r){startQuiz(+r.dataset.qring);window.scrollTo({top:0});return}
+  const o=e.target.closest("[data-qopt]");if(o){answer(+o.dataset.qopt);return}
+  const l=e.target.closest("[data-qlen]");if(l){QZ.len=l.dataset.qlen==="all"?"all":+l.dataset.qlen;renderQuiz();return}
+  if(e.target.closest("#qnext")){QZ.i++;QZ.picked=null;renderQuiz();return}
+  if(e.target.closest("[data-qback]")){QZ.ring=null;renderQuiz()}
+});
+document.addEventListener("keydown",e=>{
+  if(state.mode!=="quiz"||QZ.ring===null||QZ.i>=QZ.qs.length||QZ.picked!==null)return;
+  const k="1234abcd".indexOf(e.key.toLowerCase());
+  if(k>=0)answer(k%4);
+});
+
+$("q").addEventListener("input",e=>{state.q=e.target.value;resetDeck();render()});
+$("chips").addEventListener("click",e=>{const b=e.target.closest(".chip");if(!b)return;state.cat=b.dataset.cat;resetDeck();render()});
+document.querySelector(".seg").addEventListener("click",e=>{const b=e.target.closest("button[data-mode]");if(!b)return;state.mode=b.dataset.mode;render()});
+$("az").addEventListener("click",e=>{const b=e.target.closest("button");if(!b||b.disabled)return;const el=$("L-"+(b.dataset.l==="#"?"num":b.dataset.l));if(!el)return;const top=el.getBoundingClientRect().top+window.scrollY-document.querySelector(".bar").offsetHeight-8;window.scrollTo({top,behavior:matchMedia("(prefers-reduced-motion: reduce)").matches?"auto":"smooth"})});
+$("main").addEventListener("click",e=>{
+  const n=e.target.closest("[data-n]");if(n){goWeb(n.dataset.n);return}
+  if(e.target.closest("#card")){state.flipped=!state.flipped;renderCards();$("card").focus();return}
+  if(e.target.closest("#next"))step(1);
+  else if(e.target.closest("#prev"))step(-1);
+  else if(e.target.closest("#shuf")){const a=filtered();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}state.deck=a;state.idx=0;state.flipped=false;renderCards()}
+});
+document.addEventListener("keydown",e=>{if(state.mode!=="cards"||e.target.id==="q")return;if(e.key==="ArrowRight")step(1);else if(e.key==="ArrowLeft")step(-1)});
+renderChips();render();
+</script>
+
+<script src="config.js"></script>
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+<script>
+// Google sign-in, teacher approval (in the Google Sheet), and saving quiz results through Apps Script
+(function () {
+  const cfg = window.WB_CONFIG || {};
+  const ready = cfg.clientId && !/^PASTE_/.test(cfg.clientId) && cfg.api && !/^PASTE_/.test(cfg.api);
+  const gate = document.getElementById("gate"), gateBody = document.getElementById("gateBody");
+  const appEl = document.getElementById("app"), who = document.getElementById("who");
+  const TOKEN_KEY = "wb-token";
+  let token = null, profile = null, pollTimer = null, waitingSave = null;
+
+  const escHTML = (s) => String(s == null ? "" : s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+  function decode(t) {
+    try { return JSON.parse(decodeURIComponent(escape(atob(t.split(".")[1].replace(/-/g, "+").replace(/_/g, "/"))))); } catch (e) { return null; }
+  }
+  const fresh = (t) => { const p = t && decode(t); return !!p && p.exp * 1000 > Date.now() + 60000; };
+
+  function showGate(html) { appEl.hidden = true; gate.hidden = false; gateBody.innerHTML = html; bindSignOut(); }
+  function showApp() { gate.hidden = true; appEl.hidden = false; window.WB.refresh(); }
+  const signOutLink = `<button class="linkish" data-signout>Sign out</button>`;
+  function bindSignOut() { document.querySelectorAll("[data-signout]").forEach((b) => { b.onclick = signOut; }); }
+
+  function renderButton(el) {
+    if (!window.google || !google.accounts) { setTimeout(() => renderButton(el), 200); return; }
+    google.accounts.id.renderButton(el, { theme: "outline", size: "large", shape: "pill", text: "signin_with" });
+  }
+  function signInView(err) {
+    stopPolling();
+    showGate(`<p>Sign in with your Google account to use the course. Your teacher approves each student before the lessons and quizzes open.</p>
+      <div id="gbtn"></div>${err ? `<p class="gerr">${escHTML(err)}</p>` : ""}`);
+    renderButton(document.getElementById("gbtn"));
+  }
+  function signOut() {
+    token = null; profile = null;
+    try { sessionStorage.removeItem(TOKEN_KEY); } catch (e) {}
+    if (window.google && google.accounts) google.accounts.id.disableAutoSelect();
+    who.innerHTML = "";
+    window.WB.onQuizDone = null; window.WB.setBest({});
+    signInView();
+  }
+
+  async function api(action, extra) {
+    const res = await fetch(cfg.api, { method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify(Object.assign({ action, token }, extra || {})) });
+    if (!res.ok) throw new Error("The server did not answer (" + res.status + ").");
+    return res.json();
+  }
+
+  function stopPolling() { if (pollTimer) clearInterval(pollTimer); pollTimer = null; }
+
+  async function checkAccess(quiet) {
+    if (!quiet) showGate(`<p>Checking your access…</p>`);
+    let r;
+    try { r = await api("me"); } catch (e) {
+      if (!quiet) showGate(`<p class="gerr">Can't reach the course server. Check your internet connection and reload the page.</p>${signOutLink}`);
+      return;
+    }
+    if (!r.ok) { if (r.error === "signed_out") return signInView("Your sign-in expired. Please sign in again."); return showGate(`<p class="gerr">Sign-in problem: ${escHTML(r.error)}</p>${signOutLink}`); }
+    const name = escHTML(profile.name || profile.email);
+    if (r.status === "approved") {
+      stopPolling();
+      who.innerHTML = `${profile.picture ? `<img src="${escHTML(profile.picture)}" alt="" referrerpolicy="no-referrer">` : ""}<div><b>${name}</b>${signOutLink}</div>`;
+      bindSignOut();
+      window.WB.onQuizDone = save;
+      window.WB.setBest(r.best || {});
+      showApp();
+      return;
+    }
+    window.WB.onQuizDone = null;
+    if (r.status === "rejected") {
+      stopPolling();
+      showGate(`<p>Hi ${name}. Your teacher has not approved this account for the course. If you think this is a mistake, ask your teacher.</p>${signOutLink}`);
+    } else {
+      showGate(`<p>Hi ${name}. Your account is waiting for your teacher's approval. This page checks every 30 seconds and opens by itself once you're approved.</p>
+        <p style="font-size:.9rem">Signed in as ${escHTML(profile.email)}.</p>${signOutLink}`);
+      if (!pollTimer) pollTimer = setInterval(() => { if (fresh(token)) checkAccess(true); else signInView("Your sign-in expired. Please sign in again."); }, 30000);
+    }
+  }
+
+  // Saves a finished quiz. If the one-hour Google sign-in has expired, asks the student to sign in again first.
+  function save(result) {
+    return new Promise((resolve, reject) => {
+      const attempt = async () => {
+        try {
+          const r = await api("saveAttempt", { result });
+          if (r.ok) { window.WB.setBest(r.best || {}); resolve(); return; }
+          if (r.error === "signed_out") { askAgain(); return; }
+          if (r.error === "not_approved") { reject(r); checkAccess(); return; }
+          reject(r);
+        } catch (e) { reject(e); }
+      };
+      const askAgain = () => {
+        waitingSave = attempt;
+        const box = document.createElement("div");
+        box.className = "gate"; box.id = "resign";
+        box.style.cssText = "position:fixed;inset:0;z-index:20;background:color-mix(in srgb,var(--bg) 88%,transparent)";
+        box.innerHTML = `<div class="gatecard"><h2>Sign in again to save</h2><p>Your Google sign-in lasts one hour and has expired. Sign in again and your result will be saved.</p><div id="gbtn2"></div></div>`;
+        document.body.appendChild(box);
+        renderButton(document.getElementById("gbtn2"));
+      };
+      if (fresh(token)) attempt(); else askAgain();
+    });
+  }
+
+  function onCredential(resp) {
+    const p = decode(resp.credential);
+    if (!p) return signInView("Google sign-in did not work. Please try again.");
+    token = resp.credential;
+    profile = { email: p.email, name: p.name || "", picture: p.picture || "" };
+    try { sessionStorage.setItem(TOKEN_KEY, token); } catch (e) {}
+    const box = document.getElementById("resign");
+    if (box) box.remove();
+    if (waitingSave) { const go = waitingSave; waitingSave = null; go(); return; }
+    checkAccess();
+  }
+
+  if (!ready) {
+    showGate(`<p>This site is not connected yet. Fill in <code>config.js</code> as described in the README.</p>`);
+    return;
+  }
+  function start() {
+    if (!window.google || !google.accounts) { setTimeout(start, 100); return; }
+    google.accounts.id.initialize({ client_id: cfg.clientId, callback: onCredential, auto_select: true, cancel_on_tap_outside: false });
+    let saved = null;
+    try { saved = sessionStorage.getItem(TOKEN_KEY); } catch (e) {}
+    if (fresh(saved)) { onCredential({ credential: saved }); return; }
+    signInView();
+    google.accounts.id.prompt();
+  }
+  start();
+})();
+</script>
+</body>
+</html>
