@@ -19,6 +19,13 @@ Everything is managed in the Google Sheet.
 - **Attempts:** one row per finished quiz, with the date, student, ring, score and percent.
 - **Answers:** one row per question, showing the question, the student's answer, the right answer and whether it was correct. Use **Data → Create a filter** to look at one student or one ring.
 - **Summary:** each student's best score per ring. It updates by itself.
+- **Module quizzes:** one row per finished quiz from Module 2 onward. The tab appears after the first one. Each answer is also in **Answers**, with the module name in the Ring column.
+- **Submissions:** practice tasks students hand in, showing the task, the AI tool used, their final prompt and what they changed. The tab appears after the first hand-in.
+
+## Modules
+
+1. **Vocabulary:** learning web, learning path, glossary, flashcards and ring quizzes (`docs/index.html`).
+2. **Prompting & AI tools:** a lesson, a prompt builder, eight technique cards, a hallucination hunt, five practice tasks to hand in, and a 15-question quiz (`docs/module2.js`, `docs/module2.css`).
 
 ## How it fits together
 
