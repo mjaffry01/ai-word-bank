@@ -192,6 +192,7 @@ img{max-width:100%}
 .savestate{font:500 .8rem var(--mono);color:var(--muted);margin:4px 0 0}
 .savestate.bad{color:var(--bad)}
 </style>
+<link rel="stylesheet" href="module2.css">
 </head>
 <body>
 
@@ -207,13 +208,21 @@ img{max-width:100%}
 <div class="wrap">
   <header class="mast">
     <div class="mastrow"><div>
-    <p class="eyebrow">Course glossary</p>
+    <p class="eyebrow">AI course</p>
     <h1>The AI Word Bank</h1>
-    <p class="lede">The vocabulary of artificial intelligence as a learning web. The core words sit in the centre, and each ring outward holds words that build on the rings inside it. Teach from the centre out, ring by ring.</p>
+    <p class="lede" id="lede1">The vocabulary of artificial intelligence as a learning web. The core words sit in the centre, and each ring outward holds words that build on the rings inside it. Teach from the centre out, ring by ring.</p>
+    <p class="lede" id="lede2" hidden>Put the vocabulary to work: write prompts that get good answers, use the main prompting techniques, and catch AI when it makes things up.</p>
     </div><div class="who" id="who"></div></div>
+    <nav class="modnav" aria-label="Course modules">
+      <button data-module="1" aria-pressed="true"><span class="num">Module 1</span>Vocabulary</button>
+      <button data-module="2" aria-pressed="false"><span class="num">Module 2</span>Prompting &amp; AI tools</button>
+    </nav>
   </header>
 </div>
 
+<div id="m2" hidden><div class="wrap" id="m2body"></div></div>
+
+<div id="m1">
 <div class="bar">
   <div class="wrap">
     <div class="row">
@@ -235,6 +244,7 @@ img{max-width:100%}
 <div class="wrap">
   <main id="main"></main>
   <footer>Teaching tip: start with Basics, Data and Prompting in week one, then move on to Training, LLMs and Apps &amp; agents, and finish with Ethics &amp; safety.</footer>
+</div>
 </div>
 </div>
 
@@ -1489,6 +1499,7 @@ $("main").addEventListener("click",e=>{
   if(e.target.closest("[data-qback]")){QZ.ring=null;renderQuiz()}
 });
 document.addEventListener("keydown",e=>{
+  if(document.getElementById("m1").hidden)return;
   if(state.mode!=="quiz"||QZ.ring===null||QZ.i>=QZ.qs.length||QZ.picked!==null)return;
   const k="1234abcd".indexOf(e.key.toLowerCase());
   if(k>=0)answer(k%4);
@@ -1507,11 +1518,12 @@ $("main").addEventListener("click",e=>{
   else if(e.target.closest("#prev"))step(-1);
   else if(e.target.closest("#shuf")){const a=filtered();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}state.deck=a;state.idx=0;state.flipped=false;renderCards()}
 });
-document.addEventListener("keydown",e=>{if(state.mode==="web"&&!/INPUT|TEXTAREA/.test(e.target.tagName)&&(e.key==="Backspace"||(e.altKey&&e.key==="ArrowLeft"))){e.preventDefault();travel(-1);return}});
-document.addEventListener("keydown",e=>{if(state.mode!=="cards"||e.target.id==="q")return;if(e.key==="ArrowRight")step(1);else if(e.key==="ArrowLeft")step(-1)});
+document.addEventListener("keydown",e=>{if(document.getElementById("m1").hidden)return;if(state.mode==="web"&&!/INPUT|TEXTAREA/.test(e.target.tagName)&&(e.key==="Backspace"||(e.altKey&&e.key==="ArrowLeft"))){e.preventDefault();travel(-1);return}});
+document.addEventListener("keydown",e=>{if(document.getElementById("m1").hidden)return;if(state.mode!=="cards"||e.target.id==="q")return;if(e.key==="ArrowRight")step(1);else if(e.key==="ArrowLeft")step(-1)});
 renderChips();render();
 </script>
 
+<script src="module2.js"></script>
 <script src="config.js"></script>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <script>
@@ -1589,6 +1601,13 @@ renderChips();render();
       who.innerHTML = `${sess.picture ? `<img src="${escHTML(sess.picture)}" alt="" referrerpolicy="no-referrer">` : ""}<div><b>${name}</b>${signOutLink}</div>`;
       bindSignOut();
       window.WB.onQuizDone = save;
+      // Used by later modules to save quizzes and handed-in work
+      window.WB.call = async (action, extra) => {
+        if (!sessionValid()) { expired(); throw { error: "signed_out" }; }
+        const res = await api(action, extra);
+        if (!res.ok) { if (res.error === "not_approved") checkAccess(); throw res; }
+        return res;
+      };
       window.WB.setBest(r.best || {});
       showApp();
       return;

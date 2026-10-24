@@ -1,0 +1,74 @@
+/* Module switcher in the masthead */
+.modnav{display:flex;gap:8px;flex-wrap:wrap;margin-top:18px}
+.modnav button{display:inline-flex;align-items:baseline;gap:8px;font:600 .95rem var(--body);padding:8px 16px;border-radius:999px;border:1px solid var(--line);background:var(--surface);color:var(--fg);cursor:pointer}
+.modnav button:hover{border-color:var(--accent)}
+.modnav button[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.modnav .num{font:600 .7rem var(--mono);letter-spacing:.06em;text-transform:uppercase;opacity:.8}
+
+/* Module 2 layout */
+#m2body{padding-block:4px 56px}
+.m2tabs{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);display:flex;gap:2px;overflow-x:auto;border-bottom:1px solid var(--line);margin-bottom:22px;scrollbar-width:thin}
+.m2tabs button{flex:none;font:600 .92rem var(--body);padding:12px 14px;border:0;background:none;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px}
+.m2tabs button[aria-selected="true"]{color:var(--fg);border-color:var(--accent)}
+.m2tabs .step{font:600 .7rem var(--mono);margin-right:6px;color:var(--accent)}
+.m2sec{display:grid;gap:16px;max-width:860px}
+.m2sec>header h2{font:700 clamp(1.5rem,3.5vw,2rem)/1.15 var(--display);margin:0 0 6px;color:var(--fg);text-wrap:balance}
+.m2sec>header p{color:var(--muted);margin:0;max-width:64ch}
+.card2{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:20px;min-width:0}
+.card2 h3{font:700 1.15rem/1.25 var(--display);margin:0 0 8px}
+.card2 p{margin:0 0 10px}
+.card2 p:last-child{margin-bottom:0}
+.card2 ul,.card2 ol{margin:0 0 10px;padding-left:1.25em}
+.card2 li{margin:4px 0}
+.kicker{font:600 .7rem var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--accent);margin:0 0 6px}
+.lbl{font:600 .7rem var(--mono);letter-spacing:.08em;text-transform:uppercase;margin:0 0 6px}
+.lbl.bad{color:var(--bad)}.lbl.good{color:var(--good)}
+.pbox{font:500 .9rem/1.55 var(--mono);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:12px 14px;white-space:pre-wrap;overflow-wrap:anywhere;margin:0}
+.vs{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:12px}
+.formula{display:flex;flex-wrap:wrap;gap:8px;margin:6px 0 12px}
+.formula span{display:inline-flex;flex-direction:column;gap:2px;padding:8px 12px;border-radius:10px;border:1px solid var(--line);background:var(--bg);font-weight:600}
+.formula small{font:500 .78rem var(--body);color:var(--muted)}
+.wordlink{font:inherit;color:var(--accent);background:none;border:0;padding:0;cursor:pointer;text-decoration:underline;text-decoration-thickness:1px;text-underline-offset:2px}
+.tip{border-left:3px solid var(--accent);padding:2px 0 2px 12px;color:var(--fg)}
+
+/* Prompt builder */
+.builder{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px;align-items:start}
+.field{display:flex;flex-direction:column;gap:5px;margin-bottom:14px}
+.field label{font:600 .72rem var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.field label b{color:var(--accent);font-weight:600}
+.field input,.field textarea,.field select{font:inherit;font-size:.95rem;padding:9px 11px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--fg);min-width:0;width:100%}
+.field textarea{resize:vertical;min-height:70px;line-height:1.45}
+.field .hint{font-size:.82rem;color:var(--muted)}
+.preview{position:sticky;top:60px}
+.meter{display:flex;gap:4px;margin:10px 0 6px}
+.meter i{flex:1;height:6px;border-radius:3px;background:var(--line)}
+.meter i.on{background:var(--good)}
+.score2{font:500 .8rem var(--mono);color:var(--muted)}
+.btnrow{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.btn.sm{padding:6px 12px;font-size:.84rem}
+.missing{font-size:.88rem;color:var(--muted);margin-top:8px}
+
+/* Techniques */
+.tech{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px}
+.tech .card2{display:flex;flex-direction:column;gap:8px}
+.tech .when{font-size:.92rem;color:var(--muted);margin:0}
+.tech .pbox{flex:1}
+.tech .watch{font-size:.88rem;margin:0}
+
+/* Hallucination hunt and challenges */
+.checks{display:grid;gap:8px;margin:0;padding:0;list-style:none}
+.checks label{display:flex;gap:10px;align-items:flex-start;cursor:pointer}
+.checks input{margin-top:4px;width:18px;height:18px;accent-color:var(--accent);flex:none}
+.flags{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px}
+.flags div{padding:12px;border:1px solid var(--line);border-radius:10px;background:var(--bg)}
+.flags b{display:block;margin-bottom:2px}
+.chal{display:grid;gap:12px}
+.chal .meta{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.pill2{font:600 .7rem var(--mono);letter-spacing:.05em;text-transform:uppercase;padding:3px 8px;border-radius:999px;border:1px solid var(--line);color:var(--muted)}
+.pill2.done{color:var(--good);border-color:var(--good)}
+.crit{font-size:.9rem;color:var(--muted);margin:0}
+.savemsg{font-size:.88rem;margin:8px 0 0}
+.savemsg.ok{color:var(--good)}.savemsg.err{color:var(--bad)}
+
+@media (max-width:860px){.builder{grid-template-columns:1fr}.preview{position:static}}
+@media (max-width:640px){.vs{grid-template-columns:1fr}}

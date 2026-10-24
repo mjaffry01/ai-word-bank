@@ -21,7 +21,25 @@ const HEADERS = {
   Students: ['Email', 'Name', 'Status', 'Signed up', 'Last seen'],
   Attempts: ['Attempt ID', 'Date', 'Email', 'Name', 'Ring', 'Level', 'Score', 'Total', 'Percent'],
   Answers: ['Attempt ID', 'Date', 'Email', 'Name', 'Ring', 'Question no.', 'Type', 'Question', 'Student answer', 'Right answer', 'Correct'],
+  // Later modules (Module 2 onward): one row per finished module quiz, and one per practice task handed in.
+  'Module quizzes': ['Attempt ID', 'Date', 'Email', 'Name', 'Module', 'Score', 'Total', 'Percent'],
+  Submissions: ['Date', 'Email', 'Name', 'Module', 'Task', 'AI tool used', 'Final prompt', 'What changed and why'],
 };
+
+/** A results tab, created with its headers the first time it is needed. */
+function sheet(name) {
+  const ss = book();
+  let sh = ss.getSheetByName(name);
+  if (!sh) {
+    sh = ss.insertSheet(name);
+    sh.appendRow(HEADERS[name]);
+    sh.setFrozenRows(1);
+    sh.getRange(1, 1, 1, HEADERS[name].length).setFontWeight('bold').setBackground('#e8f1f0');
+    if (name === 'Module quizzes') sh.getRange('H2:H').setNumberFormat('0%');
+    sh.getRange(name === 'Submissions' ? 'A2:A' : 'B2:B').setNumberFormat('yyyy-mm-dd hh:mm');
+  }
+  return sh;
+}
 const STATUSES = ['pending', 'approved', 'rejected'];
 
 // The Google Sheet that holds students and results (the long id in the Sheet's web address).
@@ -83,6 +101,8 @@ function doPost(e) {
       return json(res);
     }
     if (req.action === 'saveAttempt') return json(saveAttempt(who, req.result));
+    if (req.action === 'saveModuleQuiz') return json(saveModuleQuiz(who, req.result));
+    if (req.action === 'saveSubmission') return json(saveSubmission(who, req.submission));
     return json({ ok: false, error: 'unknown_action' });
   } catch (err) {
     return json({ ok: false, error: String((err && err.message) || err) });
@@ -191,6 +211,47 @@ function saveAttempt(who, r) {
   return { ok: true, best: bestByRing(who.email) };
 }
 
+/** Saves one finished module quiz (Module 2 onward); each answer also goes to Answers, with the module in the Ring column. */
+function saveModuleQuiz(who, r) {
+  if (studentStatus(who.email) !== 'approved') return { ok: false, error: 'not_approved' };
+  const isInt = (n) => typeof n === 'number' && Math.floor(n) === n;
+  if (!r || typeof r.module !== 'string' || !r.module || !isInt(r.total) || r.total < 1 || r.total > 100 ||
+      !isInt(r.score) || r.score < 0 || r.score > r.total || !Array.isArray(r.answers) || r.answers.length !== r.total) {
+    return { ok: false, error: 'invalid_result' };
+  }
+  const id = Utilities.getUuid().slice(0, 8);
+  const now = new Date();
+  const module = safe(r.module, 80);
+  const lock = LockService.getScriptLock();
+  lock.waitLock(20000);
+  try {
+    sheet('Module quizzes').appendRow([id, now, who.email, safe(who.name), module, r.score, r.total, r.score / r.total]);
+    const rows = r.answers.map((a, i) => [id, now, who.email, safe(who.name), module, i + 1, safe(a.kind), safe(a.question), safe(a.chosen), safe(a.correct), a.ok ? 'yes' : 'no']);
+    const ans = sheet('Answers');
+    ans.getRange(ans.getLastRow() + 1, 1, rows.length, rows[0].length).setValues(rows);
+  } finally {
+    lock.releaseLock();
+  }
+  return { ok: true };
+}
+
+/** Saves a practice task a student hands in (for example, their final prompt and what they changed). */
+function saveSubmission(who, s) {
+  if (studentStatus(who.email) !== 'approved') return { ok: false, error: 'not_approved' };
+  if (!s || typeof s.task !== 'string' || !s.task || typeof s.prompt !== 'string' || !s.prompt.trim()) {
+    return { ok: false, error: 'invalid_submission' };
+  }
+  const lock = LockService.getScriptLock();
+  lock.waitLock(20000);
+  try {
+    sheet('Submissions').appendRow([new Date(), who.email, safe(who.name), safe(s.module, 80), safe(s.task, 200),
+      safe(s.tool, 80), safe(s.prompt, 5000), safe(s.reflection, 3000)]);
+  } finally {
+    lock.releaseLock();
+  }
+  return { ok: true };
+}
+
 function findStudentRow(sh, email) {
   const n = sh.getLastRow() - 1;
   if (n < 1) return 0;
@@ -227,7 +288,7 @@ function bestByRing(email) {
 }
 
 /** Stops text that starts with = + - @ from being read as a spreadsheet formula, and limits length. */
-function safe(v) {
-  const s = String(v == null ? '' : v).slice(0, 1000);
+function safe(v, max) {
+  const s = String(v == null ? '' : v).slice(0, max || 1000);
   return /^[=+\-@]/.test(s) ? "'" + s : s;
 }
