@@ -336,7 +336,7 @@ and keeps learning from new examples.</pre></div>
       const ref = $("m3spamRef").value.trim(), r = model ? results() : null;
       if (!ref) { msg.className = "savemsg err"; msg.textContent = "Write what you found first."; return; }
       const wrongOnes = r ? r.rows.filter((x) => x.y !== x.truth).map((x) => `"${x.txt}"`).join("; ") : "";
-      sub = { task: "Train a spam filter (lab)", tool: "Word Bank lab", prompt: `Labelled ${Object.keys(labels).length}/${TRAIN.length} training messages. Test accuracy: ${r ? r.correct : 0}/${TEST.length}. Wrong: ${wrongOnes || "none"}.`, reflection: ref };
+      sub = { task: "Train a spam filter (lab)", tool: "AI Concepts lab", prompt: `Labelled ${Object.keys(labels).length}/${TRAIN.length} training messages. Test accuracy: ${r ? r.correct : 0}/${TEST.length}. Wrong: ${wrongOnes || "none"}.`, reflection: ref };
     } else {
       const data = $("m3tmData").value.trim(), res = $("m3tmRes").value.trim(), fix = $("m3tmFix").value.trim();
       if (!data || !res) { msg.className = "savemsg err"; msg.textContent = "Fill in your classes and how well it worked first."; return; }

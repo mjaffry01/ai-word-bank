@@ -177,7 +177,7 @@ Rewrite for a beginner. Avoid jargon.</pre>
         <h3>${esc(t.name)}</h3><p class="when"><b>Use when:</b> ${esc(t.when)}</p>
         <pre class="pbox" id="tech${i}">${esc(t.tpl)}</pre>
         <p class="watch"><b>Watch out:</b> ${esc(t.watch)}</p>
-        <div class="btnrow" style="margin:0"><button class="btn sm" data-copy="tech${i}">Copy</button>${word(t.term, "In the word bank")}</div></div>`).join("")}</div>
+        <div class="btnrow" style="margin:0"><button class="btn sm" data-copy="tech${i}">Copy</button>${word(t.term, "Look up the word")}</div></div>`).join("")}</div>
     </section>`;
 
   /* ---------- Hallucination hunt ---------- */

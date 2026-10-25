@@ -1,6 +1,6 @@
-# AI Word Bank
+# AI Concepts
 
-An AI vocabulary course site: a learning web of about 660 terms arranged in rings from the core outward, a ring-by-ring learning path, a glossary, flashcards and multiple-choice ring quizzes.
+AI Concepts is an AI course site: a learning web of about 660 terms arranged in rings from the core outward, a ring-by-ring learning path, a glossary, flashcards and multiple-choice ring quizzes.
 
 Students sign in with Google. The teacher approves them and sees every score and answer in a Google Sheet. Everything runs on free services.
 
