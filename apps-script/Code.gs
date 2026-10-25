@@ -22,7 +22,7 @@ const HEADERS = {
   Attempts: ['Attempt ID', 'Date', 'Email', 'Name', 'Ring', 'Level', 'Score', 'Total', 'Percent'],
   Answers: ['Attempt ID', 'Date', 'Email', 'Name', 'Ring', 'Question no.', 'Type', 'Question', 'Student answer', 'Right answer', 'Correct'],
   // Later modules (Module 2 onward): one row per finished module quiz, and one per practice task handed in.
-  'Module quizzes': ['Attempt ID', 'Date', 'Email', 'Name', 'Module', 'Score', 'Total', 'Percent'],
+  'Module quizzes': ['Attempt ID', 'Date', 'Email', 'Name', 'Module', 'Level', 'Score', 'Total', 'Percent'],
   Submissions: ['Date', 'Email', 'Name', 'Module', 'Task', 'AI tool used', 'Final prompt', 'What changed and why'],
 };
 
@@ -35,8 +35,20 @@ function sheet(name) {
     sh.appendRow(HEADERS[name]);
     sh.setFrozenRows(1);
     sh.getRange(1, 1, 1, HEADERS[name].length).setFontWeight('bold').setBackground('#e8f1f0');
-    if (name === 'Module quizzes') sh.getRange('H2:H').setNumberFormat('0%');
+    if (name === 'Module quizzes') sh.getRange('I2:I').setNumberFormat('0%');
     sh.getRange(name === 'Submissions' ? 'A2:A' : 'B2:B').setNumberFormat('yyyy-mm-dd hh:mm');
+  } else if (name === 'Module quizzes' && sh.getRange(1, 6).getValue() !== 'Level') {
+    // Older tab without the Level column: insert it after Module
+    sh.insertColumnAfter(5);
+    sh.getRange(1, 6).setValue('Level').setFontWeight('bold').setBackground('#e8f1f0');
+    sh.getRange('I2:I').setNumberFormat('0%');
+  }
+  if (name === 'Module quizzes' && !ss.getSheetByName('Module summary')) {
+    const sum = ss.insertSheet('Module summary');
+    sum.getRange('A1').setFormula(
+      "=IFERROR(QUERY('Module quizzes'!A:I, \"select C, D, E, F, count(A), max(I) where C is not null group by C, D, E, F order by C, E, F label C 'Email', D 'Name', E 'Module', F 'Level', count(A) 'Attempts', max(I) 'Best %'\", 1), \"No module quizzes yet\")");
+    sum.getRange('F:F').setNumberFormat('0%');
+    sum.setFrozenRows(1);
   }
   return sh;
 }
@@ -222,11 +234,12 @@ function saveModuleQuiz(who, r) {
   const id = Utilities.getUuid().slice(0, 8);
   const now = new Date();
   const module = safe(r.module, 80);
+  const level = safe(r.level || 'Standard', 40);
   const lock = LockService.getScriptLock();
   lock.waitLock(20000);
   try {
-    sheet('Module quizzes').appendRow([id, now, who.email, safe(who.name), module, r.score, r.total, r.score / r.total]);
-    const rows = r.answers.map((a, i) => [id, now, who.email, safe(who.name), module, i + 1, safe(a.kind), safe(a.question), safe(a.chosen), safe(a.correct), a.ok ? 'yes' : 'no']);
+    sheet('Module quizzes').appendRow([id, now, who.email, safe(who.name), module, level, r.score, r.total, r.score / r.total]);
+    const rows = r.answers.map((a, i) => [id, now, who.email, safe(who.name), module + ' · ' + level, i + 1, safe(a.kind), safe(a.question), safe(a.chosen), safe(a.correct), a.ok ? 'yes' : 'no']);
     const ans = sheet('Answers');
     ans.getRange(ans.getLastRow() + 1, 1, rows.length, rows[0].length).setValues(rows);
   } finally {
