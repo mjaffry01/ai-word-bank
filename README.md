@@ -48,7 +48,7 @@ The Apps Script web app is set to **Execute as: Me** and **Who has access: Anyon
 
 ## Changing the words
 
-The terms are in `docs/index.html` inside `<script type="text/plain" id="data">`, one `Term|topic|meaning` per line. The connecting words are in `<script type="text/plain" id="web">`, one `Word > words that build on it` per line. Commit and push, and GitHub Pages updates within a minute or two.
+The terms are in `docs/index.html` inside `<script type="text/plain" id="data">`, one `Term|topic|meaning` per line. The connecting words are in `<script type="text/plain" id="web">`, one `Word > words that build on it` per line. Commit and push, and GitHub Pages updates within a minute or two. Each term also has an **In depth** explanation and an **Example** in `docs/deep.txt` (one `Term|In depth|Example` per line, using exactly the same term names). They show in the learning-web panel, the glossary and on the back of flashcards, and the search box searches them too.
 
 ## Limits
 

@@ -56,6 +56,12 @@ mark{background:transparent;color:var(--accent);font-weight:600}
 .card{width:100%;min-height:280px;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:14px;text-align:center;padding:36px 24px;background:var(--surface);color:var(--fg);border:1px solid var(--line);border-radius:14px;cursor:pointer;font:inherit}
 .card .big{font-family:var(--display);font-weight:700;font-size:clamp(1.7rem,5vw,2.5rem);line-height:1.1;text-wrap:balance}
 .card .def{font-size:1.15rem;max-width:46ch}
+/* Deeper explanation and example under each short definition */
+.deep{display:block;margin:8px 0 0;font-size:.94rem;line-height:1.55;color:var(--muted)}
+.deep b{font:600 .68rem var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--accent);margin-right:6px}
+.deep.ex{color:var(--fg)}
+.panel .deep{font-size:.92rem}
+.card .deep{max-width:54ch;font-size:.92rem;text-align:left}
 .card .hint{font:500 .74rem var(--mono);color:var(--muted);letter-spacing:.04em}
 .controls{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:16px;align-items:center}
 .btn{font:600 .9rem var(--body);padding:9px 16px;border-radius:8px;border:1px solid var(--line);background:var(--surface);color:var(--fg);cursor:pointer}
@@ -1256,7 +1262,21 @@ const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",
 const ringLabel=x=>`Ring ${x.depth} · ${TIERS[x.tier][0]}`;
 const chip=x=>`<button class="wchip t${x.tier}" data-n="${esc(x.t)}">${esc(x.t)}</button>`;
 function hl(s){const q=state.q.trim();const e=esc(s);if(!q)return e;const re=new RegExp("("+esc(q).replace(/[.*+?^${}()|[\]\\]/g,"\\$&")+")","gi");return e.replace(re,"<mark>$1</mark>")}
-function filtered(){const q=state.q.trim().toLowerCase();return terms.filter(x=>(state.cat==="all"||x.c===state.cat)&&(!q||x.t.toLowerCase().includes(q)||x.d.toLowerCase().includes(q)))}
+function filtered(){const q=state.q.trim().toLowerCase();return terms.filter(x=>(state.cat==="all"||x.c===state.cat)&&(!q||x.t.toLowerCase().includes(q)||x.d.toLowerCase().includes(q)||(DEEP&&DEEP[x.t]&&(DEEP[x.t].deep+" "+DEEP[x.t].ex).toLowerCase().includes(q))))}
+// Deeper explanation and example for each term, loaded from deep.txt (Term|In depth|Example)
+let DEEP=null;
+function deepHTML(x,mark){
+  const d=DEEP&&DEEP[x.t]; if(!d)return "";
+  const f=mark?hl:esc;
+  return `<p class="deep"><b>In depth</b>${f(d.deep)}</p><p class="deep ex"><b>Example</b>${f(d.ex)}</p>`;
+}
+fetch("deep.txt").then(r=>r.ok?r.text():"").then(t=>{
+  const m={};
+  t.split("\n").forEach(l=>{const p=l.replace(/\r$/,"").split("|");if(p.length===3)m[p[0]]={deep:p[1],ex:p[2]}});
+  DEEP=m;
+  if(state.mode==="list"||state.mode==="cards")render();
+  else if(state.mode==="web"&&$("panel"))$("panel").innerHTML=navHTML()+panelHTML(state.sel);
+}).catch(()=>{});
 const isFiltering=()=>state.cat!=="all"||state.q.trim()!=="";
 
 function renderChips(){
@@ -1284,7 +1304,7 @@ function renderList(list){
   const groups={};list.forEach(x=>(groups[letterOf(x)]=groups[letterOf(x)]||[]).push(x));
   $("az").innerHTML=["#",...LETTERS].map(L=>`<button data-l="${L}" ${groups[L]?"":"disabled"} aria-label="Jump to ${L}">${L}</button>`).join("");
   if(!list.length){$("main").innerHTML=`<p class="empty">No terms match “${esc(state.q)}”. Try a shorter word or choose All topics.</p>`;return}
-  $("main").innerHTML=["#",...LETTERS].filter(L=>groups[L]).map(L=>`<section class="letter" id="L-${L==="#"?"num":L}"><h2>${L}</h2><dl>${groups[L].map(x=>`<div class="entry"><dt><span class="term">${hl(x.t)}</span><span class="tag">${esc(catName[x.c])}</span><button class="ringlink" data-n="${esc(x.t)}" title="Show in the learning web">${ringLabel(x)} ↗</button></dt><dd>${hl(x.d)}</dd></div>`).join("")}</dl></section>`).join("");
+  $("main").innerHTML=["#",...LETTERS].filter(L=>groups[L]).map(L=>`<section class="letter" id="L-${L==="#"?"num":L}"><h2>${L}</h2><dl>${groups[L].map(x=>`<div class="entry"><dt><span class="term">${hl(x.t)}</span><span class="tag">${esc(catName[x.c])}</span><button class="ringlink" data-n="${esc(x.t)}" title="Show in the learning web">${ringLabel(x)} ↗</button></dt><dd>${hl(x.d)}${deepHTML(x,true)}</dd></div>`).join("")}</dl></section>`).join("");
 }
 
 /* Learning path: ring by ring, centre outward */
@@ -1380,7 +1400,7 @@ function panelHTML(x){
   }
   const path=[];for(let c=x;c;c=c.pp)path.unshift(c);
   return `<span class="badge"><i class="dot t${x.tier}"></i>${ringLabel(x)} · ${esc(catName[x.c])}</span>
-  <h3>${esc(x.t)}</h3><p>${esc(x.d)}</p>
+  <h3>${esc(x.t)}</h3><p>${esc(x.d)}</p>${deepHTML(x)}
   <h4>Learn these first · connecting words</h4>${x.parents.length?`<div class="chipwrap">${x.parents.map(chip).join("")}</div>`:`<p class="none">Nothing. This is a core word, so start here.</p>`}
   <h4>Unlocks next · ${x.kids.length}</h4>${x.kids.length?`<div class="chipwrap">${x.kids.map(chip).join("")}</div>`:`<p class="none">No other word in this list builds on it.</p>`}
   <h4>Path from the centre</h4><div class="crumbs">${path.map((c,i)=>(i?`<span class="sep">→</span>`:"")+(c===x?`<b>${esc(c.t)}</b>`:`<button data-n="${esc(c.t)}">${esc(c.t)}</button>`)).join("")}</div>`;
@@ -1403,7 +1423,7 @@ function renderCards(){
   const x=d[state.idx];
   $("main").innerHTML=`<div class="deck">
     <button class="card" id="card" aria-live="polite">
-      ${state.flipped?`<span class="hint">${esc(x.t)}</span><span class="def">${esc(x.d)}</span>`:`<span class="hint">${ringLabel(x)} · ${esc(catName[x.c])}</span><span class="big">${esc(x.t)}</span><span class="hint">Tap to reveal the meaning</span>`}
+      ${state.flipped?`<span class="hint">${esc(x.t)}</span><span class="def">${esc(x.d)}</span>${deepHTML(x).replace(/<p /g,"<span ").replace(/<\/p>/g,"</span>")}`:`<span class="hint">${ringLabel(x)} · ${esc(catName[x.c])}</span><span class="big">${esc(x.t)}</span><span class="hint">Tap to reveal the meaning</span>`}
     </button>
     <div class="controls">
       <button class="btn" id="prev">Previous</button>
