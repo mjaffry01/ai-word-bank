@@ -194,6 +194,7 @@ img{max-width:100%}
 </style>
 <link rel="stylesheet" href="module2.css">
 <link rel="stylesheet" href="module3.css">
+<link rel="stylesheet" href="module4.css">
 </head>
 <body>
 
@@ -213,18 +214,21 @@ img{max-width:100%}
     <h1>AI Concepts</h1>
     <p class="lede" id="lede1">The vocabulary of artificial intelligence as a learning web. The core words sit in the centre, and each ring outward holds words that build on the rings inside it. Teach from the centre out, ring by ring.</p>
     <p class="lede" id="lede2" hidden>Put the vocabulary to work: write prompts that get good answers, use the main prompting techniques, and catch AI when it makes things up.</p>
+    <p class="lede" id="lede4" hidden>Look inside a chatbot: see text split into real tokens, pick the next word with a temperature dial, watch attention find meaning, and see why models hallucinate and forget.</p>
     <p class="lede" id="lede3" hidden>See what happens before an AI ever answers: how data becomes a model, train your own spam filter, watch a model overfit, and train an image model with your webcam.</p>
     </div><div class="who" id="who"></div></div>
     <nav class="modnav" aria-label="Course modules">
       <button data-module="1" aria-pressed="true"><span class="num">Module 1</span>Vocabulary</button>
       <button data-module="2" aria-pressed="false"><span class="num">Module 2</span>Prompting &amp; AI tools</button>
       <button data-module="3" aria-pressed="false"><span class="num">Module 3</span>How machines learn</button>
+      <button data-module="4" aria-pressed="false"><span class="num">Module 4</span>How LLMs work</button>
     </nav>
   </header>
 </div>
 
 <div id="m2" hidden><div class="wrap" id="m2body"></div></div>
 <div id="m3" hidden><div class="wrap" id="m3body"></div></div>
+<div id="m4" hidden><div class="wrap" id="m4body"></div></div>
 
 <div id="m1">
 <div class="bar">
@@ -1528,6 +1532,7 @@ renderChips();render();
 </script>
 
 <script src="module3.js"></script>
+<script src="module4.js"></script>
 <script src="module2.js"></script>
 <script src="config.js"></script>
 <script src="https://accounts.google.com/gsi/client" async defer></script>

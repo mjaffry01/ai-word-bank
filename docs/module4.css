@@ -1,0 +1,51 @@
+/* Module 4: How LLMs work. Builds on the Module 2/3 layout classes. */
+.pipeline{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px}
+.pipeline div{padding:12px;border:1px solid var(--line);border-radius:10px;background:var(--bg)}
+.pipeline b{display:block;font:700 .98rem var(--display)}
+.pipeline small{display:block;color:var(--muted);font-size:.82rem;line-height:1.35;margin-top:4px}
+.pipeline .n{font:600 .7rem var(--mono);color:var(--accent)}
+.stages{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}
+.toks{display:flex;flex-wrap:wrap;gap:3px;padding:12px;border:1px solid var(--line);border-radius:10px;background:var(--bg);min-height:56px;font:500 1rem var(--mono);line-height:1.9}
+.tok{padding:1px 2px;border-radius:4px;white-space:pre}
+.tok.c0{background:color-mix(in srgb,var(--t0) 26%,transparent)}
+.tok.c1{background:color-mix(in srgb,var(--t1) 26%,transparent)}
+.tok.c2{background:color-mix(in srgb,var(--t2) 30%,transparent)}
+.tok.c3{background:color-mix(in srgb,var(--t3) 28%,transparent)}
+.tok.c4{background:color-mix(in srgb,var(--t4) 24%,transparent)}
+.tokids{font:500 .78rem var(--mono);color:var(--muted);overflow-wrap:anywhere;margin-top:8px}
+.tokstats{display:flex;gap:10px;flex-wrap:wrap;margin-top:10px}
+.tokstats .stat{padding:8px 12px;border:1px solid var(--line);border-radius:10px;background:var(--bg);min-width:110px}
+.tokstats b{display:block;font:700 1.3rem var(--display);font-variant-numeric:tabular-nums}
+.tokstats span{font:500 .7rem var(--mono);color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
+.chips4{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}
+.prompt4{font:600 1.15rem var(--display);margin:0 0 12px}
+.prompt4 .blank{display:inline-block;min-width:3.5em;border-bottom:2px solid var(--accent);color:var(--accent);text-align:center}
+.probs{display:grid;gap:6px}
+.prob{display:grid;grid-template-columns:7.5rem 1fr 3.4rem;gap:8px;align-items:center;font-size:.92rem}
+.prob .w{font:600 .92rem var(--mono);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.prob .track{height:14px;border-radius:7px;background:var(--line);overflow:hidden}
+.prob .fill{display:block;height:100%;border-radius:7px;background:var(--accent);transition:width .25s}
+.prob.picked .fill{background:var(--good)}
+.prob.picked .w{color:var(--good)}
+.prob .pct{font:600 .8rem var(--mono);text-align:right;font-variant-numeric:tabular-nums}
+.samples{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px;min-height:30px}
+.samples span{font:500 .85rem var(--mono);padding:3px 8px;border-radius:999px;border:1px solid var(--line);background:var(--bg)}
+.attn{display:flex;flex-wrap:wrap;gap:6px;font:500 1.2rem var(--display);line-height:1.6;padding:14px;border:1px solid var(--line);border-radius:10px;background:var(--bg)}
+.attn button{font:inherit;padding:2px 6px;border-radius:6px;border:1px solid transparent;background:transparent;color:var(--fg);cursor:default}
+.attn button.click{cursor:pointer;border-color:var(--line);text-decoration:underline dotted;text-underline-offset:4px}
+.attn button.focus{outline:2px solid var(--accent);outline-offset:1px}
+.attn .wt{display:block;font:500 .65rem var(--mono);color:var(--muted);text-align:center;line-height:1}
+.ctxbar{display:flex;height:34px;border:1px solid var(--line);border-radius:8px;overflow:hidden;background:var(--bg)}
+.ctxbar i{display:block;height:100%;border-right:1px solid var(--surface)}
+.ctxbar i.sys{background:var(--t3)}
+.ctxbar i.user{background:var(--t0)}
+.ctxbar i.ai{background:var(--t1)}
+.chat4{display:grid;gap:6px;margin-top:12px}
+.chat4 div{display:grid;grid-template-columns:5.5rem 1fr 4rem;gap:10px;align-items:start;padding:8px 10px;border:1px solid var(--line);border-radius:10px;background:var(--bg);font-size:.92rem}
+.chat4 .who{font:600 .72rem var(--mono);text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}
+.chat4 .n{font:500 .75rem var(--mono);color:var(--muted);text-align:right}
+.chat4 .out{opacity:.4;text-decoration:line-through}
+.chat4 .sysmsg{border-color:var(--t3)}
+.reply4{margin-top:12px;padding:12px 14px;border-radius:10px;border:2px solid var(--accent);background:var(--surface)}
+.reply4.lost{border-color:var(--bad)}
+@media (max-width:560px){.prob{grid-template-columns:5.5rem 1fr 3rem}.chat4 div{grid-template-columns:1fr}.chat4 .n{text-align:left}}

@@ -19,7 +19,7 @@ Everything is managed in the Google Sheet.
 - **Attempts:** one row per finished quiz, with the date, student, ring, score and percent.
 - **Answers:** one row per question, showing the question, the student's answer, the right answer and whether it was correct. Use **Data → Create a filter** to look at one student or one ring.
 - **Summary:** each student's best score per ring. It updates by itself.
-- **Module quizzes:** one row per finished quiz from Module 2 onward, with a **Level** column (Beginner, Intermediate or Advanced for Modules 2 and 3). Each answer is also in **Answers**, with the module and level in the Ring column.
+- **Module quizzes:** one row per finished quiz from Module 2 onward, with a **Level** column (Beginner, Intermediate or Advanced). Each answer is also in **Answers**, with the module and level in the Ring column.
 - **Module summary:** each student's best score per module and level. It updates by itself.
 - **Submissions:** practice tasks students hand in, showing the task, the AI tool used, their final prompt and what they changed. The tab appears after the first hand-in.
 
@@ -29,7 +29,9 @@ Everything is managed in the Google Sheet.
 2. **Prompting & AI tools:** a lesson, a prompt builder, eight technique cards, a hallucination hunt, five practice tasks to hand in, and a 15-question quiz (`docs/module2.js`, `docs/module2.css`).
 3. **How machines learn:** a lesson (data → features & labels → training → model → prediction → testing), the three ways machines learn with a sorting check, a spam-filter lab students label, train and test themselves (with a confusion matrix), an overfitting lab, four real case studies, a Teachable Machine hand-in, and a 15-question quiz (`docs/module3.js`, `docs/module3.css`).
 
-Modules 2 and 3 save quizzes to **Module quizzes** and hand-ins to **Submissions**, labelled with the module name. To add another module, add a `data-module` button, a `lede` paragraph and an `m<n>` container in `index.html`, and register its render function in `window.WB_MODULES`.
+4. **How LLMs work:** a lesson (next-token prediction, the six steps of an answer, pre-training → instruction tuning → RLHF), a tokenizer lab using the real GPT-4 tokenizer (loaded from jsDelivr only when the tab opens), a next-word game with a temperature slider, an attention explorer, a hallucination demo, a context-window lab, a hand-in and a three-level quiz (`docs/module4.js`, `docs/module4.css`).
+
+Modules 2, 3 and 4 save quizzes to **Module quizzes** and hand-ins to **Submissions**, labelled with the module name. To add another module, add a `data-module` button, a `lede` paragraph and an `m<n>` container in `index.html`, and register its render function in `window.WB_MODULES`.
 
 ## How it fits together
 
