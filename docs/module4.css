@@ -49,3 +49,6 @@
 .reply4{margin-top:12px;padding:12px 14px;border-radius:10px;border:2px solid var(--accent);background:var(--surface)}
 .reply4.lost{border-color:var(--bad)}
 @media (max-width:560px){.prob{grid-template-columns:5.5rem 1fr 3rem}.chat4 div{grid-template-columns:1fr}.chat4 .n{text-align:left}}
+/* Deep dive tables hold sentences, so let their cells wrap */
+#m4body .tbl td{white-space:normal;min-width:7rem;vertical-align:top}
+#m4body .tbl td:first-child{white-space:nowrap;font-weight:600}

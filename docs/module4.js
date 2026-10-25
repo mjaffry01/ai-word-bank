@@ -1,5 +1,5 @@
 // Module 4: How large language models work. A lesson, a real tokenizer, a next-word game with temperature,
-// an attention explorer, a hallucination demo, a context-window lab, a hand-in, and a three-level quiz.
+// a four-level deep dive (basic to architect), an attention explorer, a hallucination demo, a context-window lab, a hand-in, and a four-level quiz.
 (function () {
   const MODULE = "Module 4: How LLMs work";
   const TOKENIZER_URL = "https://cdn.jsdelivr.net/npm/gpt-tokenizer@2.1.2/dist/cl100k_base.js";
@@ -10,7 +10,7 @@
     set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} },
   };
   const word = (term, label) => `<button class="wordlink" data-word="${esc(term)}" title="Open in the learning web">${esc(label || term)}</button>`;
-  const TABS = [["learn", "Lesson"], ["tokens", "Tokenizer lab"], ["next", "Next-word game"], ["attn", "Attention"], ["halluc", "Why it hallucinates"], ["ctx", "Context window"], ["task", "Hand-in"], ["quiz", "Quiz"]];
+  const TABS = [["learn", "Lesson"], ["deep", "Deep dive"], ["tokens", "Tokenizer lab"], ["next", "Next-word game"], ["attn", "Attention"], ["halluc", "Why it hallucinates"], ["ctx", "Context window"], ["task", "Hand-in"], ["quiz", "Quiz"]];
   let tab = store.get("wb-m4-tab", "learn");
 
   /* ---------- 1. Lesson ---------- */
@@ -34,7 +34,7 @@ The cat sat on the mat  →  and (21%)   .  (19%)   while (8%)   …</pre>
         <div><span class="n">5</span><b>Pick one</b><small>One token is chosen, sometimes with a little randomness</small></div>
         <div><span class="n">6</span><b>Repeat</b><small>Add it to the text and go again, until the answer ends</small></div>
       </div>
-      <p style="margin-top:10px">Steps 2 to 4 happen inside the ${word("Transformer", "transformer")}, the design behind every modern LLM. You'll try steps 1, 3 and 5 yourself in this module.</p>
+      <p style="margin-top:10px">Steps 2 to 4 happen inside the ${word("Transformer", "transformer")}, the design behind every modern LLM. You'll try steps 1, 3 and 5 yourself in this module. For the full journey at four levels of depth, up to how chatbots are served at scale, open the <button class="wordlink" data-tab="deep">Deep dive</button>.</p>
     </div>
 
     <div class="card2"><p class="kicker">3 · How a model is built</p><h3>Three stages of training</h3>
@@ -60,6 +60,153 @@ The cat sat on the mat  →  and (21%)   .  (19%)   while (8%)   …</pre>
         <div><p class="lbl bad">Weak at</p><ul><li>Guaranteed facts, quotes and sources</li><li>Recent events (without tools)</li><li>Exact counting and letter-level tasks</li><li>Knowing when it doesn't know</li></ul></div>
       </div>
     </div>
+  </section>`;
+
+  /* ---------- Deep dive: one message, followed from Send to reply, at four levels of depth ---------- */
+  const DLEVELS = [
+    ["basic", "Level 1 · Basic", "What happens when you press Send"],
+    ["practitioner", "Level 2 · Practitioner", "The application around the model"],
+    ["engineer", "Level 3 · Engineer", "Inside the model, one token at a time"],
+    ["architect", "Level 4 · Architect", "Serving chatbots at scale"],
+  ];
+  let dlv = store.get("wb-m4-dlv", "basic");
+  const card = (kicker, title, body) => `<div class="card2"><p class="kicker">${kicker}</p><h3>${title}</h3>${body}</div>`;
+  const DEEP = {
+    basic: () => [
+      card("The journey of one message", "Seven steps between Send and the reply", `
+        <ol class="steps3">
+          <li><span><b>The app builds the full input.</b> Your message is not sent alone. The app adds a hidden ${word("System Prompt", "system prompt")} (the assistant's rules and personality) and the whole conversation so far.</span></li>
+          <li><span><b>Text becomes tokens.</b> Everything is split into ${word("Token", "tokens")} and each token becomes a number. The model never sees letters, only these numbers.</span></li>
+          <li><span><b>The model reads everything at once.</b> It passes all the tokens through dozens of layers that work out what each word means in context (${word("Attention Mechanism", "attention")}).</span></li>
+          <li><span><b>It scores every possible next token.</b> The result is a probability for each of the roughly 100,000 tokens in its vocabulary.</span></li>
+          <li><span><b>One token is chosen</b>, usually one of the most likely, with a little randomness set by ${word("Temperature", "temperature")}.</span></li>
+          <li><span><b>Repeat.</b> The chosen token is added to the input and the whole prediction runs again for the next token, until the model produces a special "end" token or hits a length limit.</span></li>
+          <li><span><b>Streaming.</b> Each token is sent to your screen as soon as it is chosen, which is why answers appear word by word.</span></li>
+        </ol>`),
+      card("Key fact 1", "The model has no memory between messages", `<p>The model itself forgets everything after each reply. The app creates the illusion of memory by <b>sending the whole conversation again every time</b>. That's why very long chats get slower and more expensive, and why the oldest parts eventually fall out of the ${word("Context Window", "context window")}.</p>`),
+      card("Key fact 2", "It doesn't look anything up (unless given a tool)", `<p>Knowledge is stored as patterns in billions of numbers (${word("Weights", "weights")}) learned in training. There's no database of facts inside. If an assistant searches the web or reads your files, that's the <i>app</i> fetching text and pasting it into the input for the model to read.</p>`),
+      card("Key fact 3", "Every answer is a chain of guesses", `<p>A 300-word answer is about 400 separate predictions, each depending on all the ones before. Usually the guesses are good, but one wrong early step can carry through the rest. That's the root of ${word("Hallucination", "hallucinations")}.</p>`),
+      card("Analogy for your class", "A brilliant reader with amnesia and a notepad", `<p>Imagine an expert who has read most of the internet but forgets every conversation the moment it ends. Each time you speak, an assistant hands them the full transcript on a notepad (the context window). They read it all, then write the reply one word at a time, each word chosen from what fits best so far.</p>`),
+    ].join(""),
+
+    practitioner: () => [
+      card("What the app actually sends", "A chat request, piece by piece", `
+        <p>Behind every chat window, the app calls a model through an ${word("API (Application Programming Interface)", "API")}. A typical request looks like this:</p>
+        <pre class="pbox">{
+  "model": "a-chat-model",
+  "system": "You are a helpful support assistant for Acme Bank. Never give investment advice.",
+  "messages": [
+    {"role": "user",      "content": "I lost my card."},
+    {"role": "assistant", "content": "Sorry to hear that! I can block it. Which card is it?"},
+    {"role": "user",      "content": "The debit card ending 4421."}
+  ],
+  "temperature": 0.3,
+  "max_tokens": 500
+}</pre>
+        <ul>
+          <li><b>Roles:</b> <i>system</i> sets the rules, <i>user</i> is the person, <i>assistant</i> is the model's earlier replies. All past turns are re-sent each time.</li>
+          <li><b>Chat template:</b> before the model sees it, the request is flattened into one long token sequence, with special tokens marking where each role starts and ends.</li>
+          <li><b>Parameters</b> like temperature and ${word("Max Tokens", "max tokens")} control how the reply is generated.</li>
+        </ul>`),
+      card("Managing the context window", "Memory is a budget", `<p>Everything (system prompt, history, documents, tool results and the reply) must fit in the window. When conversations get long, apps either drop the oldest turns, <b>summarise</b> older parts, or store facts separately and re-insert only the relevant ones (long-term ${word("Memory (AI)", "memory")}). Every token sent is paid for, on every turn.</p>`),
+      card("Tools", "How a chatbot \"does\" things", `
+        <div class="pipeline">
+          <div><span class="n">1</span><b>Tools described</b><small>The app tells the model which tools exist, e.g. get_weather(city)</small></div>
+          <div><span class="n">2</span><b>Model asks</b><small>Instead of text, it outputs a structured call: get_weather("Paris")</small></div>
+          <div><span class="n">3</span><b>App runs it</b><small>Your code calls the real weather service. The model never touches it</small></div>
+          <div><span class="n">4</span><b>Result returned</b><small>The result is added to the conversation as a new message</small></div>
+          <div><span class="n">5</span><b>Model answers</b><small>It writes the reply using the result, or calls another tool</small></div>
+        </div>
+        <p style="margin-top:10px">This is ${word("Tool Use (Function Calling)", "tool use")}. Repeat the loop several times and you have an ${word("AI Agent", "AI agent")}. ${word("MCP (Model Context Protocol)", "MCP")} is a standard way to plug tools into it.</p>`),
+      card("Retrieval", "How it answers from your documents", `<p>With ${word("RAG (Retrieval-Augmented Generation)", "RAG")}, the app first searches your documents for passages related to the question (usually with ${word("Embedding", "embeddings")} and a ${word("Vector Database", "vector database")}), then pastes the best passages into the prompt with an instruction like "answer only from these sources". The model is unchanged; it just reads better input. Module 5 covers this in depth.</p>`),
+      card("Around the model", "Safety, streaming and cost", `<ul>
+          <li><b>Safety layers:</b> input and output can be checked by classifiers or rules before and after the model (${word("Guardrails", "guardrails")}, ${word("Content Filter", "content filters")}).</li>
+          <li><b>Streaming:</b> the reply arrives token by token over a long-lived connection, and the response ends with a <i>stop reason</i>: finished naturally, hit max tokens, or stopped to call a tool.</li>
+          <li><b>Cost:</b> billed per input and output token. Long system prompts and histories are paid on every turn, which is why ${word("Prompt Caching", "prompt caching")} matters.</li>
+        </ul>`),
+    ].join(""),
+
+    engineer: () => [
+      card("The forward pass", "From token IDs to a probability for every next token", `
+        <div class="pipeline">
+          <div><span class="n">1</span><b>Tokenize</b><small>Text → IDs with a byte-pair-encoding tokenizer</small></div>
+          <div><span class="n">2</span><b>Embed</b><small>Each ID looks up a learned vector, e.g. 4,096 numbers wide</small></div>
+          <div><span class="n">3</span><b>N transformer blocks</b><small>Typically 32 to 100+ identical blocks, each refining every token's vector</small></div>
+          <div><span class="n">4</span><b>Final norm + unembed</b><small>The last vector is projected to one score (logit) per vocabulary token</small></div>
+          <div><span class="n">5</span><b>Softmax + sample</b><small>Logits → probabilities → one token chosen</small></div>
+        </div>`),
+      card("Inside one transformer block", "Two sub-layers, each with a shortcut", `
+        <ol class="steps3">
+          <li><span><b>Normalise</b> the vectors (${word("Layer Normalization", "layer norm")} or RMSNorm) to keep the numbers stable.</span></li>
+          <li><span><b>Masked multi-head self-attention.</b> Each token's vector is turned into three vectors: a <i>query</i> (what am I looking for?), a <i>key</i> (what do I contain?) and a <i>value</i> (what do I pass on?). Each token compares its query with the keys of all <i>earlier</i> tokens (the "causal mask" hides future tokens), turns the scores into weights with softmax, and takes a weighted mix of their values. Many heads do this in parallel with different patterns (${word("Multi-head Attention", "multi-head attention")}).</span></li>
+          <li><span><b>Add it back</b> to the original vector (a ${word("Residual Connection (Skip Connection)", "residual connection")}), so information can flow straight through deep stacks.</span></li>
+          <li><span><b>Normalise again, then a feed-forward network (MLP)</b>: each token's vector is expanded to roughly 4× wider, passed through a non-linearity, and projected back. Much of the model's stored knowledge lives in these MLP weights. In ${word("Mixture of Experts (MoE)", "mixture-of-experts")} models, a router picks a few expert MLPs per token.</span></li>
+          <li><span><b>Add back again</b> (second residual) and pass the result to the next block.</span></li>
+        </ol>
+        <pre class="pbox">attention(Q, K, V) = softmax( Q·Kᵀ / √d  + causal_mask ) · V</pre>
+        <p>Word order comes from ${word("Positional Encoding", "positional information")}, typically "rotary" position embeddings applied to the queries and keys.</p>`),
+      card("Two phases of generation", "Prefill, then decode, with the KV cache", `<ul>
+          <li><b>Prefill:</b> the whole prompt is processed in one big parallel pass. This is compute-heavy and determines how long you wait for the <i>first</i> token.</li>
+          <li><b>Decode:</b> after that, tokens are generated one at a time. Each step only computes the new token, because the keys and values of all previous tokens are saved in the <b>KV cache</b> instead of being recomputed.</li>
+          <li>The KV cache grows with every token in the context, which is why long contexts use a lot of GPU memory. Decoding is limited mostly by how fast weights and cache can be read from memory, not by raw compute.</li>
+        </ul>`),
+      card("Sampling", "Turning scores into one token", `<p>The final layer gives one ${word("Logit", "logit")} per token. Dividing logits by the ${word("Temperature", "temperature")} sharpens or flattens the distribution; ${word("Softmax", "softmax")} turns them into probabilities; ${word("Top-k Sampling", "top-k")} or ${word("Top-p (Nucleus) Sampling", "top-p")} trims unlikely tokens; then one is sampled. Temperature 0 means always taking the highest (greedy decoding). A ${word("Stop Sequence", "stop sequence")} or the end-of-turn token ends the reply.</p>`),
+      card("How the weights got there", "The training pipeline", `<div class="pipeline">
+          <div><span class="n">1</span><b>Pre-training</b><small>Trillions of tokens; minimise next-token cross-entropy loss; weeks to months on thousands of GPUs</small></div>
+          <div><span class="n">2</span><b>SFT</b><small>${word("Supervised Fine-tuning (SFT)", "Supervised fine-tuning")} on curated instruction–response pairs and chat formats</small></div>
+          <div><span class="n">3</span><b>Preference tuning</b><small>${word("RLHF (Reinforcement Learning from Human Feedback)", "RLHF")}, ${word("DPO (Direct Preference Optimization)", "DPO")} or ${word("Constitutional AI", "Constitutional AI")} for helpfulness and safety</small></div>
+          <div><span class="n">4</span><b>Reasoning RL</b><small>Reinforcement learning on checkable tasks (maths, code) to train longer step-by-step thinking</small></div>
+        </div>`),
+    ].join(""),
+
+    architect: () => [
+      card("Reference architecture", "The layers of a production chatbot", `
+        <div class="pipeline">
+          <div><span class="n">1</span><b>Client</b><small>Web or mobile UI; streams tokens; keeps conversation ID</small></div>
+          <div><span class="n">2</span><b>Gateway</b><small>Auth, rate limits, quotas, request logging, PII redaction</small></div>
+          <div><span class="n">3</span><b>Orchestrator</b><small>Builds the prompt: system prompt, history, memory, retrieval, tool definitions; runs the tool/agent loop</small></div>
+          <div><span class="n">4</span><b>Guardrails</b><small>Input and output checks: policy classifiers, injection detection, schema validation</small></div>
+          <div><span class="n">5</span><b>Model layer</b><small>Hosted API or self-hosted inference servers; routing between models</small></div>
+          <div><span class="n">6</span><b>Data plane</b><small>Vector store, document store, conversation store, tool back ends</small></div>
+          <div><span class="n">7</span><b>Ops</b><small>Tracing, token and cost metrics, evals, feedback capture</small></div>
+        </div>`),
+      card("Latency", "The numbers that matter, and what drives them", `
+        <div class="tbl"><table><thead><tr><th>Metric</th><th>Meaning</th><th>Driven by</th><th>Levers</th></tr></thead><tbody>
+          <tr><td>TTFT</td><td>Time to first token</td><td>Queueing + prefill (grows with input length)</td><td>Shorter prompts, prompt/prefix caching, capacity</td></tr>
+          <tr><td>TPOT / ITL</td><td>Time per output token</td><td>Decode: memory bandwidth, model size, batch load</td><td>Smaller or quantized model, speculative decoding</td></tr>
+          <tr><td>Throughput</td><td>Tokens/s per GPU or per dollar</td><td>Batching efficiency, KV cache memory</td><td>Continuous batching, paged KV cache, GQA</td></tr>
+          <tr><td>End-to-end</td><td>Total response time</td><td>TTFT + output tokens × TPOT + tool calls</td><td>Fewer tool round-trips, concise outputs, parallel tools</td></tr>
+        </tbody></table></div>
+        <p style="margin-top:10px">Rule of thumb: <b>input length drives the wait before streaming starts; output length drives how long streaming lasts.</b> Users perceive TTFT most.</p>`),
+      card("Capacity planning", "Why GPU memory, not just compute, is the limit", `<p>A GPU must hold the model weights plus the KV cache of every request it serves at once. KV cache per token ≈ <b>2 (K and V) × layers × KV heads × head dimension × bytes per number</b>.</p>
+        <pre class="pbox">Example: a 70B-class model, 80 layers, 8 KV heads (grouped-query attention), head dim 128, 16-bit:
+2 × 80 × 8 × 128 × 2 bytes ≈ 0.33 MB per token
+→ a 32,000-token conversation ≈ 10 GB of KV cache, for one user</pre>
+        <p>So long contexts directly reduce how many users each GPU can serve. Inference servers such as vLLM, TensorRT-LLM and SGLang use <b>continuous batching</b> (new requests join a running batch), <b>paged KV cache</b> (memory allocated in blocks, like an operating system) and <b>prefix caching</b> to raise throughput. Large models are split across GPUs with tensor and pipeline parallelism.</p>`),
+      card("Key design decisions", "Choosing the approach", `<div class="tbl"><table><thead><tr><th>Decision</th><th>Options</th><th>Choose based on</th></tr></thead><tbody>
+          <tr><td>Hosting</td><td>Hosted API · managed cloud · self-hosted open weights</td><td>Data residency and privacy, cost at your volume, need for customisation, ops capacity</td></tr>
+          <tr><td>Adding knowledge</td><td>Long context · RAG · fine-tuning</td><td>Use RAG for changing or large knowledge with citations; fine-tune for style, format or narrow skills; long context for small, one-off documents</td></tr>
+          <tr><td>Model size</td><td>One large model · routing small → large</td><td>Route easy or high-volume requests to a small fast model, escalate hard ones; measure quality per route</td></tr>
+          <tr><td>Determinism</td><td>Temperature, structured output, validation</td><td>Low temperature plus schema-constrained output plus code validation for anything a system consumes</td></tr>
+          <tr><td>Agency</td><td>Single call · fixed workflow · autonomous agent</td><td>Prefer the simplest that works; agents need step limits, timeouts, approval for side-effects and full tracing</td></tr>
+        </tbody></table></div>`),
+      card("Cost", "Modelling the bill", `<p>Cost per conversation ≈ Σ over turns of (input tokens × input price + output tokens × output price). Because history is re-sent each turn, input tokens grow roughly with the square of the number of turns in a long chat. Levers: prompt caching for the stable prefix (system prompt, tools, documents), history summarisation, retrieving fewer but better passages, smaller models for simple steps, and output length limits.</p>`),
+      card("Security and reliability", "What can go wrong in production", `<ul>
+          <li><b>${word("Prompt Injection", "Prompt injection")}:</b> instructions hidden in emails, web pages or documents the model reads. Treat all retrieved and tool content as untrusted data; never let model output alone trigger irreversible actions; apply least-privilege to tools; require human approval for side-effects.</li>
+          <li><b>Data leakage:</b> redact PII before calls where possible, control logging and retention, check provider data-use terms, keep tenant data separated in retrieval.</li>
+          <li><b>Hallucination at scale:</b> grounding with citations, answer-only-from-sources policies, confidence and refusal behaviour, and automated checks on outputs.</li>
+          <li><b>Availability:</b> timeouts, retries with backoff, fallback to a secondary model or provider, graceful degradation, and rate-limit handling.</li>
+          <li><b>Quality drift:</b> model versions change. Pin versions, keep a regression ${word("Evals", "eval")} suite of real cases, and re-run it before every model or prompt change.</li>
+        </ul>`),
+      card("Observability", "What an architect insists on logging", `<p>For every request: trace ID, model and version, prompt template version, input and output token counts, TTFT and total latency, tool calls and their latency, retrieval hits, stop reason, guardrail decisions, cost, and user feedback. Without this, you can't debug, control cost, or prove quality.</p>`),
+    ].join(""),
+  };
+  const deep = () => `<section class="m2sec">
+    <header><p class="kicker">Deep dive · from basic to architect</p><h2>Inside a chatbot: one message, followed all the way</h2>
+      <p>Each level follows the same journey, from pressing Send to reading the reply, one layer deeper. Start at Level 1 and only move on once it feels obvious.</p></header>
+    <div class="tech" style="grid-template-columns:repeat(auto-fit,minmax(170px,1fr))">${DLEVELS.map(([k, n, d]) => `<button class="rbtn" data-dlv="${k}" aria-pressed="${dlv === k}" style="${dlv === k ? "border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent)" : ""}"><b>${n}</b><small>${d}</small></button>`).join("")}</div>
+    ${DEEP[dlv]()}
+    <div class="btnrow">${DLEVELS.findIndex((x) => x[0] === dlv) > 0 ? `<button class="btn" data-dlv="${DLEVELS[DLEVELS.findIndex((x) => x[0] === dlv) - 1][0]}">← Previous level</button>` : ""}${DLEVELS.findIndex((x) => x[0] === dlv) < DLEVELS.length - 1 ? `<button class="btn primary" data-dlv="${DLEVELS[DLEVELS.findIndex((x) => x[0] === dlv) + 1][0]}">Next level →</button>` : `<button class="btn primary" data-tab="quiz">Test yourself: Architect quiz</button>`}</div>
   </section>`;
 
   /* ---------- 2. Tokenizer lab (real GPT-4 tokenizer, loaded on demand) ---------- */
@@ -353,10 +500,29 @@ The cat sat on the mat  →  and (21%)   .  (19%)   while (8%)   …</pre>
     { q: "What do scaling laws describe?", o: ["How error falls predictably as parameters, data and compute grow", "The legal limits on how large an AI model is allowed to be", "How fast a model's answers get longer as it gets bigger", "The maximum number of users a model can serve at once"], why: "These smooth trends help labs decide how big to make a model and how much data to use." },
     { q: "Which property of LLMs does prompt injection exploit?", o: ["Instructions and data reach the model as the same stream of tokens", "Models are trained to always obey the last person who speaks to them", "Models can't read text that is hidden inside long documents", "Models trust anything written in capital letters more highly"], why: "There's no built-in boundary between your instructions and the text it reads, so hidden instructions can slip in." },
   ];
+  // Architect: serving, capacity, cost, design decisions and security for production chatbots
+  const QUIZ_ARCH = [
+    { q: "Users complain the chatbot takes too long before the first word appears. Prompts are 30,000 tokens long. What mainly drives this wait?", o: ["Prefill of the long input, plus queueing", "The decode speed of each output token", "The temperature setting of the model", "The size of the model's vocabulary"], why: "Time to first token is dominated by processing the whole input (prefill). Shorter prompts and prefix caching cut it." },
+    { q: "Why does a chatbot conversation get more expensive with every turn, even if the user's messages are short?", o: ["The full history is re-sent as input tokens on every turn", "Providers charge more for longer conversations as a penalty", "The model stores each turn and bills for the storage space", "Output tokens get more expensive later in a conversation"], why: "The model is stateless, so the app re-sends all previous turns. Input tokens grow with each turn." },
+    { q: "What is the KV cache?", o: ["Saved keys and values of earlier tokens, so each new token doesn't recompute them", "A cache of the most popular user questions and the answers that were given to them last time", "A store of the model's weights kept on disk for faster start-up times", "A list of key-value settings such as temperature and max tokens"], why: "It turns decoding into one new token's work per step, at the cost of GPU memory that grows with context length." },
+    { q: "A 70B-class model needs about 0.33 MB of KV cache per token. Roughly how much does one 32,000-token conversation need?", o: ["About 10 GB", "About 10 MB", "About 1 GB", "About 100 GB"], why: "0.33 MB × 32,000 ≈ 10.5 GB, for a single user. This is why long contexts limit how many users each GPU can serve." },
+    { q: "Which technique lets an inference server add new requests to a batch that is already running?", o: ["Continuous batching", "Speculative decoding", "Grouped-query attention", "Knowledge distillation"], why: "Continuous (in-flight) batching keeps the GPU busy by letting requests join and leave the batch at each step." },
+    { q: "Your system prompt and tool definitions are 6,000 tokens and identical on every request. What cuts their cost and latency most?", o: ["Prompt (prefix) caching of the shared beginning", "Raising the temperature to finish answers faster", "Moving the system prompt to the end of the input", "Splitting the system prompt across several turns"], why: "Providers and inference servers can reuse the processed prefix, so you pay less and the first token arrives sooner." },
+    { q: "A company's policy documents change weekly and answers must cite sources. What is usually the best way to add this knowledge?", o: ["Retrieval-augmented generation (RAG) over the documents", "Fine-tune the model every week on the new documents", "Paste every document into every prompt, all the time", "Rely on the model's training data and hope it is current"], why: "RAG keeps knowledge fresh without retraining and lets you cite the exact passages used. Fine-tuning is better for style and narrow skills." },
+    { q: "Most requests are simple FAQs; a few need complex reasoning. What is a sound cost and latency design?", o: ["Route easy requests to a small model and escalate hard ones to a large one", "Send everything to the largest model so that the quality of every answer is always maximised", "Send everything to the smallest model and accept lower quality overall", "Run every request through three models and pick the longest answer"], why: "Model routing matches cost to difficulty. You must measure quality per route to make sure escalation works." },
+    { q: "An agent can send emails on users' behalf. A web page it reads contains hidden instructions to email customer data elsewhere. What is the essential control?", o: ["Least-privilege tools and human approval for side-effects, treating fetched content as untrusted", "A stronger system prompt telling the agent never to follow instructions found on web pages", "A bigger, more capable model that is better at recognising when it is being tricked", "Blocking any web page that contains the words \"ignore\" or \"instructions\""], why: "Prompt rules and smarter models reduce the risk but can be bypassed. Architecture must stop untrusted text from triggering irreversible actions." },
+    { q: "Outputs must be consumed by another system as JSON. Which combination is most robust?", o: ["Low temperature, schema-constrained output, and validation with retry in code", "High temperature, a polite request for JSON, and trusting the result", "A long example in the prompt and no validation, to save latency", "Asking the model to carefully double-check its own JSON output before it sends the answer"], why: "Constrain generation where the platform supports it, and always validate. Never assume the format was followed." },
+    { q: "The model provider releases a new version and your team wants to switch. What should happen first?", o: ["Run your regression eval suite of real cases on the new version and compare", "Switch immediately, because newer model versions are always better at every single task", "Ask a few colleagues to try it for an afternoon and report back", "Switch and roll back only if a customer complains about the change"], why: "Model changes can improve some cases and break others. Pinned versions plus regression evals make upgrades safe." },
+    { q: "Why is decoding usually limited by memory bandwidth rather than raw compute?", o: ["Each new token needs the weights and KV cache read from memory for little computation", "Generating text needs far more maths per token than processing the input does", "GPUs can only perform calculations on one token at a time while decoding", "The vocabulary is too large to fit into the GPU's fast on-chip memory"], why: "Per decode step, huge amounts of data are read for one token's worth of maths, so memory speed is the bottleneck. Batching amortises it." },
+    { q: "What does speculative decoding do?", o: ["A small draft model proposes several tokens; the large model verifies them in one pass", "The model guesses what the user's next question will be and prepares a full answer in advance", "It skips the prefill phase by reusing answers from similar earlier requests", "It lowers precision on the fly whenever the server is under heavy load"], why: "Verifying several drafted tokens at once speeds up decoding without changing the large model's output distribution." },
+    { q: "Which set of signals is most important to log for every production LLM request?", o: ["Model version, prompt version, token counts, latency, tool calls, stop reason, cost", "The user's full browser history and device details, collected for better personalisation of answers", "Only errors, because logging successful requests wastes storage and money", "Only the final answer text, since the prompt can always be rebuilt later"], why: "These let you debug, control cost, compare versions and prove quality, while keeping sensitive data handling deliberate." },
+    { q: "Regulations require customer data to stay in your region and never be used for training. What is the right first step?", o: ["Choose a deployment whose data residency, retention and training terms meet the rules", "Ask the model in the system prompt not to store or learn from the data", "Encrypt the prompt so the provider can't read it while it is processing", "Remove the customer's name from the first message of each chat"], why: "Compliance is an architecture and contract decision: region, retention, training use and access controls, not a prompt instruction." },
+  ];
   const LEVELS = {
     beginner: { name: "Beginner", desc: "The basics: next-token prediction, tokens, training stages, temperature, the context window and why LLMs hallucinate.", qs: QUIZ },
     intermediate: { name: "Intermediate", desc: "Applying the ideas: explaining odd behaviour like letter counting, changing answers, attention and context, and base vs chat models.", qs: QUIZ_MID },
     advanced: { name: "Advanced", desc: "Under the hood: logits and softmax, sampling methods, attention costs, efficient models, reasoning models and safety.", qs: QUIZ_ADV },
+    architect: { name: "Architect", desc: "Running chatbots in production: latency, KV cache and capacity, batching and caching, cost, RAG vs fine-tuning, routing, security and observability.", qs: QUIZ_ARCH },
   };
   const QZ = { level: null, qs: null, i: 0, picked: null, score: 0, missed: [], save: null };
   const bestKey = (level) => "wb-m4-best-" + level;
@@ -366,7 +532,7 @@ The cat sat on the mat  →  and (21%)   .  (19%)   while (8%)   …</pre>
   const quiz = () => {
     if (!QZ.qs) {
       return `<section class="m2sec" style="max-width:none"><header><p class="kicker">Check your understanding</p><h2>Module 4 quiz</h2>
-        <p>Three levels of 15 questions each. Start with Beginner and work up. Your score and answers go to your teacher.</p></header>
+        <p>Four levels of 15 questions each, from Beginner to Architect. Start with Beginner and work up. Your score and answers go to your teacher.</p></header>
         <div class="tech">${Object.entries(LEVELS).map(([k, L], i) => {
           const best = store.get(bestKey(k), null);
           return `<div class="card2"><p class="kicker">Level ${i + 1}</p><h3>${L.name}</h3><p class="when">${esc(L.desc)}</p>
@@ -407,7 +573,7 @@ The cat sat on the mat  →  and (21%)   .  (19%)   while (8%)   …</pre>
   }
 
   /* ---------- Rendering and events ---------- */
-  const VIEWS = { learn: lesson, tokens, next, attn, halluc, ctx, task, quiz };
+  const VIEWS = { learn: lesson, deep, tokens, next, attn, halluc, ctx, task, quiz };
   function render() {
     $("m4body").innerHTML = `<nav class="m2tabs" role="tablist">${TABS.map(([k, l], i) => `<button role="tab" data-tab="${k}" aria-selected="${tab === k}"><span class="step">${i + 1}</span>${l}</button>`).join("")}</nav>${VIEWS[tab]()}`;
     if (tab === "tokens") updateTokens();
@@ -422,6 +588,7 @@ The cat sat on the mat  →  and (21%)   .  (19%)   while (8%)   …</pre>
     if (e.target.closest("[data-gen]")) { lastPick = sample(NEXT[nextIdx], temp); samples.push(lastPick); samples = samples.slice(-30); refreshNext(); return; }
     if (e.target.closest("[data-gen10]")) { for (let i = 0; i < 10; i++) { lastPick = sample(NEXT[nextIdx], temp); samples.push(lastPick); } samples = samples.slice(-30); refreshNext(); return; }
     if (e.target.closest("[data-genclear]")) { samples = []; lastPick = null; refreshNext(); return; }
+    const dl = e.target.closest("[data-dlv]"); if (dl) { dlv = dl.dataset.dlv; store.set("wb-m4-dlv", dlv); render(); window.scrollTo({ top: $("m4").offsetTop - 8 }); return; }
     const at = e.target.closest("[data-attn]"); if (at) { attnIdx = +at.dataset.attn; store.set("wb-m4-attni", attnIdx); attnWord = null; render(); return; }
     const aw = e.target.closest("[data-aword]"); if (aw) { attnWord = attnWord === aw.dataset.aword ? null : aw.dataset.aword; render(); return; }
     if (e.target.closest("[data-mars]")) { marsPick = sample(MARS, 1); render(); return; }
