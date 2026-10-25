@@ -26,6 +26,9 @@ Everything is managed in the Google Sheet.
 
 1. **Vocabulary:** learning web, learning path, glossary, flashcards and ring quizzes (`docs/index.html`).
 2. **Prompting & AI tools:** a lesson, a prompt builder, eight technique cards, a hallucination hunt, five practice tasks to hand in, and a 15-question quiz (`docs/module2.js`, `docs/module2.css`).
+3. **How machines learn:** a lesson (data → features & labels → training → model → prediction → testing), the three ways machines learn with a sorting check, a spam-filter lab students label, train and test themselves (with a confusion matrix), an overfitting lab, four real case studies, a Teachable Machine hand-in, and a 15-question quiz (`docs/module3.js`, `docs/module3.css`).
+
+Modules 2 and 3 save quizzes to **Module quizzes** and hand-ins to **Submissions**, labelled with the module name. To add another module, add a `data-module` button, a `lede` paragraph and an `m<n>` container in `index.html`, and register its render function in `window.WB_MODULES`.
 
 ## How it fits together
 

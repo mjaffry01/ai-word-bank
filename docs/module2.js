@@ -14,13 +14,18 @@
   let tab = store.get("wb-m2-tab", "learn");
 
   /* ---------- Module switching ---------- */
+  // Shows one module at a time. Each later module registers its render function in window.WB_MODULES.
+  const MODULES = [...document.querySelectorAll("[data-module]")].map((b) => b.dataset.module);
   function setModule(m) {
-    $("m1").hidden = m !== "1"; $("m2").hidden = m !== "2";
-    $("lede1").hidden = m !== "1"; $("lede2").hidden = m !== "2";
+    if (!MODULES.includes(m)) m = "1";
+    MODULES.forEach((k) => { $("m" + k).hidden = k !== m; $("lede" + k).hidden = k !== m; });
     document.querySelectorAll("[data-module]").forEach((b) => b.setAttribute("aria-pressed", b.dataset.module === m));
     store.set("wb-module", m);
-    if (m === "1") window.WB && window.WB.refresh && window.WB.refresh(); else render();
+    if (m === "1") { if (window.WB && window.WB.refresh) window.WB.refresh(); }
+    else if (m === "2") render();
+    else if (window.WB_MODULES && window.WB_MODULES[m]) window.WB_MODULES[m]();
   }
+  window.WB_setModule = setModule;
   document.querySelector(".modnav").addEventListener("click", (e) => {
     const b = e.target.closest("[data-module]");
     if (b) setModule(b.dataset.module);
