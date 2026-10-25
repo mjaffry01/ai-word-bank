@@ -19,7 +19,7 @@ Everything is managed in the Google Sheet.
 - **Attempts:** one row per finished quiz, with the date, student, ring, score and percent.
 - **Answers:** one row per question, showing the question, the student's answer, the right answer and whether it was correct. Use **Data → Create a filter** to look at one student or one ring.
 - **Summary:** each student's best score per ring. It updates by itself.
-- **Module quizzes:** one row per finished quiz from Module 2 onward, with a **Level** column (Beginner, Intermediate or Advanced for Module 2). Each answer is also in **Answers**, with the module and level in the Ring column.
+- **Module quizzes:** one row per finished quiz from Module 2 onward, with a **Level** column (Beginner, Intermediate or Advanced for Modules 2 and 3). Each answer is also in **Answers**, with the module and level in the Ring column.
 - **Module summary:** each student's best score per module and level. It updates by itself.
 - **Submissions:** practice tasks students hand in, showing the task, the AI tool used, their final prompt and what they changed. The tab appears after the first hand-in.
 
