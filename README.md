@@ -22,6 +22,7 @@ Everything is managed in the Google Sheet.
 - **Module quizzes:** one row per finished quiz from Module 2 onward, with a **Level** column (Beginner, Intermediate or Advanced). Each answer is also in **Answers**, with the module and level in the Ring column.
 - **Module summary:** each student's best score per module and level. It updates by itself.
 - **Submissions:** practice tasks students hand in, showing the task, the AI tool used, their final prompt and what they changed. The tab appears after the first hand-in.
+- **Certificates:** one row per certificate of completion (a test passed with 60% or more): its ID, date, student, test and score. Set **Status** to `revoked` to cancel a certificate; its public page (`cert.html?id=…`) then shows it as revoked. The tab appears after the first certificate. Certificates are signed with `docs/signature.png` (transparent PNG) and the name and title set at the top of `docs/cert.js`.
 
 ## Modules
 
