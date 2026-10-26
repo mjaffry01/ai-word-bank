@@ -106,10 +106,11 @@
   /* ---------- Supervised demos ---------- */
   add({
     id: "linreg", group: "sup", star: true, name: "Linear Regression", kind: "Regression", term: "Linear Regression",
-    how: "Finds the straight line that makes the total squared distance between the line and the points (the dashed red errors) as small as possible. The line is the model: slope and intercept are its two parameters.",
-    try: "Click to add points anywhere. Add one far-away point and watch it drag the whole line: squared errors make linear regression sensitive to outliers.",
+    how: "Your turn, with the same estate-agent example. Each dot is a house (size across, price up). Whatever houses you add, linear regression instantly finds the best line through them: the one with the smallest average squared miss. The red dashed lines are the misses.",
+    try: "Click on the chart to add a house. Then add one strange house far from the others (a tiny house that sold for a fortune) and watch it drag the whole line towards it: because misses are squared, one big miss pulls hard. Press New data for a different set of sales.",
     mount(host, ctl) {
       const pal = palette(), P = plot(host);
+      const axes = () => { P.text("size (m²) →", 0.98, 0.03, pal.muted, 11, "right"); P.text("↑ price", 0.01, 0.96, pal.muted, 11); };
       let pts = Array.from({ length: 14 }, () => { const x = rand(0.05, 0.95); return { x, y: clamp01(0.18 + 0.6 * x + gauss() * 0.07) }; });
       const ui = panel(ctl, btn("new", "New data") + btn("clear", "Clear"));
       function draw() {
@@ -120,9 +121,12 @@
           pts.forEach((p) => P.line(p.x, p.y, p.x, a + b * p.x, pal.bad, 1.5, [4, 3]));
           P.line(0, a, 1, a + b, pal.fg, 3);
           const mse = pts.reduce((s, p) => s + (p.y - (a + b * p.x)) ** 2, 0) / n;
-          ui.info(`y = ${a.toFixed(2)} + ${b.toFixed(2)} × x\npoints: ${n}\nmean squared error: ${mse.toFixed(4)}`);
-        } else ui.info("Add at least 2 points.");
+          // Same scale as the walkthrough: 50–250 m² across, $100k–$600k up
+          const start = 100 + 500 * a - 125 * b, per = 2.5 * b;
+          ui.info(`best line:\nprice = ${start < 0 ? "−" : ""}$${Math.abs(Math.round(start))}k + $${per.toFixed(1)}k × size\n\nhouses: ${n}\ntypical miss: $${Math.round(Math.sqrt(mse) * 500)}k`);
+        } else ui.info("Add at least 2 houses.");
         pts.forEach((p) => P.dot(p.x, p.y, pal.a, 5));
+        axes();
       }
       P.c.addEventListener("click", (e) => { pts.push(P.at(e)); draw(); });
       ui.on("new", "click", () => { pts = Array.from({ length: 14 }, () => { const x = rand(0.05, 0.95), s = rand(-0.5, 0.8); return { x, y: clamp01(0.3 + s * x + gauss() * 0.07) }; }); draw(); });
@@ -133,8 +137,8 @@
 
   add({
     id: "logreg", group: "sup", star: true, name: "Logistic Regression", kind: "Classification", term: "Logistic Regression",
-    how: "Combines the inputs into a single score with learned weights, then squashes it into a probability between 0 and 1 with the sigmoid curve. Training nudges the weights by gradient descent to reduce errors. The boundary is where probability = 50%, always a straight line.",
-    try: "Press Train and watch the boundary rotate into place. Then switch to XOR data: no straight line can separate it, which is why we need trees or neural networks.",
+    how: "Your turn, now with two inputs instead of one. Think of each dot as a student placed by hours studied (across) and hours slept (up); teal and red are the two results. The score becomes w₁ × study + w₂ × sleep + b, the sigmoid turns it into a chance, and the shading shows that chance everywhere. The line where the chance is exactly 50% is the decision boundary, and it is always straight.",
+    try: "Press Train and watch the boundary turn into place as training reduces the mistakes. Then press XOR data: one colour sits in two opposite corners and the other colour in the remaining two. No single straight line can split that, so logistic regression fails, which is exactly when you need a decision tree or a neural network.",
     mount(host, ctl) {
       const pal = palette(), P = plot(host);
       let pts = twoBlobs(), w = [0, 0, 0], step = 0, running = false, cls = 0;
@@ -147,7 +151,8 @@
         if (Math.abs(w[2]) > 1e-6) { const yAt = (x) => 0.5 - (w[0] + w[1] * (x - 0.5) * 4) / (w[2] * 4); P.line(0, yAt(0), 1, yAt(1), pal.fg, 2.5); }
         pts.forEach((p) => P.dot(p.x, p.y, p.c ? pal.b : pal.a, 5, pal.bg));
         const acc = pts.filter((p) => (prob(p) >= 0.5 ? 1 : 0) === p.c).length / (pts.length || 1);
-        ui.info(`training steps: ${step}\nweights: ${w.map((v) => v.toFixed(2)).join(", ")}\naccuracy: ${Math.round(acc * 100)}%`);
+        P.text("hours studied →", 0.98, 0.03, pal.muted, 11, "right"); P.text("↑ hours slept", 0.01, 0.96, pal.muted, 11);
+        ui.info(`training steps: ${step}\nscore = ${w[1].toFixed(2)} × study\n      + ${w[2].toFixed(2)} × sleep\n      + ${w[0].toFixed(2)}\ncorrect: ${Math.round(acc * 100)}%`);
       }
       const stop = loop(() => { if (running) { for (let i = 0; i < 4; i++) gd(); if (step > 600) { running = false; ui.q("train").textContent = "Train"; } draw(); } });
       ui.on("train", "click", (e, b) => { running = !running; if (step > 600) step = 0; b.textContent = running ? "Pause" : "Train"; });
