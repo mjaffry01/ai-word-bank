@@ -6,6 +6,7 @@
  *   Attempts  - one row per finished ring quiz (score and percent).
  *   Answers   - one row per question answered (what was chosen, the right answer).
  *   Summary   - best score per student per ring (formula, updates itself).
+ *   Certificates - one row per certificate of completion (60%+ on a test). Set Status to "revoked" to cancel one.
  *
  * Students sign in with Google on the website; the site sends their Google ID token,
  * which this script checks with Google before reading or writing anything.
@@ -24,6 +25,7 @@ const HEADERS = {
   // Later modules (Module 2 onward): one row per finished module quiz, and one per practice task handed in.
   'Module quizzes': ['Attempt ID', 'Date', 'Email', 'Name', 'Module', 'Level', 'Score', 'Total', 'Percent'],
   Submissions: ['Date', 'Email', 'Name', 'Module', 'Task', 'AI tool used', 'Final prompt', 'What changed and why'],
+  Certificates: ['Certificate ID', 'Issued', 'Email', 'Name', 'Test', 'Score', 'Total', 'Percent', 'Status'],
 };
 
 /** A results tab, created with its headers the first time it is needed. */
@@ -35,6 +37,7 @@ function sheet(name) {
     sh.appendRow(HEADERS[name]);
     sh.setFrozenRows(1);
     sh.getRange(1, 1, 1, HEADERS[name].length).setFontWeight('bold').setBackground('#e8f1f0');
+    if (name === 'Certificates') sh.getRange('H2:H').setNumberFormat('0%');
     if (name === 'Module quizzes') sh.getRange('I2:I').setNumberFormat('0%');
     sh.getRange(name === 'Submissions' ? 'A2:A' : 'B2:B').setNumberFormat('yyyy-mm-dd hh:mm');
   } else if (name === 'Module quizzes' && sh.getRange(1, 6).getValue() !== 'Level') {
@@ -104,6 +107,8 @@ function doGet() {
 function doPost(e) {
   try {
     const req = JSON.parse((e && e.postData && e.postData.contents) || '{}');
+    // Public: anyone holding a certificate link can check it (no sign-in, and no email is returned)
+    if (req.action === 'verifyCertificate') return json(verifyCertificate(req.id));
     // A fresh Google sign-in starts a 48-hour session; later requests send the session instead.
     const fromGoogle = !req.session;
     const who = fromGoogle ? verifyGoogleToken(req.token) : verifySession(req.session);
@@ -115,6 +120,7 @@ function doPost(e) {
     if (req.action === 'saveAttempt') return json(saveAttempt(who, req.result));
     if (req.action === 'saveModuleQuiz') return json(saveModuleQuiz(who, req.result));
     if (req.action === 'saveSubmission') return json(saveSubmission(who, req.submission));
+    if (req.action === 'issueCertificate') return json(issueCertificate(who, req.cert));
     return json({ ok: false, error: 'unknown_action' });
   } catch (err) {
     return json({ ok: false, error: String((err && err.message) || err) });
@@ -263,6 +269,81 @@ function saveSubmission(who, s) {
     lock.releaseLock();
   }
   return { ok: true };
+}
+
+const CERT_PASS = 0.6;
+
+/**
+ * Issues a certificate for a result that is already recorded in the Sheet (60% or more).
+ * c = { title, score, total, match: { kind: module, module, level } | { kind: ring, ring } }.
+ * Asking again for the same result returns the same certificate instead of a new one.
+ */
+function issueCertificate(who, c) {
+  if (studentStatus(who.email) !== approved) return { ok: false, error: not_approved };
+  const isInt = (n) => typeof n === number && Math.floor(n) === n;
+  if (!c || typeof c.title !== string || !c.title || !isInt(c.total) || c.total < 1 || c.total > 200 ||
+      !isInt(c.score) || c.score < 0 || c.score > c.total || !c.match) {
+    return { ok: false, error: invalid_certificate };
+  }
+  if (c.score / c.total < CERT_PASS) return { ok: false, error: below_pass_mark };
+  if (!hasRecordedResult(who.email, c)) return { ok: false, error: no_matching_result };
+  const title = safe(c.title, 120);
+  const lock = LockService.getScriptLock();
+  lock.waitLock(20000);
+  try {
+    const sh = sheet(Certificates);
+    const n = sh.getLastRow() - 1;
+    if (n > 0) {
+      // Same student, test and score in the last day: hand back the certificate already issued
+      const rows = sh.getRange(2, 1, n, 9).getValues(), dayAgo = Date.now() - 24 * 3600 * 1000;
+      for (let i = rows.length - 1; i >= 0; i--) {
+        const r = rows[i];
+        if (String(r[2]).toLowerCase() === who.email && r[4] === title && Number(r[5]) === c.score && Number(r[6]) === c.total && new Date(r[1]).getTime() > dayAgo) {
+          return { ok: true, id: String(r[0]), name: String(r[3]), issued: isoDate(r[1]) };
+        }
+      }
+    }
+    const hex = Utilities.getUuid().replace(/-/g, '').toUpperCase();
+    const id = 'AIC-' + hex.slice(0, 5) + '-' + hex.slice(5, 10);
+    const now = new Date();
+    sh.appendRow([id, now, who.email, safe(who.name), title, c.score, c.total, c.score / c.total, 'valid']);
+    return { ok: true, id: id, name: who.name, issued: isoDate(now) };
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+/** True when the Sheet holds this student's finished quiz with exactly this score, from the last two hours. */
+function hasRecordedResult(email, c) {
+  const m = c.match, since = Date.now() - 2 * 3600 * 1000;
+  const tab = m.kind === 'ring' ? 'Attempts' : m.kind === 'module' ? 'Module quizzes' : null;
+  if (!tab) return false;
+  const sh = book().getSheetByName(tab);
+  if (!sh || sh.getLastRow() < 2) return false;
+  const rows = sh.getRange(2, 1, sh.getLastRow() - 1, 9).getValues();
+  return rows.some((r) => String(r[2]).toLowerCase() === email && new Date(r[1]).getTime() > since &&
+    Number(r[6]) === c.score && Number(r[7]) === c.total &&
+    (m.kind === 'ring' ? Number(r[4]) === Number(m.ring) : String(r[4]) === String(m.module) && String(r[5]) === String(m.level || 'Standard')));
+}
+
+/** Public lookup for the certificate page: the recorded details, without the email address. */
+function verifyCertificate(id) {
+  if (typeof id !== 'string' || !/^AIC-[0-9A-F]{5}-[0-9A-F]{5}$/.test(id)) return { ok: true, found: false };
+  const sh = book().getSheetByName('Certificates');
+  if (!sh || sh.getLastRow() < 2) return { ok: true, found: false };
+  const rows = sh.getRange(2, 1, sh.getLastRow() - 1, 9).getValues();
+  for (let i = 0; i < rows.length; i++) {
+    const r = rows[i];
+    if (String(r[0]) === id) {
+      return { ok: true, found: true, id: id, name: String(r[3]), test: String(r[4]).replace(/^'/, ''), score: Number(r[5]), total: Number(r[6]),
+        issued: isoDate(r[1]), status: String(r[8] || 'valid').trim().toLowerCase() === 'revoked' ? 'revoked' : 'valid' };
+    }
+  }
+  return { ok: true, found: false };
+}
+
+function isoDate(d) {
+  return Utilities.formatDate(new Date(d), Session.getScriptTimeZone(), 'yyyy-MM-dd');
 }
 
 function findStudentRow(sh, email) {
