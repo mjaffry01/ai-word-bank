@@ -1500,7 +1500,7 @@ function renderQuiz(){
   if(QZ.i>=n){
     const pct=Math.round(QZ.score/n*100);
     const msg=pct===100?"Perfect. This ring is solid; move outward.":pct>=80?"Strong result. Review the misses below, then move to the next ring.":pct>=50?"Getting there. Go over the misses and try this ring again.":"Spend more time on this ring, and on the connecting words it builds on, before moving on.";
-    m.innerHTML=`<div class="quiz">${head}<div class="qcard"><p class="qkind">Result</p><div class="score">${QZ.score} / ${n}</div>${QZ.save?`<p class="savestate${QZ.save==="failed"?" bad":""}">${{saving:"Saving your result…",saved:"Result saved. Your teacher can see it.",failed:"This result could not be saved. Check your connection and take the quiz again."}[QZ.save]}</p>`:""}<p>${msg}</p>
+    m.innerHTML=`<div class="quiz">${head}<div class="qcard"><p class="qkind">Result</p><div class="score">${QZ.score} / ${n}</div>${QZ.save?`<p class="savestate${QZ.save==="failed"?" bad":""}">${{saving:"Saving your result…",saved:"Result saved. Your teacher can see it.",failed:"This result could not be saved. Check your connection and take the quiz again."}[QZ.save]}</p>`:""}<p>${msg}</p>${window.WB_CERT?window.WB_CERT.block({title:`Module 1: Vocabulary · Ring ${QZ.ring} (${TIERS[t][0]}) quiz`,score:QZ.score,total:n}):""}
       ${QZ.missed.length?`<p class="qkind" style="margin-top:20px">Review these</p><ul class="missed">${QZ.missed.map(q=>`<li><div class="q">${q.prompt.replace(/<blockquote>.*<\/blockquote>/,"")}</div><div>${q.explain}</div></li>`).join("")}</ul>`:""}
       <div class="qfoot"><button class="btn" data-qring="${QZ.ring}">Retry ring ${QZ.ring}</button>${QZ.ring<maxD?`<button class="btn primary" data-qring="${QZ.ring+1}">Next: ring ${QZ.ring+1}</button>`:""}</div></div></div>`;
     return;
@@ -1552,6 +1552,7 @@ document.addEventListener("keydown",e=>{if(document.getElementById("m1").hidden)
 renderChips();render();
 </script>
 
+<script src="cert.js"></script>
 <script src="nav.js"></script>
 <script src="algos-core.js"></script>
 <script src="algos-treeanim.js"></script>

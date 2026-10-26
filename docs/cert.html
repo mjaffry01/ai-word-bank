@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Certificate of Completion · AI Concepts</title>
+<meta name="description" content="A certificate of completion from the AI Concepts course.">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Certificate of Completion · AI Concepts">
+<meta property="og:description" content="Awarded for completing a test in the AI Concepts course. Open the link to see the full certificate.">
+<meta property="og:image" content="https://mjaffry01.github.io/ai-word-bank/cert-preview.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Certificate of Completion · AI Concepts">
+<meta name="twitter:image" content="https://mjaffry01.github.io/ai-word-bank/cert-preview.png">
+<style>
+  :root{--bg:#f4f1ea;--fg:#1d2733;--muted:#5c6b7a;--line:#d9d2c3;--accent:#0b6e69;--good:#1d7a3e;--bad:#b3261e;--card:#fff}
+  @media (prefers-color-scheme:dark){:root{--bg:#121619;--fg:#e8e6e1;--muted:#9aa6b2;--line:#2c3439;--accent:#4fb3ab;--good:#5cc489;--bad:#ef7b72;--card:#1a2024}}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.55 system-ui,-apple-system,"Segoe UI",sans-serif}
+  main{max-width:980px;margin:0 auto;padding:28px 16px 48px}
+  h1{font:700 1.6rem Georgia,serif;margin:0 0 4px}
+  .sub{color:var(--muted);margin:0 0 18px}
+  canvas{display:block;width:100%;height:auto;border-radius:10px;box-shadow:0 8px 30px rgba(0,0,0,.18)}
+  .status{margin:18px 0;padding:12px 14px;border-radius:10px;border:1px solid var(--line);background:var(--card)}
+  .status.ok{border-left:5px solid var(--good)}
+  .status.bad{border-left:5px solid var(--bad)}
+  dl{display:grid;grid-template-columns:max-content 1fr;gap:6px 16px;margin:12px 0 0}
+  dt{color:var(--muted)}
+  dd{margin:0;font-weight:600}
+  .btns{display:flex;flex-wrap:wrap;gap:8px;margin-top:16px}
+  .btn{font:600 .95rem system-ui,sans-serif;padding:9px 16px;border-radius:999px;border:1.5px solid var(--accent);background:var(--card);color:var(--fg);text-decoration:none;cursor:pointer}
+  .btn.primary{background:var(--accent);color:#fff}
+  .note{color:var(--muted);font-size:.88rem;margin-top:18px}
+</style>
+</head>
+<body>
+<main>
+  <h1>Certificate of Completion</h1>
+  <p class="sub">Issued by the AI Concepts course</p>
+  <div id="out"></div>
+</main>
+<script src="cert.js"></script>
+<script>
+  // Shows the certificate described in the link (?c=…) and checks its ID against its details
+  (function () {
+    const out = document.getElementById("out"), C = window.WB_CERT;
+    const esc = (s) => String(s == null ? "" : s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+    let c = null;
+    try { c = C.unb64(new URLSearchParams(location.search).get("c") || ""); } catch (e) {}
+    if (!c || !c.n || !c.t || !(c.o > 0)) {
+      out.innerHTML = `<div class="status bad"><b>No certificate found in this link.</b> Check that the whole link was copied.</div><div class="btns"><a class="btn primary" href="./">Go to the AI Concepts course</a></div>`;
+      return;
+    }
+    const id = c.i, details = { n: c.n, t: c.t, s: c.s, o: c.o, d: c.d }, ok = id === C.code(details);
+    document.title = `${c.n} · ${c.t} · Certificate · AI Concepts`;
+    const cv = C.draw(details, document.createElement("canvas"));
+    out.appendChild(cv);
+    const box = document.createElement("div");
+    box.innerHTML = `<div class="status ${ok ? "ok" : "bad"}">${ok ? "<b>✓ Details match the certificate ID.</b>" : "<b>✗ This link has been altered:</b> its details don't match the certificate ID."}
+      <dl><dt>Name</dt><dd>${esc(c.n)}</dd><dt>Test</dt><dd>${esc(c.t)}</dd><dt>Score</dt><dd>${c.s} / ${c.o} (${C.pct(details)}%)</dd><dt>Date</dt><dd>${esc(C.longDate(c.d))}</dd><dt>Certificate ID</dt><dd>${esc(id || "")}</dd></dl></div>
+      <div class="btns"><button class="btn primary" id="dl">Download image</button><a class="btn" href="./">Take the AI Concepts course</a></div>
+      <p class="note">This page checks that the certificate's details and ID belong together. It is a simple check against casual editing, not a secure credential.</p>`;
+    out.appendChild(box);
+    document.getElementById("dl").addEventListener("click", () => { const a = document.createElement("a"); a.href = cv.toDataURL("image/png"); a.download = "AI-Concepts-certificate.png"; a.click(); });
+  })();
+</script>
+</body>
+</html>

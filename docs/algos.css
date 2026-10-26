@@ -216,3 +216,18 @@
 .popgrid>div{border:1px solid var(--accent);border-radius:10px;padding:9px 12px;background:color-mix(in srgb,var(--accent) 7%,transparent)}
 .popgrid b{display:block;margin-bottom:3px;font-size:1rem}
 .popgrid span{font-size:.9rem}
+
+/* Certificate of completion on quiz result screens */
+.certbox{margin:18px 0 6px;padding:14px 16px;border:1.5px solid #b8860b;border-radius:12px;background:color-mix(in srgb,#b8860b 7%,transparent)}
+.certbox .kicker{margin:0 0 8px}
+.certimg{display:block;width:100%;max-width:720px;height:auto;border-radius:8px;box-shadow:0 6px 22px rgba(0,0,0,.18);margin:4px 0 12px}
+.certbtns{display:flex;flex-wrap:wrap;gap:8px}
+.certbtns .btn{text-decoration:none}
+.certbtns .li{border-color:#0a66c2}
+.certbtns .fb{border-color:#1877f2}
+.certbtns .xx{border-color:var(--fg)}
+.certbtns .wa{border-color:#25d366}
+.certlbl{margin:14px 0 6px;font-weight:700}
+.certnote{font-size:.85rem;color:var(--muted);margin:12px 0 0}
+.certmiss{border-style:dashed}
+.certmiss p{margin:4px 0 0}
