@@ -56,10 +56,12 @@
     return S;
   }
 
+  A.storyKit = kit; // used by tests to draw scenes directly
+
   // view = { how, try?, note?, label?, scenes(S) → [{ t: title, dur: ms, cap: string | (k) => string, draw(S, k) }] }
   A.story = function (id, view) {
     A.addView(id, {
-      key: "anim", label: view.label || "Watch it work", order: 1, how: view.how, try: view.try || "Press Play and read the caption under each scene. Use Back and Next to go at your own pace, or click any scene in the list to jump to it.", note: view.note, wide: true,
+      key: "anim", label: view.label || "Watch it work", order: 1, scenes: view.scenes, how: view.how, try: view.try || "Press Play and read the caption under each scene. Use Back and Next to go at your own pace, or click any scene in the list to jump to it.", note: view.note, wide: true,
       mount(host, ctl) {
         const pal = palette();
         host.innerHTML = `<canvas class="algocanvas storycv"></canvas><p class="tcap storycap" aria-live="polite"></p>`;
