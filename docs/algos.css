@@ -104,3 +104,25 @@
 .cmpgrid>div{border-radius:8px;padding:8px 10px;background:color-mix(in srgb,var(--line) 35%,transparent)}
 .cmpgrid p{margin:0;font-size:.9rem}
 @media (max-width:720px){.kinds,.overlaps,.fams,.cmpgrid{grid-template-columns:1fr}}
+
+/* Animated decision tree */
+.tanim{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px;align-items:start}
+.tanim .lbl{margin:0 0 4px}
+.tscore{margin-top:2px}
+.tcap{margin:12px 0 0;padding:10px 12px;border-left:4px solid #e0a400;background:color-mix(in srgb,var(--line) 30%,transparent);border-radius:6px;font-size:1rem;min-height:3.2em}
+@media (max-width:980px){.tanim{grid-template-columns:1fr}}
+
+/* Animated random forest */
+.fgrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.fcell{position:relative;border:1px solid var(--line);border-radius:8px;padding:1px;background:var(--bg)}
+.fcell.on{border-color:#e0a400;box-shadow:0 0 0 2px #e0a400}
+.fcell canvas{display:block;border-radius:6px}
+.fname{position:absolute;left:5px;top:3px;font-size:.72rem;font-weight:600;color:var(--muted)}
+.fvb{position:absolute;right:4px;top:3px;font-size:.7rem;font-weight:700;padding:0 5px;border-radius:5px;color:#fff}
+.fvb.pass{background:var(--t0)}
+.fvb.fail{background:var(--t4)}
+.fbar{display:flex;height:12px;border-radius:6px;overflow:hidden;background:var(--line);margin-top:8px}
+.fbar i{display:block;height:100%;transition:width .3s}
+.fbar i.pass{background:var(--t0)}
+.fbar i.fail{background:var(--t4)}
+@media (max-width:520px){.fgrid{grid-template-columns:repeat(2,minmax(0,1fr))}}
