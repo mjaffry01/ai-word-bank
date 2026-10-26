@@ -9,7 +9,7 @@
     set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} },
   };
   const word = (term, label) => `<button class="wordlink" data-word="${esc(term)}" title="Open in the learning web">${esc(label || term)}</button>`;
-  const TABS = [["learn", "Lesson"], ["types", "Ways machines learn"], ["spam", "Train a model"], ["fit", "Overfitting lab"], ["wrong", "When models go wrong"], ["tm", "Teachable Machine"], ["quiz", "Quiz"]];
+  const TABS = [["learn", "Lesson"], ["types", "Ways machines learn"], ["algos", "Algorithms map"], ["spam", "Train a model"], ["fit", "Overfitting lab"], ["wrong", "When models go wrong"], ["tm", "Teachable Machine"], ["quiz", "Quiz"]];
   let tab = store.get("wb-m3-tab", "learn");
 
   /* ---------- 1. Lesson ---------- */
@@ -464,10 +464,15 @@ and keeps learning from new examples.</pre></div>
   }
 
   /* ---------- Rendering and events ---------- */
-  const VIEWS = { learn: lesson, types, spam, fit, wrong, tm, quiz };
+  /* ---------- Algorithms map: an interactive demo of every algorithm (algos-core.js, algos-uns.js, algos-rl.js) ---------- */
+  const algos = () => `<section class="m2sec" style="max-width:none">
+    <header><p class="kicker">Interactive · explore at your own pace</p><h2>Algorithms map: see every algorithm work</h2><p>Pick an algorithm on the left. Each one runs for real in your browser: click to add data, move the sliders, press Train or Step, and watch it learn. ★ marks the must-know algorithms to learn first.</p></header>
+    <div id="algoHost"></div></section>`;
+  const VIEWS = { learn: lesson, types, algos, spam, fit, wrong, tm, quiz };
   function render() {
     if (tab === "spam" && !model && Object.keys(labels).length && store.get("wb-m3-trained", false)) train();
     $("m3body").innerHTML = `<nav class="m2tabs" role="tablist">${TABS.map(([k, l], i) => `<button role="tab" data-tab="${k}" aria-selected="${tab === k}"><span class="step">${i + 1}</span>${l}</button>`).join("")}</nav>${VIEWS[tab]()}`;
+    if (window.WB_ALGOS) { if (tab === "algos" && $("algoHost")) window.WB_ALGOS.mount($("algoHost")); else window.WB_ALGOS.unmount(); }
   }
   function goTab(k) { tab = k; store.set("wb-m3-tab", k); render(); window.scrollTo({ top: $("m3").offsetTop - 8 }); }
 
