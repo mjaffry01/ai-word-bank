@@ -523,24 +523,35 @@
 
   /* ---------- Layout: picker + stage ---------- */
   const GROUPS = [["map", "Start here · the big picture"], ["sup","Supervised · with answers"], ["uns", "Unsupervised · without answers"], ["rl", "Reinforcement · trial and reward"]];
-  let current = store.get("wb-algo", "connect"), cleanup = null, root = null;
+  // A demo can grow extra tabs ("views"): its own demo becomes the "Experiment" tab, others are added with A.addView
+  A.addView = function (id, view) {
+    const a = A.list.find((x) => x.id === id); if (!a) return;
+    if (!a.views) a.views = [{ key: "play", label: "Experiment", order: 2, how: a.how, try: a.try, note: a.note, wide: a.wide, mount: a.mount }];
+    a.views.push(view); a.views.sort((p, q) => p.order - q.order);
+  };
+  const OLD = { treeanim: ["tree", "anim"], forestanim: ["forest", "anim"] };
+  let current = store.get("wb-algo", "connect"), views = store.get("wb-algo-view", {}), cleanup = null, root = null;
+  if (OLD[current]) { views[OLD[current][0]] = OLD[current][1]; current = OLD[current][0]; }
   function stage() {
     if (cleanup) { try { cleanup(); } catch (e) {} cleanup = null; }
     const a = A.list.find((x) => x.id === current) || A.list[0]; current = a.id;
+    const v = a.views ? a.views.find((x) => x.key === views[a.id]) || a.views[0] : a;
     root.querySelectorAll("[data-algo]").forEach((b) => b.setAttribute("aria-pressed", b.dataset.algo === a.id));
     const sel = root.querySelector(".algopick select"); if (sel) sel.value = a.id;
     const st = root.querySelector(".algostage");
     const P = A.plain, txt = (s) => (P ? P.wrap(esc(s)) : esc(s));
+    const tabs = a.views ? `<div class="algoviews" role="tablist">${a.views.map((x, i) => `<button role="tab" data-view="${x.key}" aria-selected="${x === v}"><b>${i + 1}</b> ${esc(x.label)}</button>`).join("")}</div>` : "";
     st.innerHTML = `<div class="card2"><div class="algohead"><h3>${esc(a.name)}</h3>${a.star ? `<span class="algotag star">★ must-know</span>` : ""}<span class="algotag">${esc(GROUPS.find((g) => g[0] === a.group)[1].split(" · ")[0])}</span><span class="algotag">${esc(a.kind)}</span></div>
-      <p class="algohow">${txt(a.how)}</p>${a.page ? `<div class="algopage"></div>` : `<div class="algoplay ${a.wide ? "wide" : ""}"><div class="algocv"></div><div class="algoctl"></div></div>`}
-      <p class="algotry"><b>Try this:</b> ${txt(a.try)}</p>${a.note ? `<p class="algonote">${txt(a.note)}</p>` : ""}
+      ${tabs}<p class="algohow">${txt(v.how)}</p>${v.page ? `<div class="algopage"></div>` : `<div class="algoplay ${v.wide ? "wide" : ""}"><div class="algocv"></div><div class="algoctl"></div></div>`}
+      ${v.try ? `<p class="algotry"><b>Try this:</b> ${txt(v.try)}</p>` : ""}${v.note ? `<p class="algonote">${txt(v.note)}</p>` : ""}
+      ${a.views && v !== a.views[a.views.length - 1] ? `<p class="algonext"><button class="btn sm" data-view="${a.views[a.views.indexOf(v) + 1].key}">Next: ${esc(a.views[a.views.indexOf(v) + 1].label)} →</button></p>` : ""}
       <div class="algoextra"></div>
       <p class="algonote"><button class="wordlink" data-word="${esc(a.term)}">Read "${esc(a.term)}" in the glossary</button></p></div>`;
-    const r = a.page ? a.mount(st.querySelector(".algopage")) : a.mount(st.querySelector(".algocv"), st.querySelector(".algoctl"));
+    const r = v.page ? v.mount(st.querySelector(".algopage")) : v.mount(st.querySelector(".algocv"), st.querySelector(".algoctl"));
     if (typeof r === "function") cleanup = r;
     // Plain-English box covers every stats word on screen (explanations, controls and readouts), then the often-confused pairs
     const extra = st.querySelector(".algoextra");
-    extra.innerHTML = (a.page ? "" : (P ? P.box(P.find(st.querySelector(".card2").textContent), esc) : "")) + (A.compare ? A.compare.box(a.id) : "");
+    extra.innerHTML = (P ? P.box(P.find(st.querySelector(".card2").textContent), esc) : "") + (A.compare ? A.compare.box(a.id) : "");
   }
   // Clicking an underlined stats word opens its plain-English entry; clicking a name in a comparison opens that demo
   function stageClick(e) {
@@ -552,6 +563,8 @@
       def.scrollIntoView({ block: "nearest", behavior: "smooth" });
       return;
     }
+    const t = e.target.closest("[data-view]");
+    if (t) { views[current] = t.dataset.view; store.set("wb-algo-view", views); stage(); root.querySelector(".algostage").scrollIntoView({ block: "start", behavior: "smooth" }); return; }
     const g = e.target.closest("[data-go]");
     if (g) { current = g.dataset.go; store.set("wb-algo", current); stage(); root.querySelector(".algostage").scrollIntoView({ block: "start", behavior: "smooth" }); }
   }

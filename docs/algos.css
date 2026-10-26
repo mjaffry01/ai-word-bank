@@ -126,3 +126,35 @@
 .fbar i.pass{background:var(--t0)}
 .fbar i.fail{background:var(--t4)}
 @media (max-width:520px){.fgrid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+/* Tabs inside one algorithm page */
+.algoviews{display:flex;flex-wrap:wrap;gap:6px;margin:4px 0 14px;border-bottom:1px solid var(--line);padding-bottom:8px}
+.algoviews button{font:inherit;font-size:.92rem;padding:7px 14px;border-radius:999px;border:1px solid var(--line);background:var(--bg);color:var(--fg);cursor:pointer}
+.algoviews button b{display:inline-grid;place-items:center;width:20px;height:20px;border-radius:50%;background:var(--line);font-size:.75rem;margin-right:4px}
+.algoviews button[aria-selected="true"]{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 14%,var(--bg));font-weight:600}
+.algoviews button[aria-selected="true"] b{background:var(--accent);color:var(--bg)}
+.algonext{margin-top:10px}
+
+/* Interview guide */
+.guide .g30{border-left:4px solid var(--accent);background:color-mix(in srgb,var(--accent) 8%,transparent);padding:10px 14px;border-radius:6px}
+.guide .g30 p{margin:0}
+.guide .g30 p+p{margin-top:4px;font-size:1.02rem}
+.gsteps{margin:0;padding-left:22px}
+.gsteps li{margin:4px 0}
+.gform{display:grid;gap:8px}
+.gform>div{border:1px solid var(--line);border-radius:8px;padding:8px 12px}
+.gform code{font-size:.95rem;font-weight:600}
+.gform p{margin:4px 0 0;font-size:.9rem}
+.gtable{display:grid;gap:6px}
+.gtable>div{display:grid;grid-template-columns:minmax(120px,1fr) 2fr 2fr;gap:10px;padding:8px 10px;border-radius:8px;background:color-mix(in srgb,var(--line) 30%,transparent);font-size:.9rem}
+.grule{color:var(--muted)}
+.gpros{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:16px}
+.gpros>div{border:1px solid var(--line);border-radius:10px;padding:8px 12px}
+.gpros h5{margin:0 0 4px}
+.gpros ul{margin:0;padding-left:18px;font-size:.92rem}
+.gcount{font-size:.8rem;background:var(--line);border-radius:999px;padding:1px 8px;vertical-align:middle}
+.gqa details{border:1px solid var(--line);border-radius:8px;padding:8px 12px;margin-bottom:6px}
+.gqa summary{cursor:pointer}
+.gqa details[open]{border-color:var(--accent)}
+.gqa details p{margin:8px 0 0}
+@media (max-width:720px){.gtable>div,.gpros{grid-template-columns:1fr}}

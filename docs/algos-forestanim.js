@@ -19,7 +19,7 @@
   const accuracy = (fn, test) => Math.round((test.filter((p) => (fn(p) >= 0.5 ? 1 : 0) === p.c).length / test.length) * 100);
 
   const demo = {
-    id: "forestanim", group: "sup", name: "Random Forest · watch it vote", kind: "Animated walkthrough", term: "Random Forest",
+    key: "anim", label: "Watch it vote", order: 1,
     how: "One decision tree is easily fooled by a few odd students. A random forest grows many trees and lets them vote. Each tree is made different on purpose, in two ways: (1) it practises on its own random \"bag\" of students, drawn with replacement, so some appear twice and some are left out; (2) at every question it may only look at a randomly chosen feature. Their individual mistakes point in different directions and cancel out in the vote.",
     try: "Press Play and watch tree 1 fill its bag (rings = picked, numbers = picked more than once), grow, and add its vote. Compare the small tree maps on the right: each one is different. Watch the forest's accuracy on 300 new students climb past the single tree's. Then press \"Predict a new student\" or click the big chart and watch every tree vote.",
     note: "Accuracy is measured on 300 students the trees never saw, which is the honest test. Building a bag by drawing with replacement is called bootstrapping; combining the votes is called bagging (bootstrap aggregating).",
@@ -168,6 +168,5 @@
       return stop;
     },
   };
-  const at = A.list.findIndex((x) => x.id === "forest");
-  A.list.splice(at < 0 ? A.list.length : at + 1, 0, demo);
+  A.addView("forest", demo);
 })();

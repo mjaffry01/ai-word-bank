@@ -70,7 +70,7 @@
   const stepDur = (s) => (s.type === "scan" ? Math.max(1200, s.cands.length * 55) : DUR[s.type]);
 
   const demo = {
-    id: "treeanim", group: "sup", name: "Decision Tree · watch it grow", kind: "Animated walkthrough", term: "Decision Tree",
+    key: "anim", label: "Watch it grow", order: 1,
     how: "A decision tree learns by playing 20 questions with the data. For the group in front of it, it tries every possible yes/no question (\"Study less than 4.5 h?\"), scores how well each one separates passes from fails, keeps the best one, and splits the group in two. Then it does the same for each half, until the groups are pure or the tree is deep enough.",
     try: "Press Play and watch one split at a time. The yellow line sweeps across the chart trying every question; the small chart underneath shows the mix score for each one (lower is better). When the tree is finished, press \"Predict a new student\" or click anywhere on the chart to send a student down the tree.",
     note: "The \"mix score\" here is the Gini impurity: 0 = everyone in the group has the same result, 0.5 = a 50/50 mix. A split is good when the two halves are less mixed than the group was.",
@@ -233,7 +233,6 @@
       return stop;
     },
   };
-  // Show it right after the Decision Tree demo
-  const at = A.list.findIndex((x) => x.id === "tree");
-  A.list.splice(at < 0 ? A.list.length : at + 1, 0, demo);
+  // First tab of the Decision Tree page
+  A.addView("tree", demo);
 })();
