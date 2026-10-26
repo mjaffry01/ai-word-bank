@@ -75,7 +75,7 @@
         <h4 class="csec">3 · Compare any two</h4>
         <div class="cmppick"><select class="field" data-k="pair">${PAIRS.map((p, i) => `<option value="${i}">${esc(name(p.a))} vs ${esc(name(p.b))}</option>`).join("")}</select><button type="button" class="choice" data-k="all">Show all ${PAIRS.length}</button></div>
         <div class="cmpout"></div>
-        ${A.uses ? `<h4 class="csec">4 · Where each one is used</h4><p class="algonote">The most popular real-world uses of each algorithm. Click a name to open its page.</p>${A.uses.table()}` : ""}`;
+        ${A.uses ? `<h4 class="csec">4 · Where each one is used</h4><p class="algonote">Popular, real examples of each algorithm that you may know. Click a name to open its page and read more.</p>${A.uses.table()}` : ""}`;
       const out = host.querySelector(".cmpout"), sel = host.querySelector('[data-k="pair"]');
       const show = () => { out.innerHTML = compareCard(PAIRS[+sel.value]); };
       sel.addEventListener("change", show);
