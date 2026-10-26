@@ -198,3 +198,16 @@
 /* Back trail button (shown after any in-course jump) */
 .wbback{position:fixed;left:16px;bottom:16px;z-index:2500;max-width:min(420px,calc(100vw - 32px));font:600 .95rem system-ui,sans-serif;padding:10px 16px;border-radius:999px;border:1.5px solid var(--accent);background:var(--bg);color:var(--fg);box-shadow:0 6px 20px rgba(0,0,0,.25);cursor:pointer;text-align:left;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .wbback:hover{background:color-mix(in srgb,var(--accent) 14%,var(--bg))}
+
+/* Where it's used */
+.usesbox .usestoday{margin:10px 0}
+.usesgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:8px}
+.usesgrid>div{border-radius:8px;padding:8px 10px;background:color-mix(in srgb,var(--line) 35%,transparent)}
+.usesgrid b{display:block;margin-bottom:2px}
+.usesgrid span{font-size:.9rem}
+.usesfamous{margin:10px 0 2px;padding:8px 12px;border-left:4px solid var(--accent);border-radius:6px;background:color-mix(in srgb,var(--accent) 8%,transparent)}
+.usestable{display:grid;gap:6px}
+.usestable>div{display:grid;grid-template-columns:minmax(180px,240px) 1fr;gap:10px;align-items:center;padding:6px 0;border-bottom:1px solid var(--line)}
+.usestable span{display:flex;flex-wrap:wrap;gap:6px}
+.usestable i{font-style:normal;font-size:.85rem;padding:2px 10px;border-radius:999px;background:color-mix(in srgb,var(--accent) 12%,transparent)}
+@media (max-width:560px){.usestable>div{grid-template-columns:1fr}}

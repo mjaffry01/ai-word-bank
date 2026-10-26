@@ -42,7 +42,7 @@
     return `<div class="probcard"><p class="lbl">The problem it solves</p><p class="probq">${esc(x.q)}</p>
       <p class="probeg"><b>Example:</b> ${esc(x.eg)}</p>
       <div class="probio"><div><span>You have</span>${esc(x.have)}</div><div class="probarrow" aria-hidden="true">→</div><div><span>You want</span>${esc(x.want)}</div></div>
-      <p class="probhard"><b>Why it's not easy:</b> ${esc(x.hard)}</p><p class="algonote"><b>Also used for:</b> ${esc(x.also)}</p></div>`;
+      <p class="probhard"><b>Why it's not easy:</b> ${esc(x.hard)}</p><p class="algonote"><b>Also used for:</b> ${esc(x.also)}${A.uses && A.uses.list[id] ? " <button type=\"button\" class=\"wordlink\" data-uses>Where is it used in the real world? ↓</button>" : ""}</p></div>`;
   }
 
   // Word-wrap text inside the story canvas; returns the v position after the last line

@@ -556,11 +556,12 @@
     if (typeof r === "function") cleanup = r;
     // Plain-English box covers every stats word on screen (explanations, controls and readouts), then the often-confused pairs
     const extra = st.querySelector(".algoextra");
-    extra.innerHTML = (A.words ? A.words.box(a.id, a.name) : "") + (P ? P.box(P.find(st.querySelector(".card2").textContent), esc) : "") + (A.compare ? A.compare.box(a.id) : "");
+    extra.innerHTML = (A.uses ? A.uses.box(a.id) : "") + (A.words ? A.words.box(a.id, a.name) : "") + (P ? P.box(P.find(st.querySelector(".card2").textContent), esc) : "") + (A.compare ? A.compare.box(a.id) : "");
   }
   // Clicking an underlined stats word opens its plain-English entry; clicking a name in a comparison opens that demo
   function stageClick(e) {
     if (e.target.closest("[data-fs]")) { toggleFull(); return; }
+    if (e.target.closest("[data-uses]")) { const u = root.querySelector(".usesbox"); if (u) { if (window.WB_NAV) window.WB_NAV.push("Back to where you were reading"); u.open = true; u.scrollIntoView({ block: "start", behavior: "smooth" }); } return; }
     const w = e.target.closest(".stword");
     if (w) {
       const box = root.querySelector(".algoextra .plainbox:not(.wordsbox):not(.confbox)"), def = box && box.querySelector(`[data-stdef="${w.dataset.st}"]`);
