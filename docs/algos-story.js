@@ -66,7 +66,7 @@
         const pal = palette();
         host.innerHTML = `<canvas class="algocanvas storycv"></canvas><p class="tcap storycap" aria-live="polite"></p>`;
         const S = kit(host.querySelector("canvas"), pal), cap = host.querySelector(".storycap");
-        const fit = () => { const W = Math.max(300, Math.min(host.clientWidth || 640, 780)); S.size(W, W < 480 ? 390 : Math.round(Math.max(300, Math.min(400, W * 0.52)))); };
+        const fit = () => { const W = Math.max(300, Math.min(host.clientWidth || 640, A.full ? 1500 : 780)); S.size(W, A.full ? Math.round(Math.max(360, Math.min(window.innerHeight * 0.66, W * 0.56))) : W < 480 ? 390 : Math.round(Math.max(300, Math.min(400, W * 0.52)))); };
         fit();
         const first = A.problems && A.problems.scene(id), scenes = (first ? [first] : []).concat(view.scenes(S));
         const ui = panel(ctl, `<div class="row">${btn("play", "Pause", true)}${btn("back", "← Back")}${btn("next", "Next →")}${btn("restart", "Restart")}</div>` + slider("sp", "Speed", 0.5, 3, 0.25, 1) + `<label>Scenes</label><ol class="storylist">${scenes.map((s, i) => `<li><button type="button" data-scene="${i}">${esc(s.t)}</button></li>`).join("")}</ol>`);
@@ -98,8 +98,8 @@
         ui.on("sp", "input", (e, el) => { speed = +el.value; ui.show("sp", speed + "×"); });
         ui.show("sp", "1×");
         ctl.querySelector(".storylist").addEventListener("click", (e) => { const b = e.target.closest("[data-scene]"); if (b) { go(+b.dataset.scene); setPlay(true); } });
-        const onResize = () => fit(); window.addEventListener("resize", onResize);
-        return () => { on = false; cancelAnimationFrame(raf); window.removeEventListener("resize", onResize); };
+        const onResize = () => fit(); window.addEventListener("resize", onResize); window.addEventListener("wb-algo-resize", onResize);
+        return () => { on = false; cancelAnimationFrame(raf); window.removeEventListener("resize", onResize); window.removeEventListener("wb-algo-resize", onResize); };
       },
     });
   };

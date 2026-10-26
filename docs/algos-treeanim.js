@@ -153,7 +153,7 @@
 
       // ---------- Right: the tree diagram ----------
       function drawDiag(s) {
-        const W = Math.max(260, Math.min(host.querySelector(".tright").clientWidth || 360, 520)), H = 360, d = window.devicePixelRatio || 1;
+        const W = Math.max(260, Math.min(host.querySelector(".tright").clientWidth || 360, A.full ? 900 : 520)), H = A.full ? Math.round(Math.max(360, window.innerHeight * 0.55)) : 360, d = window.devicePixelRatio || 1;
         if (dc.width !== W * d) { dc.width = W * d; dc.height = H * d; dc.style.width = W + "px"; dc.style.height = H + "px"; }
         dx.setTransform(d, 0, 0, d, 0, 0); dx.clearRect(0, 0, W, H);
         const levels = Math.max(...T.nodes.map((n) => n.depth)) + 1, bw = Math.min(118, W / T.leaves - 6), bh = 46;

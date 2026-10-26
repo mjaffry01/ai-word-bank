@@ -184,3 +184,13 @@
 .probarrow{align-self:center;font-size:1.4rem;color:#e0a400}
 .probhard{margin:0 0 4px;font-size:.95rem}
 @media (max-width:640px){.probio{grid-template-columns:1fr}.probarrow{transform:rotate(90deg);justify-self:center}}
+
+/* Full screen */
+.algofs{margin-left:auto;align-self:center}
+.algostage.isfull{background:var(--bg);overflow:auto;padding:14px 20px;box-sizing:border-box}
+.algostage.algofull{position:fixed;inset:0;z-index:2000}
+.algostage.isfull .card2{border:0;background:transparent;padding:0;max-width:none}
+.algostage.isfull .probcard,.algostage.isfull .algohow,.algostage.isfull .algonote,.algostage.isfull .algonext,.algostage.isfull .algoextra{display:none}
+.algostage.isfull .tcap{font-size:1.15rem}
+.algostage.isfull .algoviews{margin-bottom:10px}
+@media (min-width:1100px){.algostage.isfull .algoplay.wide{grid-template-columns:minmax(0,1fr) 270px}}

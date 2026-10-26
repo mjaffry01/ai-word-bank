@@ -31,7 +31,7 @@
   function plot(host, h = 340) {
     const c = document.createElement("canvas"); c.className = "algocanvas"; host.appendChild(c);
     const ctx = c.getContext("2d"); let W = 0, H = h;
-    function size() { W = Math.max(260, Math.min(host.clientWidth || 560, 640)); const d = window.devicePixelRatio || 1; c.width = W * d; c.height = H * d; c.style.width = W + "px"; c.style.height = H + "px"; ctx.setTransform(d, 0, 0, d, 0, 0); }
+    function size() { W = Math.max(260, Math.min(host.clientWidth || 560, A.full ? 1400 : 640)); H = A.full ? Math.round(Math.max(h, Math.min(window.innerHeight * 0.62, h * 1.8))) : h; const d = window.devicePixelRatio || 1; c.width = W * d; c.height = H * d; c.style.width = W + "px"; c.style.height = H + "px"; ctx.setTransform(d, 0, 0, d, 0, 0); }
     size();
     const P = {
       c, ctx, get w() { return W; }, get h() { return H; },
@@ -546,7 +546,7 @@
     const st = root.querySelector(".algostage");
     const P = A.plain, txt = (s) => (P ? P.wrap(esc(s)) : esc(s));
     const tabs = a.views ? `<div class="algoviews" role="tablist">${a.views.map((x, i) => `<button role="tab" data-view="${x.key}" aria-selected="${x === v}"><b>${i + 1}</b> ${esc(x.label)}</button>`).join("")}</div>` : "";
-    st.innerHTML = `<div class="card2"><div class="algohead"><h3>${esc(a.name)}</h3>${a.star ? `<span class="algotag star">★ must-know</span>` : ""}<span class="algotag">${esc(GROUPS.find((g) => g[0] === a.group)[1].split(" · ")[0])}</span><span class="algotag">${esc(a.kind)}</span></div>
+    st.innerHTML = `<div class="card2"><div class="algohead"><h3>${esc(a.name)}</h3>${a.star ? `<span class="algotag star">★ must-know</span>` : ""}<span class="algotag">${esc(GROUPS.find((g) => g[0] === a.group)[1].split(" · ")[0])}</span><span class="algotag">${esc(a.kind)}</span><button type="button" class="btn sm algofs" data-fs aria-pressed="${!!A.full}">${A.full ? "✕ Exit full screen" : "⛶ Full screen"}</button></div>
       ${A.problems ? A.problems.card(a.id) : ""}${tabs}<p class="algohow">${txt(v.how)}</p>${v.page ? `<div class="algopage"></div>` : `<div class="algoplay ${v.wide ? "wide" : ""}"><div class="algocv"></div><div class="algoctl"></div></div>`}
       ${v.try ? `<p class="algotry"><b>Try this:</b> ${txt(v.try)}</p>` : ""}${v.note ? `<p class="algonote">${txt(v.note)}</p>` : ""}
       ${a.views && v !== a.views[a.views.length - 1] ? `<p class="algonext"><button class="btn sm" data-view="${a.views[a.views.indexOf(v) + 1].key}">Next: ${esc(a.views[a.views.indexOf(v) + 1].label)} →</button></p>` : ""}
@@ -560,6 +560,7 @@
   }
   // Clicking an underlined stats word opens its plain-English entry; clicking a name in a comparison opens that demo
   function stageClick(e) {
+    if (e.target.closest("[data-fs]")) { toggleFull(); return; }
     const w = e.target.closest(".stword");
     if (w) {
       const box = root.querySelector(".algoextra .plainbox"), def = box && box.querySelector(`[data-stdef="${w.dataset.st}"]`);
@@ -573,8 +574,26 @@
     const g = e.target.closest("[data-go]");
     if (g) { current = g.dataset.go; store.set("wb-algo", current); stage(); root.querySelector(".algostage").scrollIntoView({ block: "start", behavior: "smooth" }); }
   }
+  // Full screen: the stage itself goes full screen (or fills the window where the Fullscreen API is missing, e.g. iPhone).
+  // Walkthroughs redraw in place so they keep their scene; other views are remounted at the new size.
+  const stageEl = () => root && root.querySelector(".algostage");
+  function setFull(on) {
+    const el = stageEl(); if (!el || !!A.full === on) return;
+    A.full = on; el.classList.toggle("isfull", on);
+    const b = el.querySelector("[data-fs]"); if (b) { b.textContent = on ? "✕ Exit full screen" : "⛶ Full screen"; b.setAttribute("aria-pressed", on); }
+    setTimeout(() => { const a = A.list.find((x) => x.id === current), v = a && a.views ? a.views.find((x) => x.key === views[a.id]) || a.views[0] : a; if (v && v.scenes) window.dispatchEvent(new Event("wb-algo-resize")); else stage(); }, 60);
+  }
+  function fallback(on) { const el = stageEl(); if (el) el.classList.toggle("algofull", on); setFull(on); }
+  function toggleFull() {
+    const el = stageEl(); if (!el) return;
+    if (!A.full) { if (el.requestFullscreen) { el.requestFullscreen().catch(() => fallback(true)); setTimeout(() => { if (!A.full) fallback(true); }, 500); } else fallback(true); }
+    else if (document.fullscreenElement) document.exitFullscreen(); else fallback(false);
+  }
+  const onFsChange = () => { const el = stageEl(); if (!el) return; if (document.fullscreenElement === el) setFull(true); else if (!el.classList.contains("algofull")) setFull(false); };
+  const onKey = (e) => { if (e.key === "Escape" && A.full && !document.fullscreenElement) fallback(false); };
   A.mount = function (host) {
-    root = host;
+    root = host; A.full = false;
+    document.addEventListener("fullscreenchange", onFsChange); document.addEventListener("keydown", onKey);
     host.innerHTML = `<div class="algomap"><nav class="algolist">${GROUPS.map(([g, label]) => `<div class="grp"><h4>${label}</h4>${A.list.filter((x) => x.group === g).map((x) => `<button data-algo="${x.id}">${esc(x.name)}${x.star ? ` <span class="star">★</span>` : ""}</button>`).join("")}</div>`).join("")}</nav>
       <div><div class="algopick field"><label for="algoSel">Algorithm</label><select id="algoSel">${GROUPS.map(([g, label]) => `<optgroup label="${label}">${A.list.filter((x) => x.group === g).map((x) => `<option value="${x.id}">${esc(x.name)}${x.star ? " ★" : ""}</option>`).join("")}</optgroup>`).join("")}</select></div><div class="algostage"></div></div></div>`;
     host.querySelector(".algolist").addEventListener("click", (e) => { const b = e.target.closest("[data-algo]"); if (!b) return; current = b.dataset.algo; store.set("wb-algo", current); stage(); });
@@ -582,5 +601,9 @@
     host.querySelector(".algostage").addEventListener("click", stageClick);
     stage();
   };
-  A.unmount = function () { if (cleanup) { try { cleanup(); } catch (e) {} cleanup = null; } root = null; };
+  A.unmount = function () {
+    if (document.fullscreenElement && document.fullscreenElement === stageEl()) document.exitFullscreen();
+    document.removeEventListener("fullscreenchange", onFsChange); document.removeEventListener("keydown", onKey); A.full = false;
+    if (cleanup) { try { cleanup(); } catch (e) {} cleanup = null; } root = null;
+  };
 })();
