@@ -551,7 +551,7 @@
     if (typeof r === "function") cleanup = r;
     // Plain-English box covers every stats word on screen (explanations, controls and readouts), then the often-confused pairs
     const extra = st.querySelector(".algoextra");
-    extra.innerHTML = (P ? P.box(P.find(st.querySelector(".card2").textContent), esc) : "") + (A.compare ? A.compare.box(a.id) : "");
+    extra.innerHTML = (A.words ? A.words.box(a.id, a.name) : "") + (P ? P.box(P.find(st.querySelector(".card2").textContent), esc) : "") + (A.compare ? A.compare.box(a.id) : "");
   }
   // Clicking an underlined stats word opens its plain-English entry; clicking a name in a comparison opens that demo
   function stageClick(e) {
