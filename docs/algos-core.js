@@ -542,7 +542,7 @@
     const P = A.plain, txt = (s) => (P ? P.wrap(esc(s)) : esc(s));
     const tabs = a.views ? `<div class="algoviews" role="tablist">${a.views.map((x, i) => `<button role="tab" data-view="${x.key}" aria-selected="${x === v}"><b>${i + 1}</b> ${esc(x.label)}</button>`).join("")}</div>` : "";
     st.innerHTML = `<div class="card2"><div class="algohead"><h3>${esc(a.name)}</h3>${a.star ? `<span class="algotag star">★ must-know</span>` : ""}<span class="algotag">${esc(GROUPS.find((g) => g[0] === a.group)[1].split(" · ")[0])}</span><span class="algotag">${esc(a.kind)}</span></div>
-      ${tabs}<p class="algohow">${txt(v.how)}</p>${v.page ? `<div class="algopage"></div>` : `<div class="algoplay ${v.wide ? "wide" : ""}"><div class="algocv"></div><div class="algoctl"></div></div>`}
+      ${A.problems ? A.problems.card(a.id) : ""}${tabs}<p class="algohow">${txt(v.how)}</p>${v.page ? `<div class="algopage"></div>` : `<div class="algoplay ${v.wide ? "wide" : ""}"><div class="algocv"></div><div class="algoctl"></div></div>`}
       ${v.try ? `<p class="algotry"><b>Try this:</b> ${txt(v.try)}</p>` : ""}${v.note ? `<p class="algonote">${txt(v.note)}</p>` : ""}
       ${a.views && v !== a.views[a.views.length - 1] ? `<p class="algonext"><button class="btn sm" data-view="${a.views[a.views.indexOf(v) + 1].key}">Next: ${esc(a.views[a.views.indexOf(v) + 1].label)} →</button></p>` : ""}
       <div class="algoextra"></div>

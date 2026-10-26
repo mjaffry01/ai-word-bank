@@ -66,9 +66,9 @@
         const pal = palette();
         host.innerHTML = `<canvas class="algocanvas storycv"></canvas><p class="tcap storycap" aria-live="polite"></p>`;
         const S = kit(host.querySelector("canvas"), pal), cap = host.querySelector(".storycap");
-        const fit = () => { const W = Math.max(300, Math.min(host.clientWidth || 640, 780)); S.size(W, Math.round(Math.max(300, Math.min(400, W * 0.52)))); };
+        const fit = () => { const W = Math.max(300, Math.min(host.clientWidth || 640, 780)); S.size(W, W < 480 ? 390 : Math.round(Math.max(300, Math.min(400, W * 0.52)))); };
         fit();
-        const scenes = view.scenes(S);
+        const first = A.problems && A.problems.scene(id), scenes = (first ? [first] : []).concat(view.scenes(S));
         const ui = panel(ctl, `<div class="row">${btn("play", "Pause", true)}${btn("back", "← Back")}${btn("next", "Next →")}${btn("restart", "Restart")}</div>` + slider("sp", "Speed", 0.5, 3, 0.25, 1) + `<label>Scenes</label><ol class="storylist">${scenes.map((s, i) => `<li><button type="button" data-scene="${i}">${esc(s.t)}</button></li>`).join("")}</ol>`);
         let i = 0, t = 0, playing = true, speed = 1, last = performance.now(), hold = 0;
         const capOf = (s, k) => (typeof s.cap === "function" ? s.cap(k) : s.cap);
