@@ -1,0 +1,81 @@
+/* Module 2, "AI settings (API)" tab */
+.apipage .card2{scroll-margin-top:16px}
+.apipage .flash{animation:apiflash 1.6s ease}
+@keyframes apiflash{0%,40%{box-shadow:0 0 0 3px var(--accent)}100%{box-shadow:0 0 0 0 transparent}}
+.apigroup{font:700 1.2rem var(--display);margin:14px 0 0}
+.apihead{display:flex;flex-wrap:wrap;gap:6px 12px;align-items:baseline}
+.apihead h3{margin:0}
+.apione{font-size:1.05rem}
+.apilike{color:var(--muted)}
+.apiwhen{border-left:3px solid var(--accent);padding-left:10px}
+.apidemo{border:1px solid var(--line);border-radius:10px;padding:12px;margin:10px 0;background:var(--bg)}
+.apilbl{font-size:.9rem;color:var(--muted);margin:6px 0}
+.apilbl b{color:var(--fg)}
+.apirow{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0}
+.apiout{border-radius:8px;padding:10px 12px;background:color-mix(in srgb,var(--line) 30%,transparent);margin:8px 0;white-space:pre-wrap}
+.apiout.mono,.apireq{font:500 .86rem var(--mono)}
+.apiinput{font:inherit;padding:4px 8px;border-radius:6px;border:1px solid var(--line);background:var(--bg);color:var(--fg);width:8em}
+.apigood{color:var(--good);font-weight:600}
+.apibad{color:var(--bad);font-weight:600}
+.apinote{font-size:.85rem;color:var(--muted);margin:6px 0 0}
+.apinames{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:8px}
+.apinames>div{border:1px solid var(--line);border-radius:8px;padding:6px 10px;font-size:.85rem}
+.apinames b{display:block;font-size:.75rem;color:var(--muted)}
+.apinames code{white-space:normal}
+.apibars{display:grid;gap:4px}
+.apibar{display:grid;grid-template-columns:90px 1fr 64px;gap:8px;align-items:center;font-size:.88rem}
+.apibar .track{height:14px;border-radius:7px;background:color-mix(in srgb,var(--line) 50%,transparent);overflow:hidden}
+.apibar .track i{display:block;height:100%;background:var(--accent);border-radius:7px;transition:width .25s}
+.apibar.off{opacity:.4}
+.apibar.off .track i{background:var(--muted)}
+.apibar .v{text-align:right;font-variant-numeric:tabular-nums}
+.apichips{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+.apichips .chip{padding:3px 10px;border-radius:999px;background:color-mix(in srgb,var(--accent) 15%,transparent);font-size:.88rem}
+.apimeters{display:grid;gap:6px;margin:8px 0}
+.apimeters>div{display:grid;grid-template-columns:170px 1fr;gap:8px;align-items:center;font-size:.88rem}
+.apimeters .track{height:12px;border-radius:6px;background:color-mix(in srgb,var(--line) 50%,transparent);overflow:hidden}
+.apimeters .track i{display:block;height:100%;background:var(--accent)}
+.apichat,.apigrid2{display:grid;gap:6px}
+.apigrid2{grid-template-columns:1fr 1fr}
+.apibubble{border-radius:12px;padding:8px 12px;font-size:.92rem;max-width:100%}
+.apibubble.sys{background:color-mix(in srgb,#b8860b 12%,transparent);border:1px dashed #b8860b}
+.apibubble.user{background:color-mix(in srgb,var(--accent) 14%,transparent);justify-self:end}
+.apibubble.ai{background:color-mix(in srgb,var(--line) 40%,transparent)}
+.tok{display:inline-block;padding:0 3px;margin:1px 0;border:1px solid var(--line);border-radius:4px}
+.apistop{text-decoration:line-through;opacity:.45}
+.apicands{display:flex;flex-wrap:wrap;gap:8px}
+.apicand{border:1px solid var(--line);border-radius:10px;padding:8px 12px;display:grid}
+.apicand small{color:var(--muted)}
+.apitokens{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0}
+.apitok{font:inherit;display:inline-grid;justify-items:center;padding:4px 8px;border-radius:8px;border:1px solid var(--line);cursor:pointer;color:var(--fg);background:color-mix(in srgb,var(--good) calc(var(--p) * 30%),transparent)}
+.apitok small{font-size:.7rem;color:var(--muted)}
+.apithink{display:grid;gap:4px;margin:8px 0}
+.apithink>div{padding:6px 10px;border-radius:8px;background:color-mix(in srgb,var(--line) 30%,transparent);font-size:.9rem}
+.apithink>div.fin{background:color-mix(in srgb,var(--accent) 16%,transparent);font-weight:600}
+.apiflow{display:grid;gap:6px}
+.apistep{display:grid;grid-template-columns:170px 1fr;gap:10px;padding:8px 10px;border-radius:8px;border:1px solid var(--line);font-size:.9rem;transition:opacity .2s}
+.apistep.now{border-color:var(--accent);box-shadow:0 0 0 2px color-mix(in srgb,var(--accent) 40%,transparent)}
+.apistep.later{opacity:.3}
+.apitime{margin-top:8px}
+.apilane{display:grid;grid-template-columns:190px 1fr;gap:8px;align-items:center;font:500 .82rem var(--mono);margin:4px 0}
+.apilane .track{height:16px;border-radius:6px;background:color-mix(in srgb,var(--line) 40%,transparent);overflow:hidden}
+.apilane .track i{display:block;height:100%;background:var(--accent);border-radius:6px;transition:width 1s linear}
+.apistream{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.apispin{display:inline-block;width:12px;height:12px;border:2px solid var(--muted);border-top-color:transparent;border-radius:50%;animation:apispin .8s linear infinite;vertical-align:middle}
+@keyframes apispin{to{transform:rotate(360deg)}}
+.apisafe{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:8px;margin:8px 0}
+.apisafe>div{border:1px solid var(--line);border-radius:8px;padding:8px 10px;display:grid;gap:4px;font-size:.88rem}
+.apisafe small{color:var(--muted)}
+.apisafe select,.apiq select{font:inherit;padding:4px 6px;border-radius:6px;border:1px solid var(--line);background:var(--bg);color:var(--fg)}
+.apireq{display:grid;padding:10px 12px;border-radius:10px;background:color-mix(in srgb,var(--line) 30%,transparent);white-space:pre;overflow-x:auto}
+.apireqline{font:inherit;text-align:left;background:none;border:0;color:var(--fg);padding:2px 4px;border-radius:4px;cursor:pointer;white-space:pre}
+.apireqline:hover:not(.plain){background:color-mix(in srgb,var(--accent) 18%,transparent)}
+.apireqline.plain{cursor:default;opacity:.7}
+.apitable{display:grid;gap:2px;font-size:.85rem;overflow-x:auto}
+.apitable>div{display:grid;grid-template-columns:minmax(130px,1.1fr) repeat(3,minmax(120px,1fr));gap:8px;padding:6px 4px;border-bottom:1px solid var(--line)}
+.apitable .hd{font-weight:700}
+.apitable code{white-space:normal;font-size:.8rem}
+.apiprac{display:grid;gap:10px}
+.apiq p{margin:0 0 4px}
+.apifb{font-size:.9rem;margin-top:4px}
+@media (max-width:700px){.apinames,.apistream,.apigrid2{grid-template-columns:1fr}.apistep,.apilane,.apimeters>div{grid-template-columns:1fr}.apitable>div{grid-template-columns:repeat(4,minmax(110px,1fr))}}
