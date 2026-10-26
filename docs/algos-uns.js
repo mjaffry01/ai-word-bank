@@ -6,7 +6,7 @@
 
   add({
     id: "kmeans", group: "uns", star: true, name: "K-Means Clustering", kind: "Clustering", term: "K-Means Clustering",
-    how: "You choose k. It drops k centre points, then repeats two steps: assign every point to its nearest centre, then move each centre to the middle of its points. It stops when nothing changes. You still have to decide what each group means.",
+    how: "Your turn. Think of the dots as customers again (spend across, visits up). Choose k, then watch the two steps repeat: assign every customer to the nearest centre, then move each centre to the middle of its customers, until nothing changes. Naming the groups is still your job.",
     try: "Press Step slowly to watch assign → move → assign. Then try k = 2 and k = 6 on the same data: K-means always finds k groups, even when that's the wrong number.",
     mount(host, ctl) {
       const pal = palette(), P = plot(host);
@@ -38,7 +38,7 @@
 
   add({
     id: "hier", group: "uns", name: "Hierarchical Clustering", kind: "Clustering", term: "Hierarchical Clustering",
-    how: "Starts with every point as its own group, then repeatedly merges the two closest groups. The full history of merges forms a tree (a dendrogram). Cutting the tree at different heights gives you more or fewer groups, without choosing k in advance.",
+    how: "Your turn. Think of the dots as species placed by DNA similarity. Each starts as its own group; Merge joins the two closest groups, and the full history forms the family tree (dendrogram) below. Cut it at any height to get more or fewer groups.",
     try: "Press Merge to join the two closest groups, one step at a time, and watch the dendrogram grow below. Then use the cut slider to choose how many groups to keep.",
     mount(host, ctl) {
       const pal = palette(), P = plot(host, 260);
@@ -80,8 +80,8 @@
 
   add({
     id: "dbscan", group: "uns", name: "DBSCAN", kind: "Clustering · Noise", term: "DBSCAN",
-    how: "Groups points that are packed densely together. A point with at least minPts neighbours within distance ε is a core point; clusters grow from core points through their neighbours. Isolated points are labelled noise (grey). It finds clusters of any shape and decides the number itself.",
-    try: "Hover over points to see their ε circle. Shrink ε until the crescents break apart; grow it until everything merges into one blob. Notice that K-means could never find these crescent shapes.",
+    how: "Your turn. Think of the dots as taxi pickups. A dot with at least minPts neighbours within distance ε is a core point; zones grow outwards from core points; lonely dots are noise (grey). It finds zones of any shape and decides how many there are.",
+    try: "Hover over dots to see their ε circle. Shrink ε until the curved streets break apart; grow it until everything merges into one zone. K-means could never find these curved shapes.",
     mount(host, ctl) {
       const pal = palette(), P = plot(host);
       let pts = [], eps = 0.07, minPts = 4, hover = null;
@@ -114,7 +114,7 @@
 
   add({
     id: "pca", group: "uns", star: true, name: "Principal Component Analysis (PCA)", kind: "Dimensionality reduction", term: "Principal Component Analysis (PCA)",
-    how: "Finds the directions in which the data varies the most. The first principal component (PC1) is the longest arrow. Keeping only the top components compresses many features into a few while losing as little information as possible.",
+    how: "Your turn. Think of the dots as people (height across, weight up). PCA finds the direction in which they are most spread out (PC1, the longest arrow) and the leftover direction at a right angle (PC2). Keeping only PC1 turns two numbers per person into one while losing as little as possible.",
     try: "Press \"Squash onto PC1\": every point slides onto the main arrow, turning 2 numbers into 1. The percentage tells you how much of the spread survived. Try a rounder cloud and see that percentage drop.",
     mount(host, ctl) {
       const pal = palette(), P = plot(host);
@@ -148,7 +148,7 @@
 
   add({
     id: "tsne", group: "uns", name: "t-SNE / UMAP", kind: "Visualisation", term: "t-SNE / UMAP",
-    how: "These methods draw high-dimensional data as a 2D map. They pull points that are similar in the original data close together and push dissimilar ones apart, so hidden groups appear as islands. Good for exploring; distances between islands don't mean much.",
+    how: "Your turn. Each dot stands for an item described by many numbers, like the cells and their gene readings. The map pulls each dot towards its most similar dots and pushes it away from the rest, so hidden groups appear as islands. Good for exploring; the distances between islands don't mean much.",
     try: "Press Run: the points start as a meaningless scatter and organise themselves into groups. The colours are only revealed at the end. The algorithm itself never sees them, only the similarities.",
     mount(host, ctl) {
       const pal = palette(), P = plot(host);
@@ -212,7 +212,7 @@
 
   add({
     id: "iforest", group: "uns", name: "Isolation Forest", kind: "Anomaly detection", term: "Anomaly Detection",
-    how: "Makes random cuts through the data until each point sits alone. Unusual points are far from the crowd, so they get isolated in just a few cuts; normal points need many. Averaging over many random trees gives each point an anomaly score.",
+    how: "Your turn. Think of the dots as card transactions. Random cuts isolate each dot: unusual ones far from the crowd are cut off in a few cuts, normal ones need many. Averaging over many random trees gives each dot an anomaly score.",
     try: "Click a point to watch random cuts isolate it, and compare the number of cuts for an outlier with one in the middle of the crowd. Then press \"Score every point\".",
     mount(host, ctl) {
       const pal = palette(), P = plot(host);
@@ -257,8 +257,8 @@
   // Linear autoencoder (equivalent to PCA) trained on "normal" line patterns
   add({
     id: "ae", group: "uns", name: "Autoencoder", kind: "Compression · Anomalies", term: "Autoencoder",
-    how: "An autoencoder squeezes its input through a narrow bottleneck and tries to rebuild it. Trained only on normal examples, it learns to rebuild those well. Anything unusual rebuilds badly, and that high reconstruction error flags an anomaly.",
-    try: "This one was trained only on 6 kinds of straight line (rows and columns 2, 5 and 7). Draw a line and it rebuilds almost perfectly; draw a diagonal or a blob and the error jumps. Change the bottleneck size to see compression vs quality.",
+    how: "Your turn. This autoencoder was trained only on normal parts: 6 straight-line patterns. Draw an image of a part: lines rebuild almost perfectly, while anything else (a diagonal scratch, a blob) rebuilds badly and its reconstruction error jumps.",
+    try: "Click squares to draw, or load a line, a diagonal or a blob. Change the bottleneck size (how many numbers the image is squeezed into) to see the trade-off between compression and quality.",
     wide: true,
     mount(host, ctl) {
       const N = 8, D = 64;

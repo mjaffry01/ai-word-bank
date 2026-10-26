@@ -168,8 +168,8 @@
 
   add({
     id: "tree", group: "sup", star: true, name: "Decision Tree", kind: "Classification · Regression", term: "Decision Tree",
-    how: "Repeatedly asks the yes/no question about one feature (\"is x below 0.42?\") that best separates the classes, splitting the space into boxes. Each box predicts its majority class. Easy to read, but deep trees memorise noise.",
-    try: "Raise the depth one step at a time and read the questions on the right. At high depth, look for tiny boxes drawn around single points: that's overfitting.",
+    how: "Your turn, with your own data. Think of each dot as a student: hours of study across, hours of sleep up; teal and red are the two results. The tree asks yes/no questions about one input at a time (\"study < 4.2 h?\") and splits the chart into boxes; each box predicts its majority colour. Easy to read, but deep trees memorise noise.",
+    try: "Raise the depth one step at a time and read the questions on the right. At high depth, look for tiny boxes drawn around single students: that's overfitting (memorising instead of learning).",
     mount(host, ctl) {
       const pal = palette(), P = plot(host);
       let pts = xorData(18).concat(blob(6, 0.5, 0.5, 0.12, Math.random() < 0.5 ? 0 : 1)), depth = 2, cls = 0;
@@ -179,7 +179,7 @@
         if (n.f === "x") { regions(n.left, [box[0], n.t, box[2], box[3]]); regions(n.right, [n.t, box[1], box[2], box[3]]); P.line(n.t, box[2], n.t, box[3], pal.fg, 1.5); }
         else { regions(n.left, [box[0], box[1], box[2], n.t]); regions(n.right, [box[0], box[1], n.t, box[3]]); P.line(box[0], n.t, box[1], n.t, pal.fg, 1.5); }
       }
-      const text = (n, ind = "") => n.leaf ? `${ind}→ ${n.p >= 0.5 ? "B" : "A"} (${Math.round(Math.max(n.p, 1 - n.p) * 100)}%, ${n.n} pts)\n` : `${ind}${n.f} < ${n.t.toFixed(2)} ?\n${text(n.left, ind + "  yes ")}${text(n.right, ind + "  no  ")}`;
+      const text = (n, ind = "") => n.leaf ? `${ind}→ ${n.p >= 0.5 ? "red" : "teal"} (${Math.round(Math.max(n.p, 1 - n.p) * 100)}%, ${n.n} students)\n` : `${ind}${n.f === "x" ? "study" : "sleep"} < ${(n.t * 10).toFixed(1)} h ?\n${text(n.left, ind + "  yes ")}${text(n.right, ind + "  no  ")}`;
       function draw() {
         const t = buildTree(pts, depth); P.clear(); regions(t, [0, 1, 0, 1]);
         pts.forEach((p) => P.dot(p.x, p.y, p.c ? pal.b : pal.a, 5, pal.bg));
@@ -198,7 +198,7 @@
 
   add({
     id: "forest", group: "sup", star: true, name: "Random Forest", kind: "Classification · Regression", term: "Random Forest",
-    how: "Trains many decision trees, each on a random sample of the data and with random feature choices, then averages their votes. Individual trees are jumpy; the average is smooth and much less likely to overfit.",
+    how: "Your turn. Think of each dot as a student again (study across, sleep up; teal and red are the two results). Many trees, each trained on a random sample of students with random choices of input, vote together. One tree is blocky and jumpy; the vote is smooth and much less likely to overfit.",
     try: "Start with 1 tree, then raise the number of trees. Watch the blocky boundary become smooth and the shading show how confident the forest is.",
     mount(host, ctl) {
       const pal = palette(), P = plot(host);
@@ -222,7 +222,7 @@
 
   add({
     id: "boost", group: "sup", star: true, name: "Gradient Boosting", kind: "Regression · Classification", term: "Gradient Boosting",
-    how: "Builds small trees one after another. Each new tree is trained only on the errors (residuals) that the trees so far still make, and its prediction is added in with a small learning rate. Many small corrections add up to a strong model: the idea behind XGBoost, LightGBM and CatBoost.",
+    how: "Your turn, on the same kind of data as the walkthrough: a seasonal pattern with random noise (week across, sales up). Each round adds a small tree trained on what's still wrong (the residuals), scaled down by the learning rate. Many small corrections add up to a strong model: the idea behind XGBoost, LightGBM and CatBoost.",
     try: "Move Rounds from 0 upwards: the prediction starts as a flat average and each round fixes part of the remaining error. Push it to 200 with a high learning rate and it starts chasing noise.",
     mount(host, ctl) {
       const pal = palette(), P = plot(host);
@@ -274,7 +274,7 @@
   const nbTok = (s) => s.toLowerCase().replace(/[^a-z0-9$\s]/g, " ").split(/\s+/).filter((w) => w && !NB_STOP.has(w));
   add({
     id: "nb", group: "sup", star: true, name: "Naive Bayes", kind: "Classification", term: "Naive Bayes",
-    how: "Counts how often each word appears in spam and in normal messages during training. For a new message, each word adds its own piece of evidence, and the model \"naively\" treats words as independent. The evidence is added up into a probability with Bayes' theorem.",
+    how: "Your turn: type any email. The model has already counted words in a set of spam and normal training emails. Each word in your message pushes the chance towards spam or towards normal, and the pushes are combined into one verdict. \"Naive\" because every word is treated as independent evidence.",
     try: "Type a message. Each bar shows how hard that word pushes towards spam (red, right) or normal (green, left). Try \"free lunch tomorrow\" and see the words fight.",
     wide: true,
     mount(host, ctl) {
@@ -298,7 +298,7 @@
 
   add({
     id: "knn", group: "sup", name: "K-Nearest Neighbors (KNN)", kind: "Classification · Regression", term: "K-Nearest Neighbors (KNN)",
-    how: "Doesn't train at all: it stores the examples. To classify a new point it finds the k closest stored points and takes a majority vote. Small k is jumpy and sensitive to noise; large k is smooth but can blur real boundaries.",
+    how: "Your turn. Think of each dot as an existing customer (age across, income up); teal and red are the two outcomes. KNN doesn't train: to classify any spot it finds the k closest customers and takes a majority vote. Small k is jumpy and sensitive to odd customers; large k is smooth but can blur real edges.",
     try: "Move your mouse over the plot: the lines show the k neighbours that vote. Change k from 1 to 15 and watch the shaded decision map smooth out.",
     mount(host, ctl) {
       const pal = palette(), P = plot(host);
@@ -327,8 +327,8 @@
 
   add({
     id: "svm", group: "sup", name: "Support Vector Machine (SVM)", kind: "Classification", term: "Support Vector Machine (SVM)",
-    how: "Looks for the boundary with the widest possible empty street (margin) between the classes. Only the points on the edge of the street, the support vectors (circled), decide where it goes. Moving any other point changes nothing.",
-    try: "Add a point inside the street and watch the boundary and margin react. Lower \"softness\" to demand a strict, wide street; raise it to tolerate a few points on the wrong side.",
+    how: "Your turn. Think of the dots as samples placed by two measurements; teal and red are the two classes. SVM looks for the boundary with the widest empty street (the margin) between them. Only the points on the edge of the street, the support vectors (circled), decide where it goes.",
+    try: "Click to add a point inside the street and watch the boundary and margin react. Lower \"softness\" to demand a strict street with nothing inside; raise it to tolerate a few points inside or on the wrong side (this is the soft-margin setting from the walkthrough).",
     mount(host, ctl) {
       const pal = palette(), P = plot(host);
       let pts = [...blob(22, 0.3, 0.32, 0.09, 0), ...blob(22, 0.7, 0.68, 0.09, 1)], lam = 0.01, cls = 0, w = [0, 0, 0];
@@ -361,7 +361,7 @@
 
   add({
     id: "nn", group: "sup", star: true, name: "Neural Network", kind: "Classification · Regression", term: "Neural Network",
-    how: "Layers of neurons, each computing a weighted sum and a non-linear activation. Training (backpropagation + gradient descent) adjusts every weight to reduce the error. With hidden layers it can bend its boundary into any shape, which is why it handles circles and XOR.",
+    how: "Your turn. Circle data is the walkthrough's safe zone: teal inside, red outside. The network (layers of neurons, each a weighted sum plus an activation) is trained by backpropagation and gradient descent. With hidden layers it can bend its boundary into any shape; with none, it's just logistic regression and can only draw a straight line.",
     try: "Pick Circle data with 0 hidden layers and press Train: it fails, because that's just logistic regression. Add 1 or 2 hidden layers and train again. The diagram shows the weights: thicker lines = stronger, colour = positive or negative.",
     mount(host, ctl) {
       const pal = palette(), P = plot(host, 300);
@@ -427,7 +427,7 @@
   };
   add({
     id: "cnn", group: "sup", name: "Convolutional Neural Network (CNN)", kind: "Images", term: "Convolutional Neural Network (CNN)",
-    how: "A CNN slides small filters (kernels) across an image. At each position it multiplies the 3×3 patch by the filter's weights and adds them up, producing a feature map that lights up wherever that pattern appears. Real CNNs learn hundreds of filters and stack many layers: edges → shapes → objects.",
+    how: "Your turn. Draw on the input grid (click squares) and pick a filter. Watch it slide across the image, multiplying and adding at each position, to build a feature map that lights up wherever its pattern appears, exactly as in the walkthrough.",
     try: "Pick a filter and press Play to watch it slide. Vertical-edge filters light up the left and right sides of the square; horizontal-edge filters light up the top and bottom. Click squares on the input to draw your own shape.",
     wide: true,
     mount(host, ctl) {
