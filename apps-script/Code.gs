@@ -275,23 +275,23 @@ const CERT_PASS = 0.6;
 
 /**
  * Issues a certificate for a result that is already recorded in the Sheet (60% or more).
- * c = { title, score, total, match: { kind: module, module, level } | { kind: ring, ring } }.
+ * c = { title, score, total, match: { kind: 'module', module, level } | { kind: 'ring', ring } }.
  * Asking again for the same result returns the same certificate instead of a new one.
  */
 function issueCertificate(who, c) {
-  if (studentStatus(who.email) !== approved) return { ok: false, error: not_approved };
-  const isInt = (n) => typeof n === number && Math.floor(n) === n;
-  if (!c || typeof c.title !== string || !c.title || !isInt(c.total) || c.total < 1 || c.total > 200 ||
+  if (studentStatus(who.email) !== 'approved') return { ok: false, error: 'not_approved' };
+  const isInt = (n) => typeof n === 'number' && Math.floor(n) === n;
+  if (!c || typeof c.title !== 'string' || !c.title || !isInt(c.total) || c.total < 1 || c.total > 200 ||
       !isInt(c.score) || c.score < 0 || c.score > c.total || !c.match) {
-    return { ok: false, error: invalid_certificate };
+    return { ok: false, error: 'invalid_certificate' };
   }
-  if (c.score / c.total < CERT_PASS) return { ok: false, error: below_pass_mark };
-  if (!hasRecordedResult(who.email, c)) return { ok: false, error: no_matching_result };
+  if (c.score / c.total < CERT_PASS) return { ok: false, error: 'below_pass_mark' };
+  if (!hasRecordedResult(who.email, c)) return { ok: false, error: 'no_matching_result' };
   const title = safe(c.title, 120);
   const lock = LockService.getScriptLock();
   lock.waitLock(20000);
   try {
-    const sh = sheet(Certificates);
+    const sh = sheet('Certificates');
     const n = sh.getLastRow() - 1;
     if (n > 0) {
       // Same student, test and score in the last day: hand back the certificate already issued
