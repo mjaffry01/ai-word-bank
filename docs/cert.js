@@ -53,7 +53,7 @@
     const rule = (cx) => { x.strokeStyle = muted; x.lineWidth = 2; x.beginPath(); x.moveTo(cx - 200, 912); x.lineTo(cx + 200, 912); x.stroke(); };
     const small = (t, cx, y, font, col) => { x.textAlign = "center"; x.textBaseline = "alphabetic"; x.font = font; x.fillStyle = col; x.fillText(t, cx, y, 400); };
     // Left: the instructor's signature above the line, then the printed name and title
-    if (sigOk && SIG.naturalWidth) { const sc = Math.min(360 / SIG.naturalWidth, 120 / SIG.naturalHeight), w = SIG.naturalWidth * sc, h = SIG.naturalHeight * sc; x.drawImage(SIG, 360 - w / 2, 906 - h, w, h); }
+    if (sigOk && SIG.naturalWidth) { const sc = Math.min(400 / SIG.naturalWidth, 165 / SIG.naturalHeight), w = SIG.naturalWidth * sc, h = SIG.naturalHeight * sc; x.drawImage(SIG, 360 - w / 2, 906 - h, w, h); }
     rule(360); small(SIGNER.name, 360, 950, "600 28px 'Segoe UI', system-ui, sans-serif", ink); small(SIGNER.title, 360, 984, "500 22px 'Segoe UI', system-ui, sans-serif", muted);
     // Right: the date, and the certificate ID underneath
     small(longDate(c.d), W - 360, 898, "600 32px 'Segoe UI', system-ui, sans-serif", ink); rule(W - 360); small("Date", W - 360, 948, "500 24px 'Segoe UI', system-ui, sans-serif", muted);
