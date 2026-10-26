@@ -194,3 +194,7 @@
 .algostage.isfull .tcap{font-size:1.15rem}
 .algostage.isfull .algoviews{margin-bottom:10px}
 @media (min-width:1100px){.algostage.isfull .algoplay.wide{grid-template-columns:minmax(0,1fr) 270px}}
+
+/* Back trail button (shown after any in-course jump) */
+.wbback{position:fixed;left:16px;bottom:16px;z-index:2500;max-width:min(420px,calc(100vw - 32px));font:600 .95rem system-ui,sans-serif;padding:10px 16px;border-radius:999px;border:1.5px solid var(--accent);background:var(--bg);color:var(--fg);box-shadow:0 6px 20px rgba(0,0,0,.25);cursor:pointer;text-align:left;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.wbback:hover{background:color-mix(in srgb,var(--accent) 14%,var(--bg))}

@@ -563,8 +563,9 @@
     if (e.target.closest("[data-fs]")) { toggleFull(); return; }
     const w = e.target.closest(".stword");
     if (w) {
-      const box = root.querySelector(".algoextra .plainbox"), def = box && box.querySelector(`[data-stdef="${w.dataset.st}"]`);
+      const box = root.querySelector(".algoextra .plainbox:not(.wordsbox):not(.confbox)"), def = box && box.querySelector(`[data-stdef="${w.dataset.st}"]`);
       if (!def) return;
+      if (window.WB_NAV) window.WB_NAV.push("Back to where you were reading");
       box.open = true; def.classList.remove("flash"); void def.offsetWidth; def.classList.add("flash");
       def.scrollIntoView({ block: "nearest", behavior: "smooth" });
       return;
@@ -572,7 +573,7 @@
     const t = e.target.closest("[data-view]");
     if (t) { views[current] = t.dataset.view; store.set("wb-algo-view", views); stage(); root.querySelector(".algostage").scrollIntoView({ block: "start", behavior: "smooth" }); return; }
     const g = e.target.closest("[data-go]");
-    if (g) { current = g.dataset.go; store.set("wb-algo", current); stage(); root.querySelector(".algostage").scrollIntoView({ block: "start", behavior: "smooth" }); }
+    if (g) { if (window.WB_NAV) window.WB_NAV.push(); current = g.dataset.go; store.set("wb-algo", current); stage(); root.querySelector(".algostage").scrollIntoView({ block: "start", behavior: "smooth" }); }
   }
   // Full screen: the stage itself goes full screen (or fills the window where the Fullscreen API is missing, e.g. iPhone).
   // Walkthroughs redraw in place so they keep their scene; other views are remounted at the new size.
@@ -601,6 +602,12 @@
     host.querySelector(".algostage").addEventListener("click", stageClick);
     stage();
   };
+  // Let the Back trail return to the exact algorithm and tab
+  if (window.WB_NAV) window.WB_NAV.register("3", {
+    capture: () => ({ current, view: views[current] }),
+    restore: (s) => { current = s.current; if (s.view) views[s.current] = s.view; store.set("wb-algo", current); store.set("wb-algo-view", views); if (root && document.body.contains(root)) stage(); },
+    label: () => { if (!root || !document.body.contains(root) || root.closest("[hidden]")) return null; const a = A.list.find((x) => x.id === current); if (!a) return null; const v = a.views ? a.views.find((x) => x.key === views[a.id]) || a.views[0] : null; return a.name + (v ? " · " + v.label : ""); },
+  });
   A.unmount = function () {
     if (document.fullscreenElement && document.fullscreenElement === stageEl()) document.exitFullscreen();
     document.removeEventListener("fullscreenchange", onFsChange); document.removeEventListener("keydown", onKey); A.full = false;

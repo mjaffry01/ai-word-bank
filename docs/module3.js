@@ -478,7 +478,7 @@ and keeps learning from new examples.</pre></div>
 
   $("m3body").addEventListener("click", (e) => {
     const t = e.target.closest("[data-tab]"); if (t) { goTab(t.dataset.tab); return; }
-    const w = e.target.closest("[data-word]"); if (w) { window.WB_setModule && window.WB_setModule("1"); if (typeof goWeb === "function") goWeb(w.dataset.word); return; }
+    const w = e.target.closest("[data-word]"); if (w) { if (window.WB_NAV) window.WB_NAV.push(); window.WB_setModule && window.WB_setModule("1"); if (typeof goWeb === "function") goWeb(w.dataset.word); return; }
     const s = e.target.closest("[data-sort]"); if (s) { const p = store.get("wb-m3-sort", {}); p[s.dataset.sort] = s.dataset.type; store.set("wb-m3-sort", p); render(); return; }
     if (e.target.closest("[data-sortreset]")) { store.set("wb-m3-sort", {}); render(); return; }
     const l = e.target.closest("[data-label]"); if (l) { labels[l.dataset.label] = l.dataset.y; store.set("wb-m3-labels", labels); render(); return; }

@@ -582,7 +582,7 @@ The cat sat on the mat  →  and (21%)   .  (19%)   while (8%)   …</pre>
 
   $("m4body").addEventListener("click", (e) => {
     const t = e.target.closest("[data-tab]"); if (t) { goTab(t.dataset.tab); return; }
-    const w = e.target.closest("[data-word]"); if (w) { window.WB_setModule && window.WB_setModule("1"); if (typeof goWeb === "function") goWeb(w.dataset.word); return; }
+    const w = e.target.closest("[data-word]"); if (w) { if (window.WB_NAV) window.WB_NAV.push(); window.WB_setModule && window.WB_setModule("1"); if (typeof goWeb === "function") goWeb(w.dataset.word); return; }
     const tx = e.target.closest("[data-tokex]"); if (tx) { tokText = TOK_EXAMPLES[+tx.dataset.tokex]; store.set("wb-m4-toktext", tokText); $("m4tok").value = tokText; updateTokens(); return; }
     const nx = e.target.closest("[data-next]"); if (nx) { nextIdx = +nx.dataset.next; store.set("wb-m4-nexti", nextIdx); samples = []; lastPick = null; render(); return; }
     if (e.target.closest("[data-gen]")) { lastPick = sample(NEXT[nextIdx], temp); samples.push(lastPick); samples = samples.slice(-30); refreshNext(); return; }

@@ -401,7 +401,7 @@ Question: (your question here)</pre>
 
   $("m2body").addEventListener("click", (e) => {
     const t = e.target.closest("[data-tab]"); if (t) { goTab(t.dataset.tab); return; }
-    const w = e.target.closest("[data-word]"); if (w) { setModule("1"); if (typeof goWeb === "function") goWeb(w.dataset.word); return; }
+    const w = e.target.closest("[data-word]"); if (w) { if (window.WB_NAV) window.WB_NAV.push(); setModule("1"); if (typeof goWeb === "function") goWeb(w.dataset.word); return; }
     const c = e.target.closest("[data-copy]"); if (c) { copy(c.dataset.copy, c); return; }
     const p = e.target.closest("[data-preset]"); if (p) { draft = Object.assign({}, PRESETS[p.dataset.preset]); render(); return; }
     if (e.target.closest("[data-clear]")) { draft = { role: "", task: "", context: "", format: "", tone: "", example: "", honest: false }; render(); return; }
