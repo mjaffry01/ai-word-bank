@@ -160,6 +160,8 @@
     const k = keys[p], prm = opts.params || {}, has = (n) => prm[n] !== undefined && prm[n] !== null && prm[n] !== "";
     const t0 = performance.now(), msgs = [];
     if (opts.system && p !== "anthropic" && p !== "gemini") msgs.push({ role: "system", content: opts.system });
+    // opts.history: earlier turns of a conversation, [{role: "user" | "assistant", content}], sent before the new message
+    (opts.history || []).forEach((h) => msgs.push({ role: h.role, content: h.content }));
     msgs.push({ role: "user", content: opts.prompt });
     let url, headers, body;
     if (p === "openrouter" || p === "openai" || PROVIDERS[p].base) {
@@ -186,7 +188,7 @@
       if (has("seed")) g.seed = prm.seed;
       if (has("stop")) g.stopSequences = [prm.stop];
       if (has("thinking")) g.thinkingConfig = { thinkingBudget: { low: 512, medium: 4096, high: 16384 }[prm.thinking] };
-      body = { contents: [{ role: "user", parts: [{ text: opts.prompt }] }] };
+      body = { contents: (opts.history || []).map((h) => ({ role: h.role === "assistant" ? "model" : "user", parts: [{ text: h.content }] })).concat([{ role: "user", parts: [{ text: opts.prompt }] }]) };
       if (opts.system) body.systemInstruction = { parts: [{ text: opts.system }] };
       if (Object.keys(g).length) body.generationConfig = g;
     } else {
