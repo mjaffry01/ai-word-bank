@@ -1,0 +1,52 @@
+/* Module 2 "How AI answers" tab (m2-howai.js) */
+.hasec .card2{margin-top:12px}
+.hachart{padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:var(--bg);max-width:560px}
+.habar{display:grid;grid-template-columns:7em minmax(0,1fr) 3em;gap:8px;align-items:center;font-size:.88rem;margin:4px 0}
+.habar .w{font-family:var(--mono);white-space:pre;overflow:hidden;text-overflow:ellipsis}
+.habar .track{height:12px;border-radius:6px;background:var(--surface);border:1px solid var(--line);overflow:hidden}
+.habar .fill{display:block;height:100%;background:var(--muted);transition:width .35s}
+.habar.hit .fill{background:var(--accent)}
+.habar.hit .w{color:var(--accent);font-weight:700}
+.habar .pct{font:600 .78rem var(--mono);text-align:right}
+.hasay{margin:10px 0 0;font-size:.95rem}
+.hasay.good{color:var(--good)}.hasay.bad{color:var(--bad)}
+.hastages{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px}
+.hastages span{padding:5px 10px;border-radius:999px;border:1px solid var(--line);font-size:.82rem;color:var(--muted)}
+.hastages span.on{border-color:var(--accent);color:var(--accent);font-weight:700}
+.hastage{min-height:150px}
+.hastage p{margin:0 0 10px}
+.hatoks{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:8px}
+.hatoks span{padding:4px 8px;border-radius:6px;font:600 .9rem var(--mono);background:color-mix(in srgb,var(--accent) 18%,var(--bg));border:1px solid color-mix(in srgb,var(--accent) 40%,var(--line))}
+.hatoks span:nth-child(even){background:color-mix(in srgb,var(--good) 18%,var(--bg));border-color:color-mix(in srgb,var(--good) 40%,var(--line))}
+.hactx{padding:8px 12px;border:1px solid var(--line);border-radius:8px;background:var(--bg);margin-bottom:6px;font-size:.92rem}
+.hactx b{display:block;font:700 .68rem var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--accent)}
+.haanswer{margin-top:12px;padding:10px 12px;border-left:4px solid var(--accent);background:var(--bg);border-radius:0 8px 8px 0}
+.haanswer p:last-child{margin:0;font-size:1.05rem}
+.hacursor{color:var(--accent);animation:hablink 1s steps(2) infinite}
+@keyframes hablink{50%{opacity:0}}
+@media (prefers-reduced-motion:reduce){.hacursor{animation:none}.habar .fill{transition:none}}
+.hadets{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0 10px}
+.hadet{padding:6px 12px;border-radius:999px;border:1px solid var(--line);background:var(--bg);color:var(--fg);font:inherit;font-size:.88rem;cursor:pointer}
+.hadet:hover{border-color:var(--accent)}
+.hadet.on{background:var(--accent);border-color:var(--accent);color:var(--bg)}
+.hareads{margin:0;padding-left:1.2em}
+.hareads li{margin:4px 0;transition:opacity .2s}
+.hareads li.gone{text-decoration:line-through;opacity:.45}
+.hamatch{display:grid;grid-template-columns:minmax(0,.8fr) minmax(0,1.2fr);gap:12px}
+.hamatch>div{display:flex;flex-direction:column;gap:6px}
+.hapill{text-align:left;padding:8px 12px;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--fg);font:inherit;font-size:.9rem;cursor:pointer}
+.hapill:not(.ans){font-weight:600}
+.hapill:hover:not(:disabled){border-color:var(--accent)}
+.hapill.sel{border-color:var(--accent);box-shadow:0 0 0 2px color-mix(in srgb,var(--accent) 40%,transparent)}
+.hapill.done{border-color:var(--good);color:var(--good);cursor:default;opacity:.8}
+.hapill.done::before{content:"✓ "}
+.hapill.bad{border-color:var(--bad);animation:hashake .3s}
+@keyframes hashake{25%{transform:translateX(-4px)}75%{transform:translateX(4px)}}
+.haprompt span{display:block;padding:2px 4px;border-radius:4px;transition:background .2s}
+.haprompt span.hl{background:color-mix(in srgb,var(--accent) 25%,transparent)}
+.haquiz{margin:0;padding-left:1.3em}
+.haquiz li{margin:0 0 12px}
+.haquiz li p{margin:0}
+.haquiz .btn.ok{background:var(--good);border-color:var(--good);color:var(--bg)}
+.haquiz .btn.no{background:var(--bad);border-color:var(--bad);color:var(--bg)}
+@media (max-width:700px){.hamatch{grid-template-columns:1fr}}
