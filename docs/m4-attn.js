@@ -29,10 +29,10 @@
     const E = ENDINGS[ending], words = WORDS.map((w) => (w === "LAST" ? ending : w)), w = softmax(E.scores);
     const sentence = words.map((x) => {
       const isIt = x === "it", wt = step >= 2 ? w[x] : 0, raw = step === 1 ? E.scores[x] : null;
-      const bg = step >= 2 && !isIt ? `background:color-mix(in srgb,var(--accent) ${Math.round(10 + wt * 170)}%,transparent);color:${wt > 0.3 ? "var(--accent-ink)" : "var(--fg)"}` : "";
-      return `<span class="qkw ${isIt ? "me" : ""}" style="${bg}">${esc(x)}${raw != null && !isIt ? `<small>${raw.toFixed(1)}</small>` : ""}${step >= 2 && !isIt ? `<small>${pct(wt)}%</small>` : ""}</span>`;
+      const bg = step >= 2 ? `background:color-mix(in srgb,var(--accent) ${Math.round(10 + wt * 170)}%,transparent);color:${wt > 0.3 ? "var(--accent-ink)" : "var(--fg)"}` : "";
+      return `<span class="qkw ${isIt ? "me" : ""}" style="${bg}">${esc(x)}${raw != null ? `<small>${raw.toFixed(1)}</small>` : ""}${step >= 2 ? `<small>${pct(wt)}%</small>` : ""}</span>`;
     }).join("");
-    const top = Object.entries(w).filter(([k]) => k !== "it").sort((a, b) => b[1] - a[1]).slice(0, 3);
+    const top = Object.entries(w).filter(([k]) => k !== "it").sort((a, b) => b[1] - a[1]).slice(0, 3), rest = 1 - top.reduce((x, [, v]) => x + v, 0);
     const panels = [
       `<p>Every word gets three versions of itself. Here are the three for <b>“it”</b> and for two other words:</p>
        <div class="qkcards">
@@ -40,12 +40,12 @@
          <div class="qkcard k"><span class="t">Key of each word</span><b>What do I offer?</b><p>“trolley”: ${KEY.trolley}<br>“pole”: ${KEY.pole}<br>“hit”: ${KEY.hit}</p></div>
          <div class="qkcard v"><span class="t">Value of each word</span><b>What do I carry?</b><p>“trolley”: ${VALUE.trolley}<br>“pole”: ${VALUE.pole}</p></div></div>
        <p class="crit">In a real model these are lists of numbers, not sentences. The model makes all three from the same word, using three different sets of learned weights.</p>`,
-      `<p>“it” compares its <b>query</b> with every word's <b>key</b>. A good match gives a high score. The small numbers under each word are the scores.</p>
+      `<p>“it” compares its <b>query</b> with every word's <b>key</b>, including its own. A good match gives a high score. The small numbers under each word are the scores.</p>
        <p class="crit">Nobody wrote these rules. The model learned during training which queries should match which keys.</p>`,
-      `<p>The scores are turned into <b>weights</b> that add up to 100% (this step is called softmax). Darker means more attention.</p>
+      `<p>The scores are turned into <b>weights</b> that add up to 100% (this step is called softmax). Darker means more attention. Add up all the percentages under the words and you get 100%, give or take rounding; “it” even keeps ${pct(w.it)}% for itself.</p>
        <p class="tip">“it” gives <b>${pct(top[0][1])}%</b> of its attention to “${esc(top[0][0])}”. ${esc(E.why)}</p>`,
       `<p>The model builds a <b>new version of “it”</b>: a blend of every word's <b>value</b>, mixed by those weights.</p>
-       <div class="qkblend">${top.map(([k, v]) => `<span><b>${pct(v)}%</b> of “${esc(k)}”</span>`).join(" + ")} + a little of the rest</div>
+       <div class="qkblend">${top.map(([k, v]) => `<span><b>${pct(v)}%</b> of “${esc(k)}”</span>`).join(" + ")} + <span><b>${pct(rest)}%</b> from the other words and “it” itself</span></div>
        <p>So after attention, “it” carries the meaning <b>“${esc(VALUE[E.win])}”</b>. The model now knows what “it” refers to.</p>`,
     ];
     return `<div class="chips4" style="margin:0 0 10px"><span class="crit" style="align-self:center">Last word:</span>${Object.keys(ENDINGS).map((k) => `<button class="choice" data-qaend="${k}" aria-pressed="${k === ending}">${k}</button>`).join("")}</div>
@@ -57,9 +57,9 @@
 
   /* ---------- 2. Attention heads ---------- */
   const HEADS = [
-    { name: "Head A", job: "grammar", focus: "hit", w: { trolley: 0.45, pole: 0.4, The: 0.05, the: 0.05 }, say: "This head links the action “hit” to who did it (“trolley”) and what it hit (“pole”)." },
-    { name: "Head B", job: "meaning", focus: "it", w: { pole: 0.62, trolley: 0.18, rusty: 0.12, hit: 0.04 }, say: "This head links “it” to the thing it stands for: “pole”." },
-    { name: "Head C", job: "position", focus: "was", w: { it: 0.7, because: 0.15, pole: 0.05 }, say: "This head mostly looks at the word just before: “was” looks at “it”. Word order matters too." },
+    { name: "Head A", job: "grammar", focus: "hit", w: { trolley: 0.45, pole: 0.4, The: 0.05, the: 0.05, hit: 0.05 }, say: "This head links the action “hit” to who did it (“trolley”) and what it hit (“pole”)." },
+    { name: "Head B", job: "meaning", focus: "it", w: { pole: 0.62, trolley: 0.18, rusty: 0.12, hit: 0.04, it: 0.04 }, say: "This head links “it” to the thing it stands for: “pole”." },
+    { name: "Head C", job: "position", focus: "was", w: { it: 0.7, because: 0.15, pole: 0.05, was: 0.1 }, say: "This head mostly looks at the word just before: “was” looks at “it”. Word order matters too." },
   ];
   let head = 0, headShown = false;
   function headsHTML() {
@@ -69,7 +69,7 @@
         const wt = H.w[x] || 0, me = x === H.focus;
         return `<span class="qkw ${me ? "me" : ""}" style="${wt ? `background:color-mix(in srgb,var(--accent) ${Math.round(10 + wt * 170)}%,transparent);color:${wt > 0.3 ? "var(--accent-ink)" : "var(--fg)"}` : ""}">${esc(x)}${wt ? `<small>${pct(wt)}%</small>` : ""}</span>`;
       }).join("")}</div>
-      <p style="margin:10px 0 6px">Outlined: the word doing the looking. ${esc(H.say)}</p>
+      <p style="margin:10px 0 6px">Outlined: the word doing the looking. Its percentages add up to 100%, including what it keeps for itself. ${esc(H.say)}</p>
       ${headShown ? `<p class="tip">This head ended up tracking <b>${H.job}</b>. Nobody told it to: the jobs appear by themselves during training, and researchers discovered them afterwards by looking inside trained models.</p>`
         : `<button class="btn sm" data-qajob>What is this head's job?</button>`}`;
   }
@@ -129,14 +129,16 @@
   function html() {
     return `<div class="card2 qksec"><p class="kicker">Inside attention · step by step</p><h3>Query, key and value: how “it” finds what it means</h3>
         <p>The explorer above shows <i>where</i> a word looks. Here is <i>how</i>, without any maths. Step through it, then change the last word and watch “it” change its mind.</p>
+        <p class="qkmode">Shown in whole-sentence mode, so “it” can see “rusty”. A chatbot can't look ahead: see the note under “Every word looks at every word”.</p>
         <div id="qkqkv">${qkvHTML()}</div></div>
       <div class="card2 qksec"><p class="kicker">Many heads</p><h3>Several kinds of attention at once</h3>
         <p>A model runs attention many times side by side. Each copy is called a <b>head</b>, and each head learns to notice a different kind of link. Their results are then combined. Pick a head:</p>
+        <p class="qkmode">Whole-sentence mode, like the step-by-step example above.</p>
         <div id="qkheads">${headsHTML()}</div></div>
       <div class="card2 qksec"><p class="kicker">The catch</p><h3>Every word looks at every word</h3>
         <p>Older models read text one word at a time, left to right. Attention lets every word look at all the others in one step, which is faster to train and better at long-distance links. But it costs a lot. Move the slider:</p>
         <div id="qkcost">${costHTML()}</div>
-        <p class="crit" style="margin-top:10px">Chatbots add one rule: each word may only look at the words <i>before</i> it, because the later words haven't been written yet. So in a chatbot, the link between “it” and “pole” is made when the model reaches “rusty” and looks back.</p></div>
+        <p class="crit" style="margin-top:10px">Chatbots add one rule: each word may only look at the words <i>before</i> it, because the later words haven't been written yet. That roughly halves the dots, but the work still grows with the square of the length. In a chatbot, the link between “it” and “pole” is made when the model reaches “rusty” and looks back. Try the <b>Chatbot</b> mode in the explorer at the top of this page.</p></div>
       <div class="card2 qksec"><p class="kicker">The big picture · put it in order</p><h3>From tokens to ChatGPT</h3>
         <p>Attention is one link in a chain. Click the steps in the right order to build a chatbot.</p>
         <div id="qkchain">${chainHTML()}</div></div>

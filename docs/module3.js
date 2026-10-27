@@ -8,6 +8,7 @@
     get(k, d) { try { const v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } },
     set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} },
   };
+  const mine = (k) => (window.WB_mine ? window.WB_mine(k) : k); // a key for the signed-in student's own progress
   const word = (term, label) => `<button class="wordlink" data-word="${esc(term)}" title="Open in the learning web">${esc(label || term)}</button>`;
   const TABS = [["learn", "Lesson"], ["types", "Ways machines learn"], ["algos", "Algorithms map"], ["spam", "Train a model"], ["fit", "Overfitting lab"], ["wrong", "When models go wrong"], ["tm", "Teachable Machine"], ["quiz", "Quiz"]];
   let tab = store.get("wb-m3-tab", "learn");
@@ -305,7 +306,7 @@ and keeps learning from new examples.</pre></div>
 
   /* ---------- 6. Teachable Machine hand-in ---------- */
   const tm = () => {
-    const done = store.get("wb-m3-done", {});
+    const done = store.get(mine("wb-m3-done"), {});
     return `<section class="m2sec">
     <header><p class="kicker">Hands-on task · 30 minutes · hand in</p><h2>Train a real model with Teachable Machine</h2>
       <p>Google's free <a href="https://teachablemachine.withgoogle.com/train/image" target="_blank" rel="noopener">Teachable Machine</a> lets you train an image model in your browser with your webcam, with no code and no account. Your images stay on your computer unless you choose to save them.</p></header>
@@ -347,7 +348,7 @@ and keeps learning from new examples.</pre></div>
     msg.className = "savemsg"; msg.textContent = "Handing in…";
     try {
       await window.WB.call("saveSubmission", { submission: Object.assign({ module: MODULE }, sub) });
-      const done = store.get("wb-m3-done", {}); done[kind] = true; store.set("wb-m3-done", done);
+      const done = store.get(mine("wb-m3-done"), {}); done[kind] = true; store.set(mine("wb-m3-done"), done);
       msg.className = "savemsg ok"; msg.textContent = "Handed in. Your teacher can see it.";
     } catch (e) {
       msg.className = "savemsg err";
@@ -416,7 +417,7 @@ and keeps learning from new examples.</pre></div>
     advanced: { name: "Advanced", desc: "Trade-offs and real-world use: thresholds and AUC, drift, fairness across groups, how training works, and keeping models reliable.", qs: QUIZ_ADV },
   };
   const QZ = { level: null, qs: null, i: 0, picked: null, score: 0, missed: [], save: null };
-  const bestKey = (level) => "wb-m3-best-" + level;
+  const bestKey = (level) => mine("wb-m3-best-" + level);
   const nextLevel = (level) => { const ks = Object.keys(LEVELS), i = ks.indexOf(level); return ks[i + 1] || null; };
   const shuffle = (a) => { for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
   function startQuiz(level) { QZ.level = LEVELS[level] ? level : "beginner"; QZ.qs = shuffle(LEVELS[QZ.level].qs.map((x) => ({ q: x.q, why: x.why, right: x.o[0], opts: shuffle(x.o.slice()) }))); QZ.i = 0; QZ.picked = null; QZ.score = 0; QZ.missed = []; QZ.save = null; render(); }
@@ -425,7 +426,7 @@ and keeps learning from new examples.</pre></div>
       return `<section class="m2sec" style="max-width:none"><header><p class="kicker">Check your understanding</p><h2>Module 3 quiz</h2>
         <p>Three levels of 15 questions each. Start with Beginner and work up. Your score and answers go to your teacher.</p></header>
         <div class="tech">${Object.entries(LEVELS).map(([k, L], i) => {
-          const best = store.get(bestKey(k), k === "beginner" ? store.get("wb-m3-best", null) : null);
+          const best = store.get(bestKey(k), k === "beginner" ? store.get(mine("wb-m3-best"), null) : null);
           return `<div class="card2"><p class="kicker">Level ${i + 1}</p><h3>${L.name}</h3><p class="when">${esc(L.desc)}</p>
             <p class="crit" style="margin:0">${L.qs.length} questions · ${best ? `Your best: <b>${best.s} / ${best.n}</b>` : "Not tried yet"}</p>
             <div class="btnrow" style="margin:0"><button class="btn primary" data-qstart="${k}">Start ${L.name}</button></div></div>`;
@@ -436,8 +437,8 @@ and keeps learning from new examples.</pre></div>
     if (QZ.i >= n) {
       const pct = Math.round(QZ.score / n * 100);
       const msg = pct === 100 ? "Perfect. You understand how machines learn." : pct >= 80 ? "Strong result. Look over the misses below." : pct >= 50 ? "Getting there. Revisit the lesson and labs for the questions you missed." : "Go back through the lesson and the two labs, then try again.";
-      const saveTxt = { saving: "Saving your result…", saved: "Result saved. Your teacher can see it.", failed: "This result could not be saved. Check your connection and take the quiz again." }[QZ.save];
-      return `<section class="m2sec"><div class="quiz" style="margin:0;max-width:none">${head}<div class="qcard"><p class="qkind">Result</p><div class="score">${QZ.score} / ${n}</div>${saveTxt ? `<p class="savestate${QZ.save === "failed" ? " bad" : ""}">${saveTxt}</p>` : ""}<p>${msg}</p>${window.WB_CERT ? window.WB_CERT.block({ title: `${MODULE} · ${LEVELS[QZ.level].name} quiz`, score: QZ.score, total: n, saved: QZ.save, match: { kind: "module", module: MODULE, level: LEVELS[QZ.level].name } }) : ""}
+      const saveTxt = { saving: "Saving your result…", saved: "Result saved. Your teacher can see it.", failed: "This result could not be saved yet. Your answers are kept: check your connection, then press Retry saving." }[QZ.save];
+      return `<section class="m2sec"><div class="quiz" style="margin:0;max-width:none">${head}<div class="qcard"><p class="qkind">Result</p><div class="score">${QZ.score} / ${n}</div>${saveTxt ? `<p class="savestate${QZ.save === "failed" ? " bad" : ""}">${saveTxt}</p>` : ""}${QZ.save === "failed" ? `<div class="btnrow" style="justify-content:center"><button class="btn primary" data-qretry>Retry saving</button></div>` : ""}<p>${msg}</p>${window.WB_CERT ? window.WB_CERT.block({ title: `${MODULE} · ${LEVELS[QZ.level].name} quiz`, score: QZ.score, total: n, saved: QZ.save, match: { kind: "module", module: MODULE, level: LEVELS[QZ.level].name } }) : ""}
         ${QZ.missed.length ? `<p class="qkind" style="margin-top:20px">Review these</p><ul class="missed">${QZ.missed.map((q) => `<li><div class="q">${esc(q.q)}</div><div><b>${esc(q.right)}</b>. ${esc(q.why)}</div></li>`).join("")}</ul>` : ""}
         <div class="qfoot"><button class="btn" data-qlevels>Choose a level</button><button class="btn" data-qstart="${QZ.level}">Take it again</button>${nextLevel(QZ.level) && pct >= 80 ? `<button class="btn primary" data-qstart="${nextLevel(QZ.level)}">Next: ${LEVELS[nextLevel(QZ.level)].name}</button>` : ""}</div></div></div></section>`;
     }
@@ -455,9 +456,8 @@ and keeps learning from new examples.</pre></div>
       const key = bestKey(QZ.level), best = store.get(key, null), n = QZ.qs.length;
       if (!best || QZ.score / n > best.s / best.n) store.set(key, { s: QZ.score, n });
       if (window.WB && window.WB.call) {
-        const qs = QZ.qs; QZ.save = "saving";
-        window.WB.call("saveModuleQuiz", { result: { module: MODULE, level: LEVELS[QZ.level].name, score: QZ.score, total: n, answers: qs.map((x) => ({ kind: "Module 3 · " + LEVELS[QZ.level].name, question: x.q, chosen: x.chosen, correct: x.right, ok: x.chosen === x.right })) } })
-          .then(() => { QZ.save = "saved"; }, () => { QZ.save = "failed"; }).then(() => { if (QZ.qs === qs && tab === "quiz" && !$("m3").hidden) render(); });
+        QZ.result = { module: MODULE, level: LEVELS[QZ.level].name, score: QZ.score, total: n, answers: QZ.qs.map((x) => ({ kind: "Module 3 · " + LEVELS[QZ.level].name, question: x.q, chosen: x.chosen, correct: x.right, ok: x.chosen === x.right })) };
+        saveResult();
       }
     }
     render();
@@ -488,6 +488,7 @@ and keeps learning from new examples.</pre></div>
     const h = e.target.closest("[data-handin]"); if (h) { handIn(h.dataset.handin); return; }
     const qst = e.target.closest("[data-qstart]"); if (qst) { startQuiz(qst.dataset.qstart); return; }
     if (e.target.closest("[data-qlevels]")) { QZ.qs = null; render(); return; }
+    if (e.target.closest("[data-qretry]")) { if (QZ.result && window.WB && window.WB.call) { saveResult(); render(); } return; }
     const o = e.target.closest("[data-m3opt]"); if (o) { answer(+o.dataset.m3opt); return; }
     if (e.target.closest("[data-qnext]")) { QZ.i++; QZ.picked = null; render(); }
   });
@@ -500,5 +501,16 @@ and keeps learning from new examples.</pre></div>
     const k = "1234abcd".indexOf(e.key.toLowerCase()); if (k >= 0) answer(k % 4);
   });
 
+  // A failed save keeps the answers in QZ.result so the student can retry without retaking the quiz
+  function saveResult() {
+    const qs = QZ.qs; QZ.save = "saving";
+    window.WB.call("saveModuleQuiz", { result: QZ.result })
+      .then(() => { QZ.save = "saved"; }, () => { QZ.save = "failed"; }).then(() => { if (QZ.qs === qs && tab === "quiz" && !$("m3").hidden) render(); });
+  }
+  // A different student signed in (or the last one signed out): forget the open quiz and show their own progress
+  window.addEventListener("wb-user", () => {
+    Object.assign(QZ, { level: null, qs: null, i: 0, picked: null, score: 0, missed: [], save: null, result: null });
+    if (!$("m3").hidden) render();
+  });
   (window.WB_MODULES = window.WB_MODULES || {})["3"] = render;
 })();

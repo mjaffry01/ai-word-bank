@@ -1,5 +1,6 @@
 /* Module 4 Attention tab, step-by-step parts (m4-attn.js) */
 .qksec{margin-top:12px}
+.qkmode{display:inline-block;margin:0 0 10px;padding:4px 10px;border-radius:999px;background:var(--bg);border:1px solid var(--line);font-size:.82rem;color:var(--muted)}
 .qksent{display:flex;flex-wrap:wrap;gap:6px;font:500 1.15rem var(--display);line-height:1.5;padding:14px;border:1px solid var(--line);border-radius:10px;background:var(--bg)}
 .qkw{display:inline-flex;flex-direction:column;align-items:center;padding:2px 6px;border-radius:6px;border:1px solid transparent;transition:background .25s}
 .qkw.me{outline:2px solid var(--accent);outline-offset:1px;font-weight:700}

@@ -34,6 +34,9 @@
 .attn button{font:inherit;padding:2px 6px;border-radius:6px;border:1px solid transparent;background:transparent;color:var(--fg);cursor:default}
 .attn button.click{cursor:pointer;border-color:var(--line);text-decoration:underline dotted;text-underline-offset:4px}
 .attn button.focus{outline:2px solid var(--accent);outline-offset:1px}
+.attn button.future{opacity:.3;text-decoration:none}
+.attnmode{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:0 0 6px}
+.attnmode span{font-size:.88rem;color:var(--muted)}
 .attn .wt{display:block;font:500 .65rem var(--mono);color:var(--muted);text-align:center;line-height:1}
 .ctxbar{display:flex;height:34px;border:1px solid var(--line);border-radius:8px;overflow:hidden;background:var(--bg)}
 .ctxbar i{display:block;height:100%;border-right:1px solid var(--surface)}

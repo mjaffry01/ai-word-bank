@@ -44,3 +44,11 @@
 
   window.WB_NAV = { push, back, register: (m, r) => (restorers[m] = r), get size() { return trail.length; } };
 })();
+
+// Progress that belongs to one student (best scores, hand-ins, drafts) is kept under their email,
+// so students who share a computer don't see each other's work. "wb-user" fires when the account changes.
+window.WB_mine = (k) => {
+  let e = "";
+  try { e = (JSON.parse(localStorage.getItem("wb-session") || "null") || {}).email || ""; } catch (x) {}
+  return k + "|" + (e.toLowerCase() || "guest");
+};

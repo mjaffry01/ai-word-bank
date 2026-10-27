@@ -1616,7 +1616,14 @@ renderChips();render();
   function clearSession() { sess = null; try { localStorage.removeItem(SESSION_KEY); } catch (e) {} }
 
   function showGate(html) { appEl.hidden = true; gate.hidden = false; gateBody.innerHTML = html; bindSignOut(); }
-  function showApp() { gate.hidden = true; appEl.hidden = false; window.WB.refresh(); if (window.WB_signedInAs && sess) window.WB_signedInAs(sess.email); }
+  function showApp() {
+    gate.hidden = true; appEl.hidden = false; window.WB.refresh();
+    if (window.WB_signedInAs && sess) window.WB_signedInAs(sess.email);
+    userChanged(sess && sess.email);
+  }
+  // Tells the modules when a different student is using the page, so they reload that student's progress
+  let shownFor;
+  function userChanged(email) { if (email === shownFor) return; shownFor = email; window.dispatchEvent(new CustomEvent("wb-user", { detail: email || null })); }
   const signOutLink = `<button class="linkish" data-signout>Sign out</button>`;
   function bindSignOut() { document.querySelectorAll("[data-signout]").forEach((b) => { b.onclick = signOut; }); }
 
@@ -1636,6 +1643,7 @@ renderChips();render();
     if (window.google && google.accounts) google.accounts.id.disableAutoSelect();
     who.innerHTML = "";
     window.WB.onQuizDone = null; window.WB.setBest({});
+    userChanged(null);
     signInView();
   }
   function expired() { clearSession(); signInView("Your 48-hour sign-in has ended. Please sign in again."); }

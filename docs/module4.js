@@ -9,6 +9,7 @@
     get(k, d) { try { const v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } },
     set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} },
   };
+  const mine = (k) => (window.WB_mine ? window.WB_mine(k) : k); // a key for the signed-in student's own progress
   const word = (term, label) => `<button class="wordlink" data-word="${esc(term)}" title="Open in the learning web">${esc(label || term)}</button>`;
   const TABS = [["learn", "Lesson"], ["deep", "Deep dive"], ["tokens", "Tokenizer lab"], ["next", "Next-word game"], ["attn", "Attention"], ["halluc", "Why it hallucinates"], ["ctx", "Context window"], ["task", "Hand-in"], ["quiz", "Quiz"]];
   let tab = store.get("wb-m4-tab", "learn");
@@ -315,29 +316,47 @@ The cat sat on the mat  →  and (21%)   .  (19%)   while (8%)   …</pre>
   }
 
   /* ---------- 4. Attention explorer (illustrative weights) ---------- */
+  // focus: illustrative weights for the clickable words; whatever they leave out goes to the word itself and the rest.
+  // later: what changes in chatbot mode, where a word can't see the words after it.
   const ATTN = [
-    { s: "The animal didn't cross the street because it was too tired", focus: { it: { animal: 0.52, street: 0.12, tired: 0.14, The: 0.03, cross: 0.05, was: 0.06 }, tired: { it: 0.34, animal: 0.28, was: 0.14, too: 0.12 } }, note: "\"it\" pays most attention to \"animal\": tired things are animals, not streets." },
-    { s: "The animal didn't cross the street because it was too wide", focus: { it: { street: 0.5, animal: 0.14, wide: 0.17, cross: 0.08, was: 0.05 }, wide: { it: 0.31, street: 0.33, too: 0.15, was: 0.1 } }, note: "Change one word and \"it\" now looks at \"street\": wide things are streets. Attention follows meaning." },
-    { s: "She sat on the bank of the river and watched the water", focus: { bank: { river: 0.46, water: 0.2, sat: 0.12, of: 0.06, She: 0.04 } }, note: "Here \"bank\" attends to \"river\" and \"water\", so the model reads it as a riverbank." },
-    { s: "He went to the bank to pay money into his account", focus: { bank: { money: 0.38, account: 0.3, pay: 0.16, went: 0.05, He: 0.03 } }, note: "Same word, different neighbours: \"bank\" attends to \"money\" and \"account\", so it means a bank you keep money in." },
+    { s: "The animal didn't cross the street because it was too tired", focus: { it: { animal: 0.52, street: 0.12, tired: 0.14, The: 0.03, cross: 0.05, was: 0.06 }, tired: { it: 0.34, animal: 0.28, was: 0.14, too: 0.12 } }, note: "\"it\" pays most attention to \"animal\": tired things are animals, not streets.", later: { it: "\"it\" can't see \"tired\" yet, so here it can't be sure whether it means the animal or the street. The link is made later: click \"tired\" and watch it look back at \"it\" and \"animal\"." } },
+    { s: "The animal didn't cross the street because it was too wide", focus: { it: { street: 0.5, animal: 0.14, wide: 0.17, cross: 0.08, was: 0.05 }, wide: { it: 0.31, street: 0.33, too: 0.15, was: 0.1 } }, note: "Change one word and \"it\" now looks at \"street\": wide things are streets. Attention follows meaning.", later: { it: "\"it\" can't see \"wide\" yet, so here it can't tell the animal from the street. Click \"wide\": it looks back at \"it\" and \"street\", and that is where the meaning is settled." } },
+    { s: "She sat on the bank of the river and watched the water", focus: { bank: { river: 0.46, water: 0.2, sat: 0.12, of: 0.06, She: 0.04 } }, note: "Here \"bank\" attends to \"river\" and \"water\", so the model reads it as a riverbank.", later: { bank: "\"bank\" can't see \"river\" or \"water\" yet, so when it is written it could still be either kind of bank. Later words such as \"river\" look back at it and settle the meaning." } },
+    { s: "He went to the bank to pay money into his account", focus: { bank: { money: 0.38, account: 0.3, pay: 0.16, went: 0.05, He: 0.03 } }, note: "Same word, different neighbours: \"bank\" attends to \"money\" and \"account\", so it means a bank you keep money in.", later: { bank: "\"bank\" can't see \"money\" or \"account\" yet. In a chatbot its meaning only becomes clear when those later words look back at it." } },
   ];
-  let attnIdx = store.get("wb-m4-attni", 0), attnWord = null;
+  let attnIdx = store.get("wb-m4-attni", 0), attnWord = null, attnMode = store.get("wb-m4-attnmode", "full");
   const words4 = (s) => s.split(" ");
+  const bare = (w) => w.replace(/[^A-Za-z']/g, "");
+  // The full set of weights for the clicked word, adding up to 100%. In chatbot mode, words after it get nothing.
+  function attnWeights(a, focus) {
+    const ws = words4(a.s).map(bare), at = ws.indexOf(focus), raw = a.focus[focus], out = {};
+    let kept = 0;
+    for (const [k, v] of Object.entries(raw)) { if (attnMode === "causal" && ws.indexOf(k) > at) continue; out[k] = v; kept += v; }
+    const rest = 1 - Object.values(raw).reduce((x, y) => x + y, 0), total = kept + rest;
+    Object.keys(out).forEach((k) => (out[k] /= total));
+    return { w: out, rest: rest / total, at };
+  }
   const attn = () => {
-    const a = ATTN[attnIdx], weights = attnWord ? a.focus[attnWord] : null;
+    const a = ATTN[attnIdx], A = attnWord ? attnWeights(a, attnWord) : null, ws = words4(a.s);
+    const causal = attnMode === "causal";
     return `<section class="m2sec">
-    <header><p class="kicker">Lab · 10 minutes</p><h2>Attention: how a word finds its meaning</h2><p>${word("Attention Mechanism", "Attention")} lets each word look at every other word and decide which ones matter for understanding it. Click an underlined word to see where it "looks". The darker the highlight, the more attention.</p></header>
+    <header><p class="kicker">Lab · 10 minutes</p><h2>Attention: how a word finds its meaning</h2><p>${word("Attention Mechanism", "Attention")} lets each word look at other words and decide which ones matter for understanding it. Click an underlined word to see where it "looks". The darker the highlight, the more attention.</p></header>
     <div class="card2">
-      <div class="chips4" style="margin:0 0 14px">${ATTN.map((x, i) => `<button class="choice" data-attn="${i}" aria-pressed="${i === attnIdx}">Sentence ${i + 1}</button>`).join("")}</div>
-      <div class="attn">${words4(a.s).map((w) => {
-        const key = w.replace(/[^A-Za-z']/g, ""), clickable = !!a.focus[key], wt = weights ? (weights[key] || 0) : 0;
-        const bg = weights && wt ? `background:color-mix(in srgb,var(--accent) ${Math.round(15 + wt * 160)}%,transparent);color:${wt > 0.3 ? "var(--accent-ink)" : "var(--fg)"}` : "";
-        return `<button class="${clickable ? "click" : ""} ${attnWord === key ? "focus" : ""}" ${clickable ? `data-aword="${esc(key)}"` : "disabled"} style="${bg}">${esc(w)}${weights && wt ? `<span class="wt">${Math.round(wt * 100)}%</span>` : ""}</button>`;
+      <div class="chips4" style="margin:0 0 10px">${ATTN.map((x, i) => `<button class="choice" data-attn="${i}" aria-pressed="${i === attnIdx}">Sentence ${i + 1}</button>`).join("")}</div>
+      <div class="attnmode" role="group" aria-label="How the model reads"><span>How the model reads:</span>
+        <button class="choice" data-attnmode="full" aria-pressed="${!causal}">Whole sentence at once</button>
+        <button class="choice" data-attnmode="causal" aria-pressed="${causal}">Chatbot: writing left to right</button></div>
+      <p class="crit" style="margin:0 0 12px">${causal ? "A chatbot writes one word at a time, so each word can only look at the words <b>before</b> it. Later words are greyed out: they haven't been written yet." : "Models that read finished text, such as the ones search engines use to understand your query, let every word look at the <b>whole</b> sentence, before and after it."}</p>
+      <div class="attn">${ws.map((w, i) => {
+        const key = bare(w), clickable = !!a.focus[key], wt = A ? (A.w[key] || 0) : 0, future = A && causal && i > A.at;
+        const bg = A && wt ? `background:color-mix(in srgb,var(--accent) ${Math.round(15 + wt * 160)}%,transparent);color:${wt > 0.3 ? "var(--accent-ink)" : "var(--fg)"}` : "";
+        return `<button class="${clickable ? "click" : ""} ${attnWord === key ? "focus" : ""} ${future ? "future" : ""}" ${clickable ? `data-aword="${esc(key)}"` : "disabled"} style="${bg}">${esc(w)}${A && wt ? `<span class="wt">${Math.round(wt * 100)}%</span>` : ""}</button>`;
       }).join("")}</div>
-      <p style="margin-top:12px">${attnWord ? esc(a.note) : `Click <b>${Object.keys(a.focus).map(esc).join("</b> or <b>")}</b>.`}</p>
+      ${A ? `<p class="crit" style="margin:8px 0 0">The highlighted words get ${Math.round((1 - A.rest) * 100)}%. The other ${Math.round(A.rest * 100)}% goes to "${esc(attnWord)}" itself and the words with no number. Together it adds up to 100%.</p>` : ""}
+      <p style="margin-top:12px">${attnWord ? esc(causal && a.later[attnWord] ? a.later[attnWord] : a.note) : `Click <b>${Object.keys(a.focus).map(esc).join("</b> or <b>")}</b>.`}</p>
     </div>
     <div class="card2"><p class="kicker">Why it matters</p><h3>Context changes meaning</h3>
-      <p>Compare sentences 1 and 2, then 3 and 4. The same word means different things depending on its neighbours, and attention is how the model works that out. Real models run many attention patterns at once (${word("Multi-head Attention", "multi-head attention")}) across dozens of layers. The weights here are simplified to show the idea.</p>
+      <p>Compare sentences 1 and 2, then 3 and 4. The same word means different things depending on its neighbours, and attention is how the model works that out. Then switch to <b>Chatbot</b> mode: the meaning is still found, just later in the sentence. Real models run many attention patterns at once (${word("Multi-head Attention", "multi-head attention")}) across dozens of layers. The weights here are simplified to show the idea.</p>
     </div>
     ${window.WB_ATTN ? window.WB_ATTN.html() : ""}
   </section>`;
@@ -346,6 +365,13 @@ The cat sat on the mat  →  and (21%)   .  (19%)   while (8%)   …</pre>
   /* ---------- 5. Why it hallucinates ---------- */
   const MARS = { p: "The first person to walk on Mars was", w: [["Neil", 19], ["Elon", 14], ["John", 11], ["an", 10], ["Buzz", 8], ["Mark", 6], ["Yuri", 5], ["nobody", 3]] };
   let marsPick = null;
+  // The feedback after a pick. The chance shown is worked out from the same numbers as the bars.
+  function marsMsg(w) {
+    const p = (dist(MARS, 1).find((x) => x[0] === w) || [w, 0])[1], chance = (p * 100).toFixed(p < 0.1 ? 1 : 0) + "%";
+    if (w === "nobody") return `It started the true answer this time, but this only happens about ${chance} of the time.`;
+    if (w === "an") return `"an…" could go either way: "an astronaut has never been there" is true, "an American named…" would be false. Click Generate again to see other starts.`;
+    return `"${esc(w)}…" (picked ${chance} of the time): a name. Nobody has walked on Mars, so if the sentence goes on to name this person as the first, the answer is false, however confident it sounds.`;
+  }
   const halluc = () => `<section class="m2sec">
     <header><p class="kicker">Concept · 15 minutes</p><h2>Why LLMs make things up</h2><p>Now you know how answers are made, ${word("Hallucination", "hallucinations")} make sense. The model is choosing <i>likely</i> next words, not checking facts.</p></header>
     <div class="card2"><p class="kicker">Demo</p><h3>A question with no true answer</h3>
@@ -353,7 +379,8 @@ The cat sat on the mat  →  and (21%)   .  (19%)   while (8%)   …</pre>
       <p class="prompt4">${esc(MARS.p)} <span class="blank">${marsPick ? esc(marsPick) : "___"}</span></p>
       <div class="probs">${probsHTML(MARS, 1, marsPick)}</div>
       <div class="btnrow"><button class="btn primary" data-mars>Generate</button></div>
-      ${marsPick ? `<p class="savemsg ${marsPick === "nobody" ? "ok" : "err"}" style="font-size:1rem">${marsPick === "nobody" ? "It picked the true answer this time, but only about 3% of the time." : `"${esc(marsPick)}…": a confident start to a false answer. The rest of the sentence will be made up to fit.`}</p>` : ""}
+      ${marsPick ? `<p class="savemsg ${marsPick === "nobody" ? "ok" : marsPick === "an" ? "" : "err"}" style="font-size:1rem">${marsMsg(marsPick)}</p>` : ""}
+      <p class="crit" style="margin-top:8px">One word can't make an answer true or false. What matters is the whole sentence it leads to, but a name here pulls the answer towards a false one.</p>
       <p class="crit" style="margin-top:8px">Probabilities are illustrative. Modern assistants are trained to catch questions like this one, but the same pull towards a plausible-sounding answer causes hallucinations on harder or more obscure questions.</p>
     </div>
     <div class="card2"><p class="kicker">Causes</p><h3>Four reasons it happens</h3>
@@ -419,7 +446,7 @@ The cat sat on the mat  →  and (21%)   .  (19%)   while (8%)   …</pre>
 
   /* ---------- 7. Hand-in ---------- */
   const task = () => {
-    const done = store.get("wb-m4-done", false);
+    const done = store.get(mine("wb-m4-done"), false), dr = store.get(mine("wb-m4-draft"), {});
     return `<section class="m2sec">
     <header><p class="kicker">Hands-on task · 20 minutes · hand in</p><h2>Same prompt, different answers</h2><p>Explain real AI behaviour using what you've learned: tokens, next-word prediction, temperature, training data and the context window.</p></header>
     <div class="card2"><p class="kicker">Steps</p><ol class="steps3">
@@ -429,10 +456,10 @@ The cat sat on the mat  →  and (21%)   .  (19%)   while (8%)   …</pre>
       <li><span>Explain the differences using at least two ideas from this module.</span></li>
     </ol></div>
     <div class="card2"><p class="kicker">Hand in</p><h3>Your findings <span class="pill2 ${done ? "done" : ""}" style="vertical-align:middle;margin-left:6px">${done ? "Handed in" : "To do"}</span></h3>
-      <div class="field"><label for="m4p">The prompt you used, and which tools</label><textarea id="m4p" rows="2"></textarea></div>
-      <div class="field"><label for="m4diff">How did the answers differ (same tool vs different tools)?</label><textarea id="m4diff" rows="3"></textarea></div>
-      <div class="field"><label for="m4why">Why? Explain using ideas from this module</label><textarea id="m4why" rows="4" placeholder="e.g. The words changed each time because the model samples the next token with some randomness (temperature)…"></textarea></div>
-      <div class="btnrow" style="margin:0"><button class="btn primary" data-m4handin>Hand in</button></div><p class="savemsg" id="m4msg" hidden></p>
+      <div class="field"><label for="m4p">The prompt you used, and which tools</label><textarea id="m4p" rows="2">${esc(dr.m4p || "")}</textarea></div>
+      <div class="field"><label for="m4diff">How did the answers differ (same tool vs different tools)?</label><textarea id="m4diff" rows="3">${esc(dr.m4diff || "")}</textarea></div>
+      <div class="field"><label for="m4why">Why? Explain using ideas from this module</label><textarea id="m4why" rows="4" placeholder="e.g. The words changed each time because the model samples the next token with some randomness (temperature)…">${esc(dr.m4why || "")}</textarea></div>
+      <div class="btnrow" style="margin:0"><button class="btn primary" data-m4handin>Hand in</button></div><p class="crit" style="margin-top:6px">Your answers are saved on this device as you type, so you can switch tabs and come back.</p><p class="savemsg" id="m4msg" hidden></p>
     </div>
   </section>`;
   };
@@ -444,7 +471,7 @@ The cat sat on the mat  →  and (21%)   .  (19%)   while (8%)   …</pre>
     const btn = document.querySelector("[data-m4handin]"); btn.disabled = true; msg.className = "savemsg"; msg.textContent = "Handing in…";
     try {
       await window.WB.call("saveSubmission", { submission: { module: MODULE, task: "Same prompt, different answers", tool: "Several AI tools", prompt: p, reflection: `DIFFERENCES: ${d || "-"}\nWHY: ${w}` } });
-      store.set("wb-m4-done", true); msg.className = "savemsg ok"; msg.textContent = "Handed in. Your teacher can see it.";
+      store.set(mine("wb-m4-done"), true); msg.className = "savemsg ok"; msg.textContent = "Handed in. Your teacher can see it.";
     } catch (e) { msg.className = "savemsg err"; msg.textContent = e && e.error === "signed_out" ? "Your sign-in has ended. Sign in again, then hand in." : "This could not be handed in. Check your connection and try again."; }
     btn.disabled = false;
   }
@@ -526,7 +553,7 @@ The cat sat on the mat  →  and (21%)   .  (19%)   while (8%)   …</pre>
     architect: { name: "Architect", desc: "Running chatbots in production: latency, KV cache and capacity, batching and caching, cost, RAG vs fine-tuning, routing, security and observability.", qs: QUIZ_ARCH },
   };
   const QZ = { level: null, qs: null, i: 0, picked: null, score: 0, missed: [], save: null };
-  const bestKey = (level) => "wb-m4-best-" + level;
+  const bestKey = (level) => mine("wb-m4-best-" + level);
   const nextLevel = (level) => { const ks = Object.keys(LEVELS), i = ks.indexOf(level); return ks[i + 1] || null; };
   const shuffle = (a) => { for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
   function startQuiz(level) { QZ.level = LEVELS[level] ? level : "beginner"; QZ.qs = shuffle(LEVELS[QZ.level].qs.map((x) => ({ q: x.q, why: x.why, right: x.o[0], opts: shuffle(x.o.slice()) }))); QZ.i = 0; QZ.picked = null; QZ.score = 0; QZ.missed = []; QZ.save = null; render(); }
@@ -546,8 +573,8 @@ The cat sat on the mat  →  and (21%)   .  (19%)   while (8%)   …</pre>
     if (QZ.i >= n) {
       const pct = Math.round(QZ.score / n * 100);
       const msg = pct === 100 ? "Perfect. You understand how LLMs work." : pct >= 80 ? "Strong result. Look over the misses below." : pct >= 50 ? "Getting there. Revisit the lesson and labs for the questions you missed." : "Go back through the lesson and labs, then try again.";
-      const saveTxt = { saving: "Saving your result…", saved: "Result saved. Your teacher can see it.", failed: "This result could not be saved. Check your connection and take the quiz again." }[QZ.save];
-      return `<section class="m2sec"><div class="quiz" style="margin:0;max-width:none">${head}<div class="qcard"><p class="qkind">Result</p><div class="score">${QZ.score} / ${n}</div>${saveTxt ? `<p class="savestate${QZ.save === "failed" ? " bad" : ""}">${saveTxt}</p>` : ""}<p>${msg}</p>${window.WB_CERT ? window.WB_CERT.block({ title: `${MODULE} · ${LEVELS[QZ.level].name} quiz`, score: QZ.score, total: n, saved: QZ.save, match: { kind: "module", module: MODULE, level: LEVELS[QZ.level].name } }) : ""}
+      const saveTxt = { saving: "Saving your result…", saved: "Result saved. Your teacher can see it.", failed: "This result could not be saved yet. Your answers are kept: check your connection, then press Retry saving." }[QZ.save];
+      return `<section class="m2sec"><div class="quiz" style="margin:0;max-width:none">${head}<div class="qcard"><p class="qkind">Result</p><div class="score">${QZ.score} / ${n}</div>${saveTxt ? `<p class="savestate${QZ.save === "failed" ? " bad" : ""}">${saveTxt}</p>` : ""}${QZ.save === "failed" ? `<div class="btnrow" style="justify-content:center"><button class="btn primary" data-qretry>Retry saving</button></div>` : ""}<p>${msg}</p>${window.WB_CERT ? window.WB_CERT.block({ title: `${MODULE} · ${LEVELS[QZ.level].name} quiz`, score: QZ.score, total: n, saved: QZ.save, match: { kind: "module", module: MODULE, level: LEVELS[QZ.level].name } }) : ""}
         ${QZ.missed.length ? `<p class="qkind" style="margin-top:20px">Review these</p><ul class="missed">${QZ.missed.map((q) => `<li><div class="q">${esc(q.q)}</div><div><b>${esc(q.right)}</b>. ${esc(q.why)}</div></li>`).join("")}</ul>` : ""}
         <div class="qfoot"><button class="btn" data-qlevels>Choose a level</button><button class="btn" data-qstart="${QZ.level}">Take it again</button>${nextLevel(QZ.level) && pct >= 80 ? `<button class="btn primary" data-qstart="${nextLevel(QZ.level)}">Next: ${LEVELS[nextLevel(QZ.level)].name}</button>` : ""}</div></div></div></section>`;
     }
@@ -565,12 +592,19 @@ The cat sat on the mat  →  and (21%)   .  (19%)   while (8%)   …</pre>
       const key = bestKey(QZ.level), best = store.get(key, null), n = QZ.qs.length;
       if (!best || QZ.score / n > best.s / best.n) store.set(key, { s: QZ.score, n });
       if (window.WB && window.WB.call) {
-        const qs = QZ.qs, level = LEVELS[QZ.level].name; QZ.save = "saving";
-        window.WB.call("saveModuleQuiz", { result: { module: MODULE, level, score: QZ.score, total: n, answers: qs.map((x) => ({ kind: "Module 4 · " + level, question: x.q, chosen: x.chosen, correct: x.right, ok: x.chosen === x.right })) } })
-          .then(() => { QZ.save = "saved"; }, () => { QZ.save = "failed"; }).then(() => { if (QZ.qs === qs && tab === "quiz" && !$("m4").hidden) render(); });
+        const level = LEVELS[QZ.level].name;
+        QZ.result = { module: MODULE, level, score: QZ.score, total: n, answers: QZ.qs.map((x) => ({ kind: "Module 4 · " + level, question: x.q, chosen: x.chosen, correct: x.right, ok: x.chosen === x.right })) };
+        saveResult();
       }
     }
     render();
+  }
+
+  // Sends the finished quiz to the teacher. A failed save keeps the answers so the student can retry without retaking.
+  function saveResult() {
+    const qs = QZ.qs; QZ.save = "saving";
+    window.WB.call("saveModuleQuiz", { result: QZ.result })
+      .then(() => { QZ.save = "saved"; }, () => { QZ.save = "failed"; }).then(() => { if (QZ.qs === qs && tab === "quiz" && !$("m4").hidden) render(); });
   }
 
   /* ---------- Rendering and events ---------- */
@@ -592,6 +626,7 @@ The cat sat on the mat  →  and (21%)   .  (19%)   while (8%)   …</pre>
     if (e.target.closest("[data-genclear]")) { samples = []; lastPick = null; refreshNext(); return; }
     const dl = e.target.closest("[data-dlv]"); if (dl) { dlv = dl.dataset.dlv; store.set("wb-m4-dlv", dlv); render(); window.scrollTo({ top: $("m4").offsetTop - 8 }); return; }
     const at = e.target.closest("[data-attn]"); if (at) { attnIdx = +at.dataset.attn; store.set("wb-m4-attni", attnIdx); attnWord = null; render(); return; }
+    const am = e.target.closest("[data-attnmode]"); if (am) { attnMode = am.dataset.attnmode; store.set("wb-m4-attnmode", attnMode); render(); return; }
     const aw = e.target.closest("[data-aword]"); if (aw) { attnWord = attnWord === aw.dataset.aword ? null : aw.dataset.aword; render(); return; }
     if (e.target.closest("[data-mars]")) { marsPick = sample(MARS, 1); render(); return; }
     if (e.target.closest("[data-ctxadd]")) { ctxN = Math.min(CHAT.length, ctxN + 1); store.set("wb-m4-ctxn", ctxN); render(); return; }
@@ -599,11 +634,13 @@ The cat sat on the mat  →  and (21%)   .  (19%)   while (8%)   …</pre>
     if (e.target.closest("[data-m4handin]")) { handIn(); return; }
     const qst = e.target.closest("[data-qstart]"); if (qst) { startQuiz(qst.dataset.qstart); return; }
     if (e.target.closest("[data-qlevels]")) { QZ.qs = null; render(); return; }
+    if (e.target.closest("[data-qretry]")) { if (QZ.result && window.WB && window.WB.call) { saveResult(); render(); } return; }
     const o = e.target.closest("[data-m4opt]"); if (o) { answer(+o.dataset.m4opt); return; }
     if (e.target.closest("[data-qnext]")) { QZ.i++; QZ.picked = null; render(); }
   });
   $("m4body").addEventListener("input", (e) => {
     if (e.target.id === "m4tok") { tokText = e.target.value; store.set("wb-m4-toktext", tokText); updateTokens(); }
+    if (/^m4(p|diff|why)$/.test(e.target.id)) { const dr = store.get(mine("wb-m4-draft"), {}); dr[e.target.id] = e.target.value; store.set(mine("wb-m4-draft"), dr); }
     if (e.target.id === "m4temp") { temp = +e.target.value; store.set("wb-m4-temp", temp); lastPick = null; refreshNext(); }
   });
   document.addEventListener("keydown", (e) => {
@@ -611,5 +648,10 @@ The cat sat on the mat  →  and (21%)   .  (19%)   while (8%)   …</pre>
     const k = "1234abcd".indexOf(e.key.toLowerCase()); if (k >= 0) answer(k % 4);
   });
 
+  // A different student signed in (or the last one signed out): forget the open quiz and show their own progress
+  window.addEventListener("wb-user", () => {
+    Object.assign(QZ, { level: null, qs: null, i: 0, picked: null, score: 0, missed: [], save: null, result: null });
+    if (!$("m4").hidden) render();
+  });
   (window.WB_MODULES = window.WB_MODULES || {})["4"] = render;
 })();

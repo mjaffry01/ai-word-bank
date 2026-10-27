@@ -8,6 +8,7 @@
     get(k, d) { try { const v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } },
     set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} },
   };
+  const mine = (k) => (window.WB_mine ? window.WB_mine(k) : k); // a key for the signed-in student's own progress
   const word = (term, label) => `<button class="wordlink" data-word="${esc(term)}" title="Open in the learning web">${esc(label || term)}</button>`;
 
   const TABS = [["model", "How AI answers"], ["learn", "Lesson"], ["build", "Prompt builder"], ["tech", "Techniques"], ["api", "AI settings (API)"], ["play", "Model playground"], ["hunt", "Hallucination hunt"], ["tasks", "Practice tasks"], ["quiz", "Quiz"]];
@@ -257,7 +258,7 @@ Question: (your question here)</pre>
   ];
   const TOOLS = ["ChatGPT", "Claude", "Gemini", "Microsoft Copilot", "Meta AI", "Perplexity", "Other"];
   const tasks = () => {
-    const done = store.get("wb-m2-done", {});
+    const done = store.get(mine("wb-m2-done"), {});
     const step = (n, text) => `<p class="tstep"><span class="n">${n}</span><span>${text}</span></p>`;
     return `<section class="m2sec">
       <header><p class="kicker">Hand-in · goes to your teacher</p><h2>Practice tasks</h2>
@@ -296,7 +297,7 @@ Question: (your question here)</pre>
     btn.disabled = true; msg.className = "savemsg"; msg.textContent = "Handing in…";
     try {
       await window.WB.call("saveSubmission", { submission: { module: MODULE, task: t.title, tool: $("t-tool-" + id).value, prompt, reflection } });
-      const done = store.get("wb-m2-done", {}); done[id] = true; store.set("wb-m2-done", done);
+      const done = store.get(mine("wb-m2-done"), {}); done[id] = true; store.set(mine("wb-m2-done"), done);
       msg.className = "savemsg ok"; msg.textContent = "Handed in. Your teacher can see it. You can hand in an improved version any time.";
       const pill = btn.closest(".chal").querySelector(".pill2"); pill.className = "pill2 done"; pill.textContent = "Handed in";
     } catch (e) {
@@ -372,14 +373,14 @@ Question: (your question here)</pre>
     QZ.qs = shuffle(LEVELS[QZ.level].qs.map((x) => ({ q: x.q, why: x.why, right: x.o[0], opts: shuffle(x.o.slice()) })));
     QZ.i = 0; QZ.picked = null; QZ.score = 0; QZ.missed = []; QZ.save = null; render();
   }
-  const bestKey = (level) => "wb-m2-best-" + level;
+  const bestKey = (level) => mine("wb-m2-best-" + level);
   const nextLevel = (level) => { const ks = Object.keys(LEVELS), i = ks.indexOf(level); return ks[i + 1] || null; };
   const quiz = () => {
     if (!QZ.qs) {
       return `<section class="m2sec" style="max-width:none"><header><p class="kicker">Check your understanding</p><h2>Module 2 quiz</h2>
         <p>Three levels of 15 questions each. Start with Beginner and work up. Your score and answers go to your teacher.</p></header>
         <div class="tech">${Object.entries(LEVELS).map(([k, L], i) => {
-          const best = store.get(bestKey(k), k === "beginner" ? store.get("wb-m2-best", null) : null);
+          const best = store.get(bestKey(k), k === "beginner" ? store.get(mine("wb-m2-best"), null) : null);
           return `<div class="card2"><p class="kicker">Level ${i + 1}</p><h3>${L.name}</h3><p class="when">${esc(L.desc)}</p>
             <p class="crit" style="margin:0">${L.qs.length} questions · ${best ? `Your best: <b>${best.s} / ${best.n}</b>` : "Not tried yet"}</p>
             <div class="btnrow" style="margin:0"><button class="btn primary" data-qstart="${k}">Start ${L.name}</button></div></div>`;
@@ -390,8 +391,8 @@ Question: (your question here)</pre>
     if (QZ.i >= n) {
       const pct = Math.round(QZ.score / n * 100);
       const msg = pct === 100 ? "Perfect. You're ready to use these techniques for real." : pct >= 80 ? "Strong result. Look over the misses below." : pct >= 50 ? "Getting there. Re-read the lesson sections for the questions you missed, then try again." : "Go back through the lesson and techniques, then try again.";
-      const saveTxt = { saving: "Saving your result…", saved: "Result saved. Your teacher can see it.", failed: "This result could not be saved. Check your connection and take the quiz again." }[QZ.save];
-      return `<section class="m2sec"><div class="quiz" style="margin:0;max-width:none">${head}<div class="qcard"><p class="qkind">Result</p><div class="score">${QZ.score} / ${n}</div>${saveTxt ? `<p class="savestate${QZ.save === "failed" ? " bad" : ""}">${saveTxt}</p>` : ""}<p>${msg}</p>${window.WB_CERT ? window.WB_CERT.block({ title: `${MODULE} · ${LEVELS[QZ.level].name} quiz`, score: QZ.score, total: n, saved: QZ.save, match: { kind: "module", module: MODULE, level: LEVELS[QZ.level].name } }) : ""}
+      const saveTxt = { saving: "Saving your result…", saved: "Result saved. Your teacher can see it.", failed: "This result could not be saved yet. Your answers are kept: check your connection, then press Retry saving." }[QZ.save];
+      return `<section class="m2sec"><div class="quiz" style="margin:0;max-width:none">${head}<div class="qcard"><p class="qkind">Result</p><div class="score">${QZ.score} / ${n}</div>${saveTxt ? `<p class="savestate${QZ.save === "failed" ? " bad" : ""}">${saveTxt}</p>` : ""}${QZ.save === "failed" ? `<div class="btnrow" style="justify-content:center"><button class="btn primary" data-qretry>Retry saving</button></div>` : ""}<p>${msg}</p>${window.WB_CERT ? window.WB_CERT.block({ title: `${MODULE} · ${LEVELS[QZ.level].name} quiz`, score: QZ.score, total: n, saved: QZ.save, match: { kind: "module", module: MODULE, level: LEVELS[QZ.level].name } }) : ""}
         ${QZ.missed.length ? `<p class="qkind" style="margin-top:20px">Review these</p><ul class="missed">${QZ.missed.map((q) => `<li><div class="q">${esc(q.q)}</div><div><b>${esc(q.right)}</b>. ${esc(q.why)}</div></li>`).join("")}</ul>` : ""}
         <div class="qfoot"><button class="btn" data-qlevels>Choose a level</button><button class="btn" data-qstart="${QZ.level}">Take it again</button>${nextLevel(QZ.level) && pct >= 80 ? `<button class="btn primary" data-qstart="${nextLevel(QZ.level)}">Next: ${LEVELS[nextLevel(QZ.level)].name}</button>` : ""}</div></div></div></section>`;
     }
@@ -414,11 +415,14 @@ Question: (your question here)</pre>
   }
   function saveQuiz() {
     if (!window.WB || !window.WB.call) return;
-    const qs = QZ.qs;
-    QZ.save = "saving";
-    const level = LEVELS[QZ.level].name;
-    const result = { module: MODULE, level, score: QZ.score, total: qs.length, answers: qs.map((q) => ({ kind: "Module 2 · " + level, question: q.q, chosen: q.chosen, correct: q.right, ok: q.chosen === q.right })) };
-    window.WB.call("saveModuleQuiz", { result }).then(() => { QZ.save = "saved"; }, () => { QZ.save = "failed"; }).then(() => { if (QZ.qs === qs && tab === "quiz" && !$("m2").hidden) render(); });
+    const qs = QZ.qs, level = LEVELS[QZ.level].name;
+    QZ.result = { module: MODULE, level, score: QZ.score, total: qs.length, answers: qs.map((q) => ({ kind: "Module 2 · " + level, question: q.q, chosen: q.chosen, correct: q.right, ok: q.chosen === q.right })) };
+    saveResult();
+  }
+  // A failed save keeps the answers in QZ.result so the student can retry without retaking the quiz
+  function saveResult() {
+    const qs = QZ.qs; QZ.save = "saving";
+    window.WB.call("saveModuleQuiz", { result: QZ.result }).then(() => { QZ.save = "saved"; }, () => { QZ.save = "failed"; }).then(() => { if (QZ.qs === qs && tab === "quiz" && !$("m2").hidden) render(); });
   }
 
   /* ---------- Rendering and events ---------- */
@@ -452,6 +456,7 @@ Question: (your question here)</pre>
     const s = e.target.closest("[data-submit]"); if (s) { submitTask(s.dataset.submit); return; }
     const qs = e.target.closest("[data-qstart]"); if (qs) { startQuiz(qs.dataset.qstart); return; }
     if (e.target.closest("[data-qlevels]")) { QZ.qs = null; render(); return; }
+    if (e.target.closest("[data-qretry]")) { if (QZ.result && window.WB && window.WB.call) { saveResult(); render(); } return; }
     const o = e.target.closest("[data-m2opt]"); if (o) { answer(+o.dataset.m2opt); return; }
     if (e.target.closest("[data-qnext]")) { QZ.i++; QZ.picked = null; render(); }
   });
@@ -474,5 +479,10 @@ Question: (your question here)</pre>
     const k = "1234abcd".indexOf(e.key.toLowerCase()); if (k >= 0) answer(k % 4);
   });
 
+  // A different student signed in (or the last one signed out): forget the open quiz and show their own progress
+  window.addEventListener("wb-user", () => {
+    Object.assign(QZ, { level: null, qs: null, i: 0, picked: null, score: 0, missed: [], save: null, result: null });
+    if (!$("m2").hidden) render();
+  });
   setModule(wanted);
 })();
