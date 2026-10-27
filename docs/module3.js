@@ -9,6 +9,7 @@
     set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} },
   };
   const mine = (k) => (window.WB_mine ? window.WB_mine(k) : k); // a key for the signed-in student's own progress
+  const draft = (id) => store.get(mine("wb-m3-drafts"), {})[id] || ""; // hand-in text kept per student, so switching tabs doesn't lose it
   const word = (term, label) => `<button class="wordlink" data-word="${esc(term)}" title="Open in the learning web">${esc(label || term)}</button>`;
   const TABS = [["learn", "Lesson"], ["types", "Ways machines learn"], ["algos", "Algorithms map"], ["spam", "Train a model"], ["fit", "Overfitting lab"], ["wrong", "When models go wrong"], ["tm", "Teachable Machine"], ["quiz", "Quiz"]];
   let tab = store.get("wb-m3-tab", "learn");
@@ -198,8 +199,8 @@ and keeps learning from new examples.</pre></div>
     </div>
 
     <div class="card2"><p class="kicker">Hand in</p><h3>What did you find?</h3>
-      <div class="field"><label for="m3spamRef">Which messages did it get wrong, and why? What happened when you mislabelled a training message?</label><textarea id="m3spamRef" rows="4"></textarea></div>
-      <div class="btnrow" style="margin:0"><button class="btn primary" data-handin="spam">Hand in</button></div><p class="savemsg" id="m3msg-spam" hidden></p>
+      <div class="field"><label for="m3spamRef">Which messages did it get wrong, and why? What happened when you mislabelled a training message?</label><textarea id="m3spamRef" rows="4">${esc(draft("m3spamRef"))}</textarea></div>
+      <div class="btnrow" style="margin:0"><button class="btn primary" data-handin="spam">Hand in</button></div><p class="crit" style="margin-top:6px">Your answers are saved on this device as you type, so you can switch tabs and come back.</p><p class="savemsg" id="m3msg-spam" hidden></p>
     </div>` : ""}
   </section>`;
   };
@@ -321,10 +322,10 @@ and keeps learning from new examples.</pre></div>
       </ol>
     </div>
     <div class="card2"><p class="kicker">Hand in</p><h3>Your results <span class="pill2 ${done.tm ? "done" : ""}" style="vertical-align:middle;margin-left:6px">${done.tm ? "Handed in" : "To do"}</span></h3>
-      <div class="field"><label for="m3tmData">Your classes, and roughly how many images per class</label><textarea id="m3tmData" rows="2" placeholder="e.g. Thumbs up (60), Thumbs down (55), Open hand (50)"></textarea></div>
-      <div class="field"><label for="m3tmRes">How well did it work? What fooled it, and why do you think that happened?</label><textarea id="m3tmRes" rows="4" placeholder="e.g. It worked in my room but failed by the window, because all my training images had the same lighting…"></textarea></div>
-      <div class="field"><label for="m3tmFix">What did you change to improve it, and did it work?</label><textarea id="m3tmFix" rows="3"></textarea></div>
-      <div class="btnrow" style="margin:0"><button class="btn primary" data-handin="tm">Hand in</button></div><p class="savemsg" id="m3msg-tm" hidden></p>
+      <div class="field"><label for="m3tmData">Your classes, and roughly how many images per class</label><textarea id="m3tmData" rows="2" placeholder="e.g. Thumbs up (60), Thumbs down (55), Open hand (50)">${esc(draft("m3tmData"))}</textarea></div>
+      <div class="field"><label for="m3tmRes">How well did it work? What fooled it, and why do you think that happened?</label><textarea id="m3tmRes" rows="4" placeholder="e.g. It worked in my room but failed by the window, because all my training images had the same lighting…">${esc(draft("m3tmRes"))}</textarea></div>
+      <div class="field"><label for="m3tmFix">What did you change to improve it, and did it work?</label><textarea id="m3tmFix" rows="3">${esc(draft("m3tmFix"))}</textarea></div>
+      <div class="btnrow" style="margin:0"><button class="btn primary" data-handin="tm">Hand in</button></div><p class="crit" style="margin-top:6px">Your answers are saved on this device as you type, so you can switch tabs and come back.</p><p class="savemsg" id="m3msg-tm" hidden></p>
     </div>
   </section>`;
   };
@@ -494,6 +495,7 @@ and keeps learning from new examples.</pre></div>
   });
   $("m3body").addEventListener("input", (e) => {
     if (e.target.id === "m3own") ownPredict();
+    if (/^m3(spamRef|tmData|tmRes|tmFix)$/.test(e.target.id)) { const dr = store.get(mine("wb-m3-drafts"), {}); dr[e.target.id] = e.target.value; store.set(mine("wb-m3-drafts"), dr); }
     if (e.target.id === "m3deg") { degree = +e.target.value; store.set("wb-m3-degree", degree); const y = window.scrollY; render(); window.scrollTo(0, y); const s = $("m3deg"); if (s) s.focus(); }
   });
   document.addEventListener("keydown", (e) => {

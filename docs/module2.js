@@ -258,7 +258,7 @@ Question: (your question here)</pre>
   ];
   const TOOLS = ["ChatGPT", "Claude", "Gemini", "Microsoft Copilot", "Meta AI", "Perplexity", "Other"];
   const tasks = () => {
-    const done = store.get(mine("wb-m2-done"), {});
+    const done = store.get(mine("wb-m2-done"), {}), dr = store.get(mine("wb-m2-drafts"), {});
     const step = (n, text) => `<p class="tstep"><span class="n">${n}</span><span>${text}</span></p>`;
     return `<section class="m2sec">
       <header><p class="kicker">Hand-in · goes to your teacher</p><h2>Practice tasks</h2>
@@ -275,11 +275,12 @@ Question: (your question here)</pre>
         <div>${step(2, "Improve the prompt until the answer is good. A good prompt:")}<ul class="tcheck">${t.crit.map((c) => `<li>${esc(c)}</li>`).join("")}</ul></div>`
         : `<div>${step(1, `First do the <button class="wordlink" data-tab="hunt">Hallucination hunt</button>: get an AI to make something up, then fix your prompt.`)}</div>
         <div>${step(2, "A good report:")}<ul class="tcheck">${t.crit.map((c) => `<li>${esc(c)}</li>`).join("")}</ul></div>`}
-        <div class="field" style="margin:0">${step(3, `<label for="t-tool-${t.id}">Which AI tool did you use?</label>`)}<select id="t-tool-${t.id}">${TOOLS.map((x) => `<option>${x}</option>`).join("")}</select></div>
-        <div class="field" style="margin:0">${step(4, `<label for="t-prompt-${t.id}">${t.id === "hunt" ? "Paste the bait prompt, what the AI made up, and your fixed prompt" : "Paste your final (improved) prompt"}</label>`)}<textarea id="t-prompt-${t.id}" rows="5"></textarea></div>
+        <div class="field" style="margin:0">${step(3, `<label for="t-tool-${t.id}">Which AI tool did you use?</label>`)}<select id="t-tool-${t.id}">${TOOLS.map((x) => `<option ${dr["t-tool-" + t.id] === x ? "selected" : ""}>${x}</option>`).join("")}</select></div>
+        <div class="field" style="margin:0">${step(4, `<label for="t-prompt-${t.id}">${t.id === "hunt" ? "Paste the bait prompt, what the AI made up, and your fixed prompt" : "Paste your final (improved) prompt"}</label>`)}<textarea id="t-prompt-${t.id}" rows="5">${esc(dr["t-prompt-" + t.id] || "")}</textarea></div>
         ${window.WB_CMP && t.id !== "hunt" ? window.WB_CMP.slot(t) : ""}
-        <div class="field" style="margin:0">${step(5, `<label for="t-ref-${t.id}">${t.id === "hunt" ? "How did you catch the made-up part?" : "What did you change, and how did the answer get better?"}</label>`)}<textarea id="t-ref-${t.id}" rows="3" placeholder="${t.id === "hunt" ? "e.g. I searched for the book and it doesn't exist." : "e.g. I added my job and experience, and asked for 200 words. The letter became specific instead of generic."}"></textarea></div>
+        <div class="field" style="margin:0">${step(5, `<label for="t-ref-${t.id}">${t.id === "hunt" ? "How did you catch the made-up part?" : "What did you change, and how did the answer get better?"}</label>`)}<textarea id="t-ref-${t.id}" rows="3" placeholder="${t.id === "hunt" ? "e.g. I searched for the book and it doesn't exist." : "e.g. I added my job and experience, and asked for 200 words. The letter became specific instead of generic."}">${esc(dr["t-ref-" + t.id] || "")}</textarea></div>
         <div class="btnrow" style="margin:0"><button class="btn primary" data-submit="${t.id}">Hand in</button></div>
+        <p class="crit" style="margin-top:6px">Your answers are saved on this device as you type, so you can switch tabs and come back.</p>
         <p class="savemsg" id="t-msg-${t.id}" hidden></p>
       </div>`).join("")}
       ${window.WB_CMP ? window.WB_CMP.keysPanel({ closed: true }) : ""}
@@ -461,6 +462,8 @@ Question: (your question here)</pre>
     if (e.target.closest("[data-qnext]")) { QZ.i++; QZ.picked = null; render(); }
   });
   $("m2body").addEventListener("input", (e) => {
+    // Practice-task answers are kept per student, so switching tabs doesn't lose them
+    if (/^t-(tool|prompt|ref)-/.test(e.target.id)) { const dr = store.get(mine("wb-m2-drafts"), {}); dr[e.target.id] = e.target.value; store.set(mine("wb-m2-drafts"), dr); return; }
     const b = e.target.dataset && e.target.dataset.b; if (!b) return;
     draft[b] = e.target.type === "checkbox" ? e.target.checked : e.target.value;
     updateBuilder();
