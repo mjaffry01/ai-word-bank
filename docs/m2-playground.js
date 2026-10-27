@@ -12,8 +12,8 @@
   const ALL = ["openrouter", "openai", "gemini", "anthropic"];
   const PARAMS = [
     { id: "temperature", label: "Temperature", min: 0, max: 2, step: 0.1, def: 1, on: true, prov: ALL, visual: true },
-    { id: "top_p", label: "Top-p (nucleus)", min: 0.05, max: 1, step: 0.05, def: 0.9, prov: ALL, visual: true },
-    { id: "top_k", label: "Top-k", min: 1, max: 50, step: 1, def: 5, prov: ["openrouter", "gemini", "anthropic"], visual: true },
+    { id: "top_p", label: "Top-p (p = how much of the chance to keep)", min: 0.05, max: 1, step: 0.05, def: 0.9, prov: ALL, visual: true },
+    { id: "top_k", label: "Top-k (k = how many words to keep)", min: 1, max: 50, step: 1, def: 5, prov: ["openrouter", "gemini", "anthropic"], visual: true },
     { id: "max_tokens", label: "Max output tokens", min: 16, max: 2000, step: 16, def: 400, on: true, prov: ALL },
     { id: "frequency_penalty", label: "Frequency penalty", min: -2, max: 2, step: 0.1, def: 0.5, prov: ["openrouter", "openai", "gemini"] },
     { id: "presence_penalty", label: "Presence penalty", min: -2, max: 2, step: 0.1, def: 0.5, prov: ["openrouter", "openai", "gemini"] },
@@ -40,14 +40,25 @@
         if (v <= 1.5) return [T(`At ${v} unlikely words get a real chance. Look at the chart: 'moon' and 'spaceship' are growing.`), S("So this is the creative setting?"), T("Yes: brainstorming, poems, names, jokes. But facts get less reliable, so don't use it for anything you need to be true.")];
         return [T(`At ${v} the chances are nearly flattened. The model can pick almost any word.`), S("Is that why answers can turn into nonsense?"), T("Exactly. Very high temperatures often drift off-topic or into gibberish. Try it once to see, then come back down.")];
       case "top_p":
-        if (v <= 0.3) return [T(`Top-p ${v}: the model keeps only the few most likely words whose chances add up to ${Math.round(v * 100)}%, and throws the rest away.`), S("So 'banana' can never be chosen now?"), T("Right. With such a small p, often just one or two words are left, so answers become very safe and similar.")];
-        if (v < 0.9) return [T(`Top-p ${v} keeps the most likely words until they cover ${Math.round(v * 100)}% of the chance, then picks among those.`), S("Isn't that the same as temperature?"), T("Related, but different. Temperature reshapes everyone's chances; top-p cuts off the long tail of unlikely words. Usually you change one or the other, not both.")];
-        return [T(`Top-p ${v} keeps almost every word in play and only cuts off the very rarest ones.`), S("So at 1.0 it does nothing?"), T("Exactly. 1.0 means 'no cut'. Many apps use about 0.9 to stop truly weird words while keeping variety.")];
+        return [S("What does the p in top-p mean?"), T("Before each word, the model lists the words that could come next, most likely first, each with a chance. p means probability (chance). Top-p keeps words from the top of that list until their chances add up to p, and throws the rest away.")].concat(topP(v));
       case "top_k":
         if (prov === "openai") return [T(NOT_SUPPORTED.top_k.openai)];
-        if (v === 1) return [T("Top-k 1 means only the single most likely word is allowed."), S("That sounds like temperature 0."), T("It behaves the same way: one choice, so the answer is fixed.")];
-        if (v <= 10) return [T(`Top-k ${v}: only the ${v} most likely words are allowed at each step. See the chart: everything after word ${v} is greyed out.`), S("Why use a fixed number instead of top-p?"), T("It's simpler, but less smart: sometimes the top 5 words are all good, sometimes only 1 is. Top-p adapts to that; top-k doesn't.")];
-        return [T(`Top-k ${v} allows a large list of candidates, so it barely limits the model.`), S("So big numbers mean more variety?"), T("Yes. A large k only removes very rare words. Temperature then decides how adventurous the choice is.")];
+        return [S("And what is k?"), T("k is just a number. The model lists the words that could come next, most likely first, and top-k keeps only the first k words on that list.")].concat(topK(v));
+    }
+    return talkRest(id, v, prov);
+  }
+  function topP(v) {
+    if (v <= 0.3) return [T(`Top-p ${v}: the model keeps only the few most likely words whose chances add up to ${Math.round(v * 100)}%, and throws the rest away.`), S("So 'banana' can never be chosen now?"), T("Right. With such a small p, often just one or two words are left, so answers become very safe and similar.")];
+    if (v < 0.9) return [T(`Top-p ${v} keeps the most likely words until they cover ${Math.round(v * 100)}% of the chance, then picks among those.`), S("Isn't that the same as temperature?"), T("Related, but different. Temperature reshapes everyone's chances; top-p cuts off the long tail of unlikely words. Usually you change one or the other, not both.")];
+    return [T(`Top-p ${v} keeps almost every word in play and only cuts off the very rarest ones.`), S("So at 1.0 it does nothing?"), T("Exactly. 1.0 means 'no cut'. Many apps use about 0.9 to stop truly weird words while keeping variety.")];
+  }
+  function topK(v) {
+    if (v === 1) return [T("Top-k 1 means only the single most likely word is allowed."), S("That sounds like temperature 0."), T("It behaves the same way: one choice, so the answer is fixed.")];
+    if (v <= 10) return [T(`Top-k ${v}: only the ${v} most likely words are allowed at each step. See the chart: everything after word ${v} is greyed out.`), S("Why use a fixed number instead of top-p?"), T("It's simpler, but less smart: sometimes the top 5 words are all good, sometimes only 1 is. Top-p adapts to that; top-k doesn't.")];
+    return [T(`Top-k ${v} allows a large list of candidates, so it barely limits the model.`), S("So big numbers mean more variety?"), T("Yes. A large k only removes very rare words. Temperature then decides how adventurous the choice is.")];
+  }
+  function talkRest(id, v, prov) {
+    switch (id) {
       case "max_tokens": {
         const words = Math.round(v * 0.75);
         return [T(`Max ${v} tokens is about ${words} English words. That's the longest the answer is allowed to be.`), S(v < 100 ? "What happens if the answer needs more?" : "Will a bigger number give me a better answer?"),
