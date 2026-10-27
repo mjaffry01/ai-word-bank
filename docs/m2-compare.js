@@ -276,9 +276,10 @@
           <button class="btn sm" data-cmpcheck="${p}" ${haveKey(p) ? "" : "disabled"}>Check</button></div>
         <p class="savemsg ${st.state === "ok" ? "ok" : st.state === "bad" ? "err" : ""}" data-cmpstatus="${p}">${st.state === "checking" ? "Checking…" : esc(st.text || "")}</p>
       </div>`; };
-  const keysPanel = () => {
+  // opts.closed keeps the panel folded even with no keys (on Practice tasks, where it's an optional extra).
+  const keysPanel = (opts) => {
     const n = providersWithKeys().length;
-    return `<details class="card2 cmpkeys" ${n ? "" : "open"}><summary><span class="kicker" style="display:inline">Optional · your own API keys</span><h3>Compare answers from real AI models</h3>
+    return `<details class="card2 cmpkeys" ${n || (opts && opts.closed) ? "" : "open"}><summary><span class="kicker" style="display:inline">Optional extra · needs an API key</span><h3>Compare answers from real AI models</h3>
       <p class="crit" style="margin:0">${n ? `${n} key${n > 1 ? "s" : ""} added. Open to change them.` : "Add an API key to run your prompts in up to three AI models side by side, right here on this page."}</p></summary>
       <div class="cmpnote"><b>Your key stays with you.</b> It is kept only in this browser and sent straight to the AI company when you press Run. It never goes to your teacher or this course's server. Treat it like a password: don't share it or paste it anywhere else.</div>
       <p class="crit">Start with <b>one free key</b>: OpenRouter is the easiest (many free models with one key). You can add more later.</p>
@@ -296,7 +297,7 @@
 
   function slotHTML(t) {
     const id = t.id, avail = providersWithKeys();
-    if (!avail.length) return `<p class="lbl">Try it in real AI models</p><p class="crit" style="margin:0">Add an API key in “Compare answers from real AI models” at the top of this page to run this prompt in several models side by side.</p>`;
+    if (!avail.length) return `<p class="lbl">Try it in real AI models</p><p class="crit" style="margin:0">Optional: add a free API key in “Compare answers from real AI models” at the bottom of this page to test this prompt in several AI models right here.</p>`;
     const sl = slotsFor(id), res = results[id], busy = running[id];
     const provOpts = (cur) => `<option value="" ${cur ? "" : "selected"}>— none —</option>` + avail.map((p) => `<option value="${p}" ${p === cur ? "selected" : ""}>${esc(PROVIDERS[p].name)}</option>`).join("");
     const modelOpts = (p, cur) => {

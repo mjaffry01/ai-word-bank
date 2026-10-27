@@ -231,22 +231,30 @@ Question: (your question here)</pre>
   const TOOLS = ["ChatGPT", "Claude", "Gemini", "Microsoft Copilot", "Meta AI", "Perplexity", "Other"];
   const tasks = () => {
     const done = store.get("wb-m2-done", {});
+    const step = (n, text) => `<p class="tstep"><span class="n">${n}</span><span>${text}</span></p>`;
     return `<section class="m2sec">
       <header><p class="kicker">Hand-in · goes to your teacher</p><h2>Practice tasks</h2>
-        <p>Do each task in an AI tool of your choice. When you're happy with the result, paste your final prompt here and say what you changed. Your teacher sees every hand-in.</p></header>
-      ${window.WB_CMP ? window.WB_CMP.keysPanel() : ""}
+        <p>Each task gives you a <b>weak prompt</b>. Your job is to turn it into a <b>good prompt</b> and show your teacher what you changed.</p></header>
+      <div class="card2 thow"><p class="lbl">How to do a task</p>
+        <ol><li><b>Try the weak prompt.</b> Copy it into any AI tool (ChatGPT, Gemini, Copilot…) and look at the answer. It's usually vague.</li>
+          <li><b>Improve it.</b> Rewrite the prompt using the checklist in the task. Try it again until the answer is good.</li>
+          <li><b>Hand it in.</b> Paste your final prompt here, say what you changed, and press <b>Hand in</b>.</li></ol>
+        <p class="crit" style="margin:0">You don't need an API key. Use any AI website you like. Do the tasks in any order; each one is handed in separately.</p></div>
       ${TASKS.map((t) => `<div class="card2 chal">
         <div class="meta"><h3 style="margin:0">${esc(t.title)}</h3><span class="pill2 ${done[t.id] ? "done" : ""}">${done[t.id] ? "Handed in" : "To do"}</span></div>
-        <p style="margin:0">${esc(t.goal)}</p>
-        ${t.weak ? `<div><p class="lbl bad">Starting prompt</p><pre class="pbox">${esc(t.weak)}</pre></div>` : ""}
-        <p class="crit"><b>A good answer:</b> ${t.crit.map(esc).join(" · ")}</p>
-        <div class="field" style="margin:0"><label for="t-tool-${t.id}">AI tool used</label><select id="t-tool-${t.id}">${TOOLS.map((x) => `<option>${x}</option>`).join("")}</select></div>
-        <div class="field" style="margin:0"><label for="t-prompt-${t.id}">${t.id === "hunt" ? "Bait prompt, what the AI invented, and your fixed prompt" : "Your final prompt"}</label><textarea id="t-prompt-${t.id}" rows="5"></textarea></div>
+        <p style="margin:0"><b>Goal:</b> ${esc(t.goal)}</p>
+        ${t.weak ? `<div>${step(1, "Paste this weak prompt into an AI tool and see what you get:")}<pre class="pbox" id="t-weak-${t.id}">${esc(t.weak)}</pre><div class="btnrow" style="margin:6px 0 0"><button class="btn sm" data-copy="t-weak-${t.id}">Copy</button></div></div>
+        <div>${step(2, "Improve the prompt until the answer is good. A good prompt:")}<ul class="tcheck">${t.crit.map((c) => `<li>${esc(c)}</li>`).join("")}</ul></div>`
+        : `<div>${step(1, `First do the <button class="wordlink" data-tab="hunt">Hallucination hunt</button>: get an AI to make something up, then fix your prompt.`)}</div>
+        <div>${step(2, "A good report:")}<ul class="tcheck">${t.crit.map((c) => `<li>${esc(c)}</li>`).join("")}</ul></div>`}
+        <div class="field" style="margin:0">${step(3, `<label for="t-tool-${t.id}">Which AI tool did you use?</label>`)}<select id="t-tool-${t.id}">${TOOLS.map((x) => `<option>${x}</option>`).join("")}</select></div>
+        <div class="field" style="margin:0">${step(4, `<label for="t-prompt-${t.id}">${t.id === "hunt" ? "Paste the bait prompt, what the AI made up, and your fixed prompt" : "Paste your final (improved) prompt"}</label>`)}<textarea id="t-prompt-${t.id}" rows="5"></textarea></div>
         ${window.WB_CMP && t.id !== "hunt" ? window.WB_CMP.slot(t) : ""}
-        <div class="field" style="margin:0"><label for="t-ref-${t.id}">${t.id === "hunt" ? "How you caught it" : "What you changed, and how the answer improved"}</label><textarea id="t-ref-${t.id}" rows="3"></textarea></div>
+        <div class="field" style="margin:0">${step(5, `<label for="t-ref-${t.id}">${t.id === "hunt" ? "How did you catch the made-up part?" : "What did you change, and how did the answer get better?"}</label>`)}<textarea id="t-ref-${t.id}" rows="3" placeholder="${t.id === "hunt" ? "e.g. I searched for the book and it doesn't exist." : "e.g. I added my job and experience, and asked for 200 words. The letter became specific instead of generic."}"></textarea></div>
         <div class="btnrow" style="margin:0"><button class="btn primary" data-submit="${t.id}">Hand in</button></div>
         <p class="savemsg" id="t-msg-${t.id}" hidden></p>
       </div>`).join("")}
+      ${window.WB_CMP ? window.WB_CMP.keysPanel({ closed: true }) : ""}
     </section>`;
   };
   async function submitTask(id) {

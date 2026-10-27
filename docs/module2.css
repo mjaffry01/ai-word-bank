@@ -63,6 +63,13 @@
 .flags div{padding:12px;border:1px solid var(--line);border-radius:10px;background:var(--bg)}
 .flags b{display:block;margin-bottom:2px}
 .chal{display:grid;gap:12px}
+.thow ol{margin:0 0 10px;padding-left:1.3em}
+.thow li{margin:5px 0}
+.tstep{display:flex;gap:8px;align-items:center;margin:0 0 6px;font-weight:600}
+.tstep>.n{flex:none;display:inline-grid;place-items:center;width:22px;height:22px;border-radius:50%;background:var(--accent);color:var(--bg);font:700 .75rem var(--mono)}
+.chal .tstep label{margin:0;font:inherit;font-weight:600;letter-spacing:0;text-transform:none;color:inherit}
+.tcheck{margin:0;padding-left:1.3em}
+.tcheck li{margin:3px 0}
 .chal .meta{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
 .pill2{font:600 .7rem var(--mono);letter-spacing:.05em;text-transform:uppercase;padding:3px 8px;border-radius:999px;border:1px solid var(--line);color:var(--muted)}
 .pill2.done{color:var(--good);border-color:var(--good)}
