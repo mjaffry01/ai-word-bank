@@ -339,6 +339,7 @@ The cat sat on the mat  →  and (21%)   .  (19%)   while (8%)   …</pre>
     <div class="card2"><p class="kicker">Why it matters</p><h3>Context changes meaning</h3>
       <p>Compare sentences 1 and 2, then 3 and 4. The same word means different things depending on its neighbours, and attention is how the model works that out. Real models run many attention patterns at once (${word("Multi-head Attention", "multi-head attention")}) across dozens of layers. The weights here are simplified to show the idea.</p>
     </div>
+    ${window.WB_ATTN ? window.WB_ATTN.html() : ""}
   </section>`;
   };
 
@@ -577,6 +578,7 @@ The cat sat on the mat  →  and (21%)   .  (19%)   while (8%)   …</pre>
   function render() {
     $("m4body").innerHTML = `<nav class="m2tabs" role="tablist">${TABS.map(([k, l], i) => `<button role="tab" data-tab="${k}" aria-selected="${tab === k}"><span class="step">${i + 1}</span>${l}</button>`).join("")}</nav>${VIEWS[tab]()}`;
     if (tab === "tokens") updateTokens();
+    if (tab === "attn" && window.WB_ATTN) window.WB_ATTN.mount($("m4body"));
   }
   function goTab(k) { tab = k; store.set("wb-m4-tab", k); render(); window.scrollTo({ top: $("m4").offsetTop - 8 }); }
 

@@ -1,0 +1,39 @@
+/* Module 4 Attention tab, step-by-step parts (m4-attn.js) */
+.qksec{margin-top:12px}
+.qksent{display:flex;flex-wrap:wrap;gap:6px;font:500 1.15rem var(--display);line-height:1.5;padding:14px;border:1px solid var(--line);border-radius:10px;background:var(--bg)}
+.qkw{display:inline-flex;flex-direction:column;align-items:center;padding:2px 6px;border-radius:6px;border:1px solid transparent;transition:background .25s}
+.qkw.me{outline:2px solid var(--accent);outline-offset:1px;font-weight:700}
+.qkw small{font:500 .66rem var(--mono);opacity:.85;line-height:1.1}
+.qksteps{list-style:none;display:flex;flex-wrap:wrap;gap:6px;margin:12px 0 0;padding:0}
+.qksteps button{display:inline-flex;align-items:center;gap:6px;font:600 .84rem var(--body);padding:6px 12px;border-radius:999px;border:1px solid var(--line);background:var(--surface);color:var(--fg);cursor:pointer}
+.qksteps button span{display:inline-grid;place-items:center;width:1.4em;height:1.4em;border-radius:50%;background:var(--line);font:700 .72rem var(--mono)}
+.qksteps button[aria-pressed="true"]{border-color:var(--accent)}
+.qksteps button[aria-pressed="true"] span,.qksteps button.done span{background:var(--accent);color:var(--accent-ink)}
+.qkpanel{margin-top:12px;padding:14px;border-left:4px solid var(--accent);background:var(--bg);border-radius:0 10px 10px 0}
+.qkpanel>p:first-child{margin-top:0}
+.qkcards{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px;margin:10px 0}
+.qkcard{padding:10px 12px;border:1px solid var(--line);border-top-width:4px;border-radius:10px;background:var(--surface)}
+.qkcard.q{border-top-color:var(--accent)}.qkcard.k{border-top-color:var(--good)}.qkcard.v{border-top-color:#b8860b}
+.qkcard .t{display:block;font:600 .68rem var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.qkcard b{display:block;margin:2px 0 4px}
+.qkcard p{margin:0;font-size:.9rem;line-height:1.45}
+.qkblend{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:8px 0;font-size:.95rem}
+.qkblend span{padding:4px 10px;border-radius:999px;border:1px solid var(--accent)}
+.qkrange{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin-bottom:10px}
+.qkrange input{flex:1;min-width:160px;accent-color:var(--accent)}
+.qkgrid{display:grid;gap:3px;max-width:280px}
+.qkgrid i{aspect-ratio:1;border-radius:50%;background:var(--accent);opacity:.75}
+.qkcost{max-width:460px}
+.qkchain{margin:0 0 10px;padding-left:1.5em;display:flex;flex-direction:column;gap:4px}
+.qkchain .got{color:var(--accent)}
+.qkchain li.next{color:var(--muted);font-style:italic}
+.qkpool{display:flex;flex-wrap:wrap;gap:8px}
+.qkcardbtn{font:inherit;font-size:.9rem;text-align:left;padding:8px 12px;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--fg);cursor:pointer;max-width:100%}
+.qkcardbtn:hover{border-color:var(--accent)}
+.qkcardbtn.no{border-color:var(--bad);animation:qkshake .3s}
+@keyframes qkshake{25%{transform:translateX(-4px)}75%{transform:translateX(4px)}}
+.qkquiz{margin:0;padding-left:1.3em;display:flex;flex-direction:column;gap:12px}
+.qkquiz p{margin:0}
+.qkquiz .btn.ok{background:var(--good);border-color:var(--good);color:var(--bg)}
+.qkquiz .btn.no{background:var(--bad);border-color:var(--bad);color:var(--bg)}
+@media (prefers-reduced-motion:reduce){.qkcardbtn.no{animation:none}.qkw{transition:none}}
