@@ -191,6 +191,11 @@ img{max-width:100%}
 .gerr{color:var(--bad);font-size:.92rem;margin-top:12px}
 .mastrow{display:flex;gap:16px;align-items:flex-start;justify-content:space-between;flex-wrap:wrap}
 .mastrow>div{min-width:0;flex:1 1 320px}
+.mastrow>.mastside{flex:0 1 auto;display:flex;flex-direction:column;align-items:flex-end;gap:12px}
+.wishbtn{display:inline-flex;align-items:center;gap:7px;padding:7px 14px;border:1px solid var(--accent);border-radius:999px;color:var(--accent);font-weight:600;font-size:.9rem;text-decoration:none;white-space:nowrap}
+.wishbtn:hover{background:var(--accent);color:var(--bg)}
+.gatecard .gatewish{margin:22px 0 0;padding-top:16px;border-top:1px solid var(--line)}
+@media (max-width:640px){.mastrow>.mastside{align-items:flex-start}}
 .who{display:flex;align-items:center;gap:10px;font-size:.9rem;color:var(--muted)}
 .who img{width:32px;height:32px;border-radius:50%;flex:none}
 .who b{color:var(--fg);font-weight:600;display:block}
@@ -214,6 +219,7 @@ img{max-width:100%}
     <p class="eyebrow">AI course</p>
     <h1>AI Concepts</h1>
     <div id="gateBody"><p>Checking your sign-in…</p></div>
+    <p class="gatewish"><a class="wishbtn" href="https://mjaffry01.github.io/training-wishlist/" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path fill="currentColor" d="M12 2.5l2.9 6 6.6.9-4.8 4.6 1.2 6.5L12 17.4l-5.9 3.1 1.2-6.5L2.5 9.4l6.6-.9z"/></svg><span>Training wish list</span></a></p>
   </div>
 </section>
 
@@ -227,7 +233,7 @@ img{max-width:100%}
     <p class="lede" id="lede2" hidden>Put the vocabulary to work: write prompts that get good answers, use the main prompting techniques, and catch AI when it makes things up.</p>
     <p class="lede" id="lede4" hidden>Look inside a chatbot: see text split into real tokens, pick the next word with a temperature dial, watch attention find meaning, and see why models hallucinate and forget.</p>
     <p class="lede" id="lede3" hidden>See what happens before an AI ever answers: how data becomes a model, train your own spam filter, watch a model overfit, and train an image model with your webcam.</p>
-    </div><div class="who" id="who"></div></div>
+    </div><div class="mastside"><a class="wishbtn" href="https://mjaffry01.github.io/training-wishlist/" target="_blank" rel="noopener" title="Suggest training you'd like to have"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path fill="currentColor" d="M12 2.5l2.9 6 6.6.9-4.8 4.6 1.2 6.5L12 17.4l-5.9 3.1 1.2-6.5L2.5 9.4l6.6-.9z"/></svg><span>Training wish list</span></a><div class="who" id="who"></div></div></div>
     <nav class="modnav" aria-label="Course modules">
       <button data-module="1" aria-pressed="true"><span class="num">Module 1</span>Vocabulary</button>
       <button data-module="2" aria-pressed="false"><span class="num">Module 2</span>Prompting &amp; AI tools</button>
