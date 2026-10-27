@@ -3,6 +3,10 @@
 .modnav button{display:inline-flex;align-items:baseline;gap:8px;font:600 .95rem var(--body);padding:8px 16px;border-radius:999px;border:1px solid var(--line);background:var(--surface);color:var(--fg);cursor:pointer}
 .modnav button:hover{border-color:var(--accent)}
 .modnav button[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.modnav button.locked{opacity:.55;cursor:not-allowed;align-items:center}
+.modnav button.locked:hover{border-color:var(--line)}
+.modnav .lock{align-self:center}
+.locknote{margin:8px 0 0;font-size:.9rem;color:var(--muted)}
 .modnav .num{font:600 .7rem var(--mono);letter-spacing:.06em;text-transform:uppercase;opacity:.8}
 
 /* Module 2 layout */

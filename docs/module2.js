@@ -15,9 +15,23 @@
 
   /* ---------- Module switching ---------- */
   // Shows one module at a time. Each later module registers its render function in window.WB_MODULES.
+  // OPEN: the modules students can use. The rest show a lock until the teacher adds their number here.
+  const OPEN = ["1"];
   const MODULES = [...document.querySelectorAll("[data-module]")].map((b) => b.dataset.module);
+  document.querySelectorAll("[data-module]").forEach((b) => {
+    if (OPEN.includes(b.dataset.module)) return;
+    b.classList.add("locked"); b.setAttribute("aria-disabled", "true");
+    b.title = "Locked. Your teacher will open this module.";
+    b.insertAdjacentHTML("beforeend", `<svg class="lock" viewBox="0 0 24 24" width="13" height="13" aria-label="locked"><path fill="currentColor" d="M7 10V7a5 5 0 0110 0v3h1a1 1 0 011 1v10a1 1 0 01-1 1H6a1 1 0 01-1-1V11a1 1 0 011-1h1zm2 0h6V7a3 3 0 00-6 0v3z"/></svg>`);
+  });
+  function lockedNote(b) {
+    let n = $("locknote");
+    if (!n) { n = document.createElement("p"); n.id = "locknote"; n.className = "locknote"; n.setAttribute("role", "status"); document.querySelector(".modnav").after(n); }
+    n.textContent = `${b.querySelector(".num").textContent} is locked for now. Your teacher will open it when the class is ready.`;
+    clearTimeout(lockedNote.t); lockedNote.t = setTimeout(() => n.remove(), 4000);
+  }
   function setModule(m) {
-    if (!MODULES.includes(m)) m = "1";
+    if (!MODULES.includes(m) || !OPEN.includes(m)) m = "1";
     MODULES.forEach((k) => { $("m" + k).hidden = k !== m; $("lede" + k).hidden = k !== m; });
     document.querySelectorAll("[data-module]").forEach((b) => b.setAttribute("aria-pressed", b.dataset.module === m));
     store.set("wb-module", m);
@@ -28,6 +42,7 @@
   window.WB_setModule = setModule;
   document.querySelector(".modnav").addEventListener("click", (e) => {
     const b = e.target.closest("[data-module]");
+    if (b && b.classList.contains("locked")) { lockedNote(b); return; }
     if (b) setModule(b.dataset.module);
   });
 
