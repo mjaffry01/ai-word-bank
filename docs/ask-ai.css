@@ -1,0 +1,9 @@
+/* Right-click "Ask AI" menu (ask-ai.js) */
+.askai{position:fixed;z-index:1000;min-width:220px;max-width:min(320px,calc(100vw - 16px));padding:6px;border:1px solid var(--line);border-radius:12px;background:var(--surface);color:var(--fg);box-shadow:0 10px 30px rgba(0,0,0,.25);display:flex;flex-direction:column;gap:2px;font-size:.92rem}
+.askai-h{margin:2px 8px 4px;font:700 .68rem var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--accent)}
+.askai button{all:unset;box-sizing:border-box;padding:8px 10px;border-radius:8px;cursor:pointer;overflow-wrap:anywhere}
+.askai button:hover,.askai button:focus-visible{background:color-mix(in srgb,var(--accent) 15%,transparent)}
+.askai-tool{display:flex;align-items:center;gap:8px;margin:4px 0 0;padding:8px 10px 4px;border-top:1px solid var(--line);font-size:.82rem;color:var(--muted)}
+.askai-tool select{flex:1;min-width:0;font:inherit;padding:4px 6px;border:1px solid var(--line);border-radius:6px;background:var(--bg);color:var(--fg)}
+.askai-tip{margin:2px 10px 4px;font-size:.72rem;color:var(--muted)}
+.askai-toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);z-index:1001;padding:10px 16px;border-radius:10px;background:var(--fg);color:var(--bg);font-size:.9rem;max-width:calc(100vw - 32px)}
