@@ -265,5 +265,10 @@
 
   // A different student signed in: load their own chatbot
   window.addEventListener("wb-user", () => { b = null; chat = []; last = null; sentTotal = 0; err = ""; msg = ""; });
-  window.WB_BOT = { html, mount };
+  // The finished chatbot, for the "Host it on GitHub" tab to turn into a web page
+  function design() {
+    if (!b) load();
+    return { name: b.name || "My chatbot", greet: b.greet || "", system: systemPrompt(), temp: b.temp, len: b.len, mem: b.mem, p: b.p, m: b.m, tests: b.tests || STARTERS.blank.tests };
+  }
+  window.WB_BOT = { html, mount, design };
 })();

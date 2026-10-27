@@ -11,7 +11,7 @@
   };
   const mine = (k) => (window.WB_mine ? window.WB_mine(k) : k); // a key for the signed-in student's own progress
   const word = (term, label) => `<button class="wordlink" data-word="${esc(term)}" title="Open in the learning web">${esc(label || term)}</button>`;
-  const TABS = [["learn", "Lesson"], ["deep", "Deep dive"], ["tokens", "Tokenizer lab"], ["next", "Next-word game"], ["attn", "Attention"], ["halluc", "Why it hallucinates"], ["ctx", "Context window"], ["bot", "My first chatbot"], ["task", "Hand-in"], ["quiz", "Quiz"]];
+  const TABS = [["learn", "Lesson"], ["deep", "Deep dive"], ["tokens", "Tokenizer lab"], ["next", "Next-word game"], ["attn", "Attention"], ["halluc", "Why it hallucinates"], ["ctx", "Context window"], ["bot", "My first chatbot"], ["host", "Host it on GitHub"], ["task", "Hand-in"], ["quiz", "Quiz"]];
   let tab = store.get("wb-m4-tab", "learn");
 
   /* ---------- 1. Lesson ---------- */
@@ -610,12 +610,13 @@ The cat sat on the mat  →  and (21%)   .  (19%)   while (8%)   …</pre>
   }
 
   /* ---------- Rendering and events ---------- */
-  const VIEWS = { learn: lesson, deep, tokens, next, attn, halluc, ctx, bot: () => (window.WB_BOT ? window.WB_BOT.html() : ""), task, quiz };
+  const VIEWS = { learn: lesson, deep, tokens, next, attn, halluc, ctx, bot: () => (window.WB_BOT ? window.WB_BOT.html() : ""), host: () => (window.WB_HOST ? window.WB_HOST.html() : ""), task, quiz };
   function render() {
     $("m4body").innerHTML = `<nav class="m2tabs" role="tablist">${TABS.map(([k, l], i) => `<button role="tab" data-tab="${k}" aria-selected="${tab === k}"><span class="step">${i + 1}</span>${l}</button>`).join("")}</nav>${VIEWS[tab]()}`;
     if (tab === "tokens") updateTokens();
     if (tab === "deep" && dlv === "designer" && window.WB_DESIGN) window.WB_DESIGN.mount($("m4body"));
     if (tab === "bot" && window.WB_BOT) window.WB_BOT.mount($("m4body"));
+    if (tab === "host" && window.WB_HOST) window.WB_HOST.mount($("m4body"));
     if (tab === "attn" && window.WB_ATTN) window.WB_ATTN.mount($("m4body"));
   }
   function goTab(k) { tab = k; store.set("wb-m4-tab", k); render(); window.scrollTo({ top: $("m4").offsetTop - 8 }); }
