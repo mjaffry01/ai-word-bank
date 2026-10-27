@@ -217,6 +217,7 @@ Do not invent sources. If you mention one, say how sure you are that it exists.
 Question: (your question here)</pre>
         <div class="btnrow"><button class="btn sm" data-copy="safer">Copy</button><button class="btn sm primary" data-tab="tasks">Hand in my findings</button></div>
       </div>
+      ${window.WB_HRATE ? window.WB_HRATE.html() : ""}
     </section>`;
   };
 
@@ -400,6 +401,7 @@ Question: (your question here)</pre>
     $("m2body").innerHTML = `<nav class="m2tabs" role="tablist">${TABS.map(([k, l], i) => `<button role="tab" data-tab="${k}" aria-selected="${tab === k}"><span class="step">${i + 1}</span>${l}</button>`).join("")}</nav>${VIEWS[tab]()}`;
     if (tab === "build") updateBuilder();
     if (tab === "api" && window.WB_M2API) window.WB_M2API.mount($("m2body"));
+    if (tab === "hunt" && window.WB_HRATE) window.WB_HRATE.mount($("m2body"));
     if (tab === "play" && window.WB_PLAY) window.WB_PLAY.mount($("m2body"));
     if (tab === "tasks" && window.WB_CMP) window.WB_CMP.mount($("m2body"), TASKS);
   }

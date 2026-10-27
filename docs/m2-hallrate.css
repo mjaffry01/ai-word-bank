@@ -1,0 +1,38 @@
+/* Module 2 Hallucination hunt, "Step 5 · Measure it" (m2-hallrate.js) */
+.hrsec{margin-top:12px}
+.hr-s{color:var(--good)}.hr-c{color:var(--bad)}.hr-u{color:#b8860b}
+.hrsteps{margin:10px 0 0;padding-left:1.3em}
+.hrsteps li{margin:6px 0}
+.hrsplit{margin-top:14px;padding:12px;border:1px dashed var(--line);border-radius:10px;background:var(--bg)}
+.hrbox{margin:0;padding:10px 12px;border:1px solid var(--line);border-radius:8px;background:var(--bg);font-size:.95rem;line-height:1.5}
+.hrchips{display:flex;flex-wrap:wrap;gap:6px}
+.hrchips span{padding:4px 10px;border-radius:999px;border:1px solid var(--accent);font-size:.85rem}
+.hrgrid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.hrclaims{margin:0;padding-left:1.4em;display:flex;flex-direction:column;gap:8px}
+.hrclaims li{padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:var(--bg)}
+.hrclaims li.ok{border-color:var(--good)}
+.hrclaims li.no{border-color:var(--bad)}
+.hrtxt{display:block;margin-bottom:6px}
+.hrbtns{display:flex;flex-wrap:wrap;gap:6px}
+.hrpick{padding:4px 10px;border-radius:999px;border:1px solid var(--line);background:var(--surface);color:var(--fg);font:inherit;font-size:.82rem;cursor:pointer}
+.hrpick.on.hr-s{background:var(--good);border-color:var(--good);color:var(--bg)}
+.hrpick.on.hr-c{background:var(--bad);border-color:var(--bad);color:var(--bg)}
+.hrpick.on.hr-u{background:#b8860b;border-color:#b8860b;color:var(--bg)}
+.hrwhy{display:block;margin-top:6px;font-size:.88rem}
+.hrresult{margin-top:12px;padding:12px;border-left:4px solid var(--accent);background:var(--bg);border-radius:0 8px 8px 0}
+.hrtable{width:100%;border-collapse:collapse;font-size:.9rem}
+.hrtable th,.hrtable td{padding:6px 8px;border-bottom:1px solid var(--line);text-align:left}
+.hrtable th:not(:first-child),.hrtable td:not(:first-child){text-align:right;font-family:var(--mono)}
+.hrtable tr.tot td{font-weight:700;border-bottom:0}
+.hrnums{display:flex;flex-wrap:wrap;gap:10px;margin:8px 0 12px}
+.hrnum{display:flex;flex-direction:column;gap:3px;font-size:.8rem;color:var(--muted)}
+.hrnum input{width:9em;font:inherit;font-size:.95rem;padding:6px 8px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--fg)}
+.hrrates{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;margin-top:10px}
+.hrrates>div{padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:var(--bg);display:flex;flex-direction:column;gap:2px}
+.hrrates b{font:700 1.5rem var(--mono);color:var(--accent)}
+.hrrates span{font-weight:600}
+.hrrates small{color:var(--muted);font-size:.8rem}
+.hrfair{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.hrfair ul,.hrwatch{margin:0;padding-left:1.2em}
+.hrfair li,.hrwatch li{margin:4px 0}
+@media (max-width:700px){.hrgrid2,.hrfair{grid-template-columns:1fr}}
