@@ -111,14 +111,14 @@
       models[p] = await listModels(p);
       keyStatus[p] = { state: "ok", text: `Key works · ${models[p].length} models${p === "openrouter" ? ` (${models[p].filter((m) => m.free).length} free)` : ""}` };
     } catch (e) {
-      keyStatus[p] = { state: "bad", text: friendly(e, p) };
+      keyStatus[p] = { state: "bad", text: friendly(e, p) }; models[p] = [];
     }
     refresh();
   }
   function ensureModels(p) {
     if (!haveKey(p) || models[p] || modelsLoading[p]) return;
     modelsLoading[p] = true;
-    listModels(p).then((m) => { models[p] = m; }, (e) => { keyStatus[p] = { state: "bad", text: friendly(e, p) }; }).then(() => { modelsLoading[p] = false; refresh(); });
+    listModels(p).then((m) => { models[p] = m; }, (e) => { keyStatus[p] = { state: "bad", text: friendly(e, p) }; models[p] = []; }).then(() => { modelsLoading[p] = false; refresh(); });
   }
 
   /* ---------- Running a prompt ---------- */
@@ -268,18 +268,23 @@
   }
 
   /* ---------- HTML ---------- */
+  const STARTERS = ["openrouter", "gemini"], MORE = Object.keys(PROVIDERS).filter((p) => !STARTERS.includes(p));
+  let moreOpen = false;
+  const keyRow = (p) => { const P = PROVIDERS[p]; const st = keyStatus[p] || {}; return `<div class="cmprow">
+        <div><b>${esc(P.name)}</b> <span class="pill2 ${P.free ? "done" : ""}">${P.free ? "Free option" : "Paid"}</span><p class="cmpintro">${esc(P.intro)}</p><p class="crit" style="margin:2px 0 0">${esc(P.hint)} <a href="${P.keyUrl}" target="_blank" rel="noopener">Get a key ↗</a></p></div>
+        <div class="cmpkeyin"><input type="password" autocomplete="off" spellcheck="false" placeholder="${esc(P.ph)}" data-cmpkey="${p}" value="${esc(keys[p] || "")}" aria-label="${esc(P.name)} API key">
+          <button class="btn sm" data-cmpcheck="${p}" ${haveKey(p) ? "" : "disabled"}>Check</button></div>
+        <p class="savemsg ${st.state === "ok" ? "ok" : st.state === "bad" ? "err" : ""}" data-cmpstatus="${p}">${st.state === "checking" ? "Checking…" : esc(st.text || "")}</p>
+      </div>`; };
   const keysPanel = () => {
     const n = providersWithKeys().length;
     return `<details class="card2 cmpkeys" ${n ? "" : "open"}><summary><span class="kicker" style="display:inline">Optional · your own API keys</span><h3>Compare answers from real AI models</h3>
       <p class="crit" style="margin:0">${n ? `${n} key${n > 1 ? "s" : ""} added. Open to change them.` : "Add an API key to run your prompts in up to three AI models side by side, right here on this page."}</p></summary>
       <div class="cmpnote"><b>Your key stays with you.</b> It is kept only in this browser and sent straight to the AI company when you press Run. It never goes to your teacher or this course's server. Treat it like a password: don't share it or paste it anywhere else.</div>
-      <p class="crit">Start with a <b>free</b> one: OpenRouter (many free models with one key) or Google Gemini (free daily allowance). Add Groq too if you want to see how fast an answer can be.</p>
-      <div class="cmprows">${Object.entries(PROVIDERS).map(([p, P]) => { const st = keyStatus[p] || {}; return `<div class="cmprow">
-        <div><b>${esc(P.name)}</b> <span class="pill2 ${P.free ? "done" : ""}">${P.free ? "Free option" : "Paid"}</span><p class="cmpintro">${esc(P.intro)}</p><p class="crit" style="margin:2px 0 0">${esc(P.hint)} <a href="${P.keyUrl}" target="_blank" rel="noopener">Get a key ↗</a></p></div>
-        <div class="cmpkeyin"><input type="password" autocomplete="off" spellcheck="false" placeholder="${esc(P.ph)}" data-cmpkey="${p}" value="${esc(keys[p] || "")}" aria-label="${esc(P.name)} API key">
-          <button class="btn sm" data-cmpcheck="${p}" ${haveKey(p) ? "" : "disabled"}>Check</button></div>
-        <p class="savemsg ${st.state === "ok" ? "ok" : st.state === "bad" ? "err" : ""}" data-cmpstatus="${p}">${st.state === "checking" ? "Checking…" : esc(st.text || "")}</p>
-      </div>`; }).join("")}</div>
+      <p class="crit">Start with <b>one free key</b>: OpenRouter is the easiest (many free models with one key). You can add more later.</p>
+      <div class="cmprows">${STARTERS.map(keyRow).join("")}</div>
+      <details class="cmpmore" ${moreOpen || MORE.some(haveKey) ? "open" : ""}><summary>More services: ${esc(MORE.map((p) => PROVIDERS[p].name).join(", "))}</summary>
+        <div class="cmprows">${MORE.map(keyRow).join("")}</div></details>
       <div class="btnrow"><label class="cmpremember"><input type="checkbox" data-cmpremember ${remember ? "checked" : ""}> Remember my keys on this device</label><button class="btn sm" data-cmpforget>Forget all keys</button></div>
       <p class="crit" style="margin:6px 0 0">Not ticked: keys are forgotten when you close this browser tab. Only tick it on your own device.</p>
       <details class="cmpothers"><summary>Other services like OpenRouter (not on this page)</summary>
@@ -337,6 +342,7 @@
   }
   function bind() {
     if (bound || !root) return; bound = true;
+    root.addEventListener("toggle", (e) => { if (e.target.classList && e.target.classList.contains("cmpmore")) moreOpen = e.target.open; }, true);
     root.addEventListener("input", (e) => {
       const k = e.target.dataset && e.target.dataset.cmpkey; if (!k) return;
       keys[k] = e.target.value.trim(); delete models[k]; keyStatus[k] = null; saveKeys();

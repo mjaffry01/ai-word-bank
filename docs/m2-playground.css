@@ -1,34 +1,31 @@
-/* Module 2 "Model playground" tab: per-model settings with teacher/student explanations (m2-playground.js) */
-#pgsection .card2{margin-top:14px}
-.pgexps{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:8px}
-.pgexp{display:flex;flex-direction:column;gap:3px;text-align:left;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--fg);font:inherit;cursor:pointer}
-.pgexp:hover{border-color:var(--accent)}
-.pgexp b{font-size:.92rem}
-.pgexp span{font-size:.82rem;color:var(--muted)}
-.pgmodels{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px}
-.pgmodel{display:flex;flex-direction:column;gap:6px;padding:12px;border:1px solid var(--line);border-radius:10px;background:var(--bg);min-width:0}
-.pgmodel.sel{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent)}
-.pgmodel select,#pgsection select,#pgsection input[type=text],#pgsection input[type=number]{font:inherit;font-size:.88rem;padding:7px 8px;border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--fg);min-width:0;width:100%}
+/* Module 2 "Model playground" tab: Part 1 learn one setting at a time, Part 2 try it in real models (m2-playground.js) */
+#pgsection .card2{margin-top:12px}
+#pgsection select,#pgsection input[type=text],#pgsection input[type=number]{font:inherit;font-size:.88rem;padding:7px 8px;border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--fg);min-width:0;width:100%}
 #pgsection textarea{width:100%;font:inherit;padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--fg);resize:vertical}
-.pgmhead{display:flex;justify-content:space-between;align-items:center}
-.pgsum{font:500 .74rem var(--mono);overflow-wrap:anywhere}
-.linkish{background:none;border:0;padding:0;color:var(--accent);font:600 .8rem var(--mono);cursor:pointer}
-.pgadd{border:1px dashed var(--line);border-radius:10px;background:transparent;color:var(--accent);font:600 .9rem inherit;cursor:pointer;min-height:120px}
-.pgadd:hover{border-color:var(--accent)}
-.pglayout{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(0,1fr);gap:16px;align-items:start}
-.pgrows{display:grid;gap:10px}
-.pgside{position:sticky;top:12px;display:flex;flex-direction:column;gap:8px}
-.pgrow{padding:12px;border:1px solid var(--line);border-radius:10px;background:var(--bg);display:flex;flex-direction:column;gap:8px;min-width:0}
-.pgrow.off{opacity:.6}
-.pghead{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:center}
-.pgsend{display:inline-flex;gap:8px;align-items:center;cursor:pointer}
-.pgsend input{width:16px;height:16px;accent-color:var(--accent)}
-.pgctl{display:flex;gap:10px;align-items:center}
-.pgctl input[type=range]{flex:1;accent-color:var(--accent)}
-.pgctl input[type=range]:disabled{opacity:.4}
-.pgval{min-width:3.2em;text-align:right;font:700 .95rem var(--mono)}
+#pgsection input[type=range]{flex:1;min-width:0;accent-color:var(--accent)}
+.pgsteps{margin:6px 0 0;padding-left:1.3em}
+.pgsteps li{margin:4px 0}
+.pgpart{display:flex;align-items:center;gap:10px;font:700 1.25rem/1.2 var(--display);margin:28px 0 0}
+.pgpart span{display:inline-grid;place-items:center;width:30px;height:30px;border-radius:50%;background:var(--accent);color:var(--bg);font:700 .95rem var(--mono)}
+
+/* Part 1 */
+.pgchips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px}
+.pgchip{display:inline-flex;align-items:center;gap:6px;padding:6px 12px;border:1px solid var(--line);border-radius:999px;background:var(--bg);color:var(--fg);font:inherit;font-size:.88rem;cursor:pointer}
+.pgchip span{font:600 .72rem var(--mono);color:var(--muted)}
+.pgchip:hover{border-color:var(--accent)}
+.pgchip.on{background:var(--accent);border-color:var(--accent);color:var(--bg)}
+.pgchip.on span{color:inherit}
+.pglhead{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+.pglhead h3{margin:0}
+.pglhead code{font:500 .78rem var(--mono);color:var(--muted)}
+.pgwhat{font-size:1.05rem;margin:6px 0 12px}
+.pgctl{display:flex;gap:12px;align-items:center;margin-bottom:12px}
+.pgbig{min-width:3em;text-align:right;font:700 1.4rem var(--mono);color:var(--accent)}
+.pglgrid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px;align-items:start}
+.pglgrid > div:empty{display:none}
+.pglgrid:has(> div:empty){grid-template-columns:1fr}
 .pgtalk{display:flex;flex-direction:column;gap:6px}
-.pgtalk p{margin:0;padding:8px 10px;border-radius:10px;font-size:.9rem;line-height:1.45;max-width:92%}
+.pgtalk p{margin:0;padding:8px 10px;border-radius:10px;font-size:.92rem;line-height:1.45;max-width:92%}
 .pgtalk p b{display:block;font:700 .66rem var(--mono);letter-spacing:.08em;text-transform:uppercase;margin-bottom:2px}
 .pgtalk .t{background:var(--surface);border:1px solid var(--line);align-self:flex-start}
 .pgtalk .t b{color:var(--accent)}
@@ -42,7 +39,42 @@
 .pgbar .pct{font:600 .78rem var(--mono);text-align:right}
 .pgbar.cut{color:var(--muted);text-decoration:line-through}
 .pgbar.cut .pct{text-decoration:none}
-.pgresults{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:10px;margin-top:10px}
+.pgtext{font:inherit;font-size:.92rem;line-height:1.5;white-space:pre-wrap;margin:0 0 8px}
+.pgcut{color:var(--bad);text-decoration:line-through;opacity:.7}
+
+/* Part 2 */
+.pgstart ol{margin:0 0 10px;padding-left:1.3em}
+.pgstart li{margin:5px 0}
+.pgexps{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:8px}
+.pgexp{display:flex;flex-direction:column;gap:3px;text-align:left;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--fg);font:inherit;cursor:pointer}
+.pgexp:hover,.pgexp.on{border-color:var(--accent)}
+.pgexp.on{box-shadow:0 0 0 1px var(--accent)}
+.pgexp b{font-size:.92rem}
+.pgexp span{font-size:.82rem;color:var(--muted)}
+.pgmodels{display:grid;grid-template-columns:repeat(auto-fit,minmax(270px,1fr));gap:12px;align-items:start}
+.pgmodels .card2{margin-top:12px}
+.pgmhead{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.pgmhead b{font:700 1.05rem var(--display)}
+.pgfield{display:flex;flex-direction:column;gap:3px;font-size:.8rem;color:var(--muted);margin-bottom:8px}
+.pgsets{display:flex;flex-direction:column;gap:2px}
+.pgset{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:8px;align-items:center;padding:6px 8px;border-radius:8px}
+.pgset.wide{grid-template-columns:1fr}
+.pgset.on{background:color-mix(in srgb,var(--accent) 10%,transparent)}
+.pgset.na{opacity:.55}
+.pgsname{font-size:.86rem;display:flex;align-items:center;gap:4px;flex-wrap:wrap;white-space:nowrap}
+.pgset.on .pgsname{font-weight:700}
+.pgsctl{display:flex;gap:8px;align-items:center;min-width:0}
+.pgsval{min-width:4.2em;text-align:right;font:600 .8rem var(--mono);color:var(--muted)}
+.pgset.on .pgsval{color:var(--accent)}
+.pgq{width:18px;height:18px;border-radius:50%;border:1px solid var(--line);background:var(--bg);color:var(--accent);font:700 .7rem var(--mono);cursor:pointer;padding:0;line-height:1}
+.pgreset{display:none;border:0;background:none;color:var(--accent);font:600 .72rem var(--mono);cursor:pointer;padding:0}
+.pgset.on .pgreset{display:inline}
+.linkish{background:none;border:0;padding:0;color:var(--accent);font:600 .8rem var(--mono);cursor:pointer}
+.pgadd{border:1px dashed var(--line);border-radius:12px;background:transparent;color:var(--accent);font:600 .95rem inherit;cursor:pointer;min-height:64px;margin-top:12px;align-self:start;padding:12px}
+.pgadd:hover{border-color:var(--accent)}
+.pgnotice{margin-top:12px;padding:10px 12px;border-left:4px solid var(--accent);background:var(--bg);border-radius:0 8px 8px 0;font-size:.92rem}
+.pgnotice b{display:block;font:700 .7rem var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--accent);margin-bottom:3px}
+.pgresults{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:10px;margin-top:12px}
 .pgrun{border-top:1px solid var(--line)}
 .pgrun:first-of-type{border-top:0}
 .pgrun .lbl{padding:8px 10px 0;margin:0}
@@ -50,4 +82,4 @@
 .pgreq{padding:0 10px 10px;font-size:.82rem}
 .pgreq summary{cursor:pointer;color:var(--accent)}
 .pgreq pre{margin:6px 0 0;padding:8px;background:var(--bg);border:1px solid var(--line);border-radius:8px;font:500 .74rem var(--mono);white-space:pre-wrap;overflow-wrap:anywhere;max-height:240px;overflow:auto}
-@media (max-width:760px){.pglayout{grid-template-columns:1fr}.pgside{position:static;order:-1}}
+@media (max-width:760px){.pglgrid{grid-template-columns:1fr}.pgset{grid-template-columns:1fr}}

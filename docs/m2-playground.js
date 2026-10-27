@@ -1,117 +1,115 @@
-// Module 2, "Model playground" tab: pick up to three models (using the student's own keys from m2-compare.js),
-// give each model its own settings (temperature, top-p, top-k, max tokens, penalties, stop, seed, thinking, system prompt),
-// and run the same prompt in all of them. As each control moves, a Teacher and a Student explain what it does at that value,
-// and a live chart shows which next words the settings still allow. Module 2 calls WB_PLAY.html() and WB_PLAY.mount(root).
+// Module 2, "Model playground" tab, in two parts.
+// Part 1, "Learn the dials" (no key needed): one setting at a time, with a slider, a picture of what it does,
+// and a short Teacher/Student conversation that changes with the value.
+// Part 2, "Try it for real" (student's own key, from m2-compare.js): run one prompt in up to three models,
+// each with its own settings; every setting says "default" until the student moves it.
+// Module 2 calls WB_PLAY.html() and WB_PLAY.mount(root).
 (function () {
   "use strict";
   const esc = (s) => String(s == null ? "" : s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
   const C = () => window.WB_CMP;
-  const STORE = "wb-pg-state";
+  const STORE = "wb-pg2";
 
-  /* ---------- The settings, with what each provider supports ---------- */
+  /* ---------- The settings, with what each service supports ---------- */
   const ALL = ["openrouter", "openai", "gemini", "anthropic", "groq", "huggingface", "mistral"], COMPAT = ["groq", "huggingface", "mistral"];
+  // min/max/def: the real range used in Part 2. learn: a smaller range for Part 1 where that makes the picture clearer.
   const PARAMS = [
-    { id: "temperature", label: "Temperature", min: 0, max: 2, step: 0.1, def: 1, on: true, prov: ALL, visual: true },
-    { id: "top_p", label: "Top-p (p = how much of the chance to keep)", min: 0.05, max: 1, step: 0.05, def: 0.9, prov: ALL, visual: true },
-    { id: "top_k", label: "Top-k (k = how many words to keep)", min: 1, max: 50, step: 1, def: 5, prov: ["openrouter", "gemini", "anthropic"], visual: true },
-    { id: "max_tokens", label: "Max output tokens", min: 16, max: 2000, step: 16, def: 400, on: true, prov: ALL },
-    { id: "frequency_penalty", label: "Frequency penalty", min: -2, max: 2, step: 0.1, def: 0.5, prov: ["openrouter", "openai", "gemini", ...COMPAT] },
-    { id: "presence_penalty", label: "Presence penalty", min: -2, max: 2, step: 0.1, def: 0.5, prov: ["openrouter", "openai", "gemini", ...COMPAT] },
-    { id: "stop", label: "Stop sequence", type: "text", def: "", prov: ALL },
-    { id: "seed", label: "Seed", type: "number", def: 42, prov: ["openrouter", "openai", "gemini", ...COMPAT] },
-    { id: "thinking", label: "Thinking (reasoning effort)", type: "choice", choices: ["low", "medium", "high"], def: "low", prov: ALL },
+    { id: "temperature", name: "Temperature", api: "temperature", what: "How adventurous the model is when it picks each next word.", min: 0, max: 2, step: 0.1, def: 1, prov: ALL },
+    { id: "top_p", name: "Top-p", api: "top_p", what: "Keep only the most likely words until their chances add up to p. Throw the rest away.", min: 0.05, max: 1, step: 0.05, def: 0.9, prov: ALL },
+    { id: "top_k", name: "Top-k", api: "top_k", what: "Keep only the k most likely words. Throw the rest away.", min: 1, max: 50, step: 1, def: 5, learn: { max: 10 }, prov: ["openrouter", "gemini", "anthropic"] },
+    { id: "max_tokens", name: "Max length", api: "max_tokens", what: "The longest the answer is allowed to be, counted in tokens (pieces of words).", min: 16, max: 2000, step: 16, def: 400, learn: { min: 10, max: 100, step: 5, def: 30 }, prov: ALL },
+    { id: "stop", name: "Stop sequence", api: "stop", what: "A piece of text that makes the model stop writing the moment it would write it.", type: "text", def: "4.", prov: ALL },
+    { id: "frequency_penalty", name: "Repeat penalty", api: "frequency_penalty", what: "Makes a word less likely every time it is repeated.", min: -2, max: 2, step: 0.1, def: 0, prov: ["openrouter", "openai", "gemini", ...COMPAT] },
+    { id: "presence_penalty", name: "New-ideas nudge", api: "presence_penalty", what: "Gives a one-time push away from any word already used, towards new words and ideas.", min: -2, max: 2, step: 0.1, def: 0, prov: ["openrouter", "openai", "gemini", ...COMPAT] },
+    { id: "seed", name: "Seed", api: "seed", what: "Fixes the model's “dice”, so the same prompt and settings give the same answer again.", type: "number", def: 42, prov: ["openrouter", "openai", "gemini", ...COMPAT] },
+    { id: "thinking", name: "Thinking", api: "reasoning effort", what: "Lets reasoning models think privately before they answer.", type: "choice", choices: ["low", "medium", "high"], def: "low", prov: ALL },
+    { id: "system", name: "System prompt", api: "system", what: "Hidden instructions about the model's role, rules and style, sent before your question.", type: "system", def: "You are a cheerful pirate. Answer in one sentence.", prov: ALL },
   ];
+  const P = (id) => PARAMS.find((x) => x.id === id);
   const NOT_SUPPORTED = {
-    top_k: { openai: "OpenAI's API doesn't offer top-k. Use temperature or top-p instead." },
-    frequency_penalty: { anthropic: "Claude's API doesn't use penalties. It avoids repetition in other ways." },
-    presence_penalty: { anthropic: "Claude's API doesn't use penalties. It avoids repetition in other ways." },
-    seed: { anthropic: "Claude's API doesn't offer a seed, so repeated runs can always differ a little." },
+    top_k: { openai: "OpenAI doesn't offer top-k." },
+    frequency_penalty: { anthropic: "Claude doesn't use penalties." },
+    presence_penalty: { anthropic: "Claude doesn't use penalties." },
+    seed: { anthropic: "Claude doesn't offer a seed." },
   };
+  const supports = (p, prov) => p.prov.includes(prov) && !(NOT_SUPPORTED[p.id] || {})[prov];
+  const provName = (prov) => (C() && C().providers[prov] ? C().providers[prov].name : prov);
 
-  /* ---------- What the Teacher and the Student say at each value ---------- */
+  /* ---------- What the Teacher and the Student say at each value (prov is "" in Part 1) ---------- */
   const T = (t) => ["T", t], S = (t) => ["S", t];
   function talk(id, v, prov) {
     switch (id) {
       case "temperature":
-        if (prov === "anthropic" && v > 1) return [T("Claude only accepts temperatures from 0 to 1, so this will be sent as 1."), S("So Claude's 'hottest' is about a normal setting elsewhere?"), T("Roughly, yes. Each company scales it a little differently.")];
+        if (prov === "anthropic" && v > 1) return [T("Claude only accepts temperatures from 0 to 1, so this will be sent as 1.")];
         if (v === 0) return [T("At 0 the model always picks the single most likely next word. No dice are rolled."), S("So if I ask the same thing twice, I get the same answer?"), T("Almost word for word. Use this for facts, maths, code and pulling data out of text.")];
-        if (v <= 0.5) return [T(`At ${v} the model sticks closely to the most likely words, with just a little variety.`), S("Is that good for my homework summary?"), T("Yes. Low temperature means focused, predictable and less risky. Great for summaries and answers you need to rely on.")];
-        if (v <= 1.0) return [T(`${v} is the balanced zone, close to most apps' default. Likely words win most of the time, but the model sometimes surprises you.`), S("Why not always use 0 then, to be safe?"), T("At 0, writing can sound flat and repetitive. A bit of randomness makes emails, stories and ideas sound natural.")];
-        if (v <= 1.5) return [T(`At ${v} unlikely words get a real chance. Look at the chart: 'moon' and 'spaceship' are growing.`), S("So this is the creative setting?"), T("Yes: brainstorming, poems, names, jokes. But facts get less reliable, so don't use it for anything you need to be true.")];
-        return [T(`At ${v} the chances are nearly flattened. The model can pick almost any word.`), S("Is that why answers can turn into nonsense?"), T("Exactly. Very high temperatures often drift off-topic or into gibberish. Try it once to see, then come back down.")];
+        if (v <= 0.5) return [T(`At ${v} the model sticks closely to the most likely words, with just a little variety.`), S("Is that good for my homework summary?"), T("Yes. Low temperature means focused and predictable. Great for answers you need to rely on.")];
+        if (v <= 1.0) return [T(`${v} is the balanced zone, close to most apps' default. Likely words usually win, but the model sometimes surprises you.`), S("Why not always use 0, to be safe?"), T("At 0, writing can sound flat and repetitive. A little randomness makes emails, stories and ideas sound natural.")];
+        if (v <= 1.5) return [T(`At ${v} unlikely words get a real chance. Look at the bars: “moon” and “spaceship” are growing.`), S("So this is the creative setting?"), T("Yes: brainstorming, poems, names, jokes. But facts get less reliable.")];
+        return [T(`At ${v} the chances are nearly flat. The model can pick almost any word.`), S("Is that why answers turn into nonsense?"), T("Exactly. Very high temperatures often drift off-topic or into gibberish. Try it once, then come back down.")];
       case "top_p":
-        return [S("What does the p in top-p mean?"), T("Before each word, the model lists the words that could come next, most likely first, each with a chance. p means probability (chance). Top-p keeps words from the top of that list until their chances add up to p, and throws the rest away.")].concat(topP(v));
+        if (v <= 0.3) return [S("What does the p mean?"), T("p is short for probability, which just means chance."), T(`With p = ${v}, the model keeps words from the top of the list until their chances reach ${Math.round(v * 100)}%. Here that's only “mat”. Everything else is crossed out.`), S("So the answer becomes very safe?"), T("Yes. A small p leaves only one or two words to choose from.")];
+        if (v < 1) return [S("What does the p mean?"), T("p is short for probability, which just means chance."), T(`With p = ${v}, the model keeps words from the top until their chances reach ${Math.round(v * 100)}%. Look at the bars: the rare words at the bottom are crossed out.`), S("Isn't that the same as temperature?"), T("Related, but different. Temperature changes everyone's chances; top-p just cuts off the unlikely words. Usually you change one or the other, not both.")];
+        return [S("What does the p mean?"), T("p is short for probability, which just means chance."), T("p = 1 means keep 100% of the chance: nothing is cut, so top-p does nothing at all."), S("So why do apps use it?"), T("Many apps use about 0.9 to cut only the truly weird words while keeping variety.")];
       case "top_k":
-        if (!PARAMS[2].prov.includes(prov)) return [T(NOT_SUPPORTED.top_k[prov] || "This service doesn't offer top-k. Use temperature or top-p instead.")];
-        return [S("And what is k?"), T("k is just a number. The model lists the words that could come next, most likely first, and top-k keeps only the first k words on that list.")].concat(topK(v));
-    }
-    return talkRest(id, v, prov);
-  }
-  function topP(v) {
-    if (v <= 0.3) return [T(`Top-p ${v}: the model keeps only the few most likely words whose chances add up to ${Math.round(v * 100)}%, and throws the rest away.`), S("So 'banana' can never be chosen now?"), T("Right. With such a small p, often just one or two words are left, so answers become very safe and similar.")];
-    if (v < 0.9) return [T(`Top-p ${v} keeps the most likely words until they cover ${Math.round(v * 100)}% of the chance, then picks among those.`), S("Isn't that the same as temperature?"), T("Related, but different. Temperature reshapes everyone's chances; top-p cuts off the long tail of unlikely words. Usually you change one or the other, not both.")];
-    return [T(`Top-p ${v} keeps almost every word in play and only cuts off the very rarest ones.`), S("So at 1.0 it does nothing?"), T("Exactly. 1.0 means 'no cut'. Many apps use about 0.9 to stop truly weird words while keeping variety.")];
-  }
-  function topK(v) {
-    if (v === 1) return [T("Top-k 1 means only the single most likely word is allowed."), S("That sounds like temperature 0."), T("It behaves the same way: one choice, so the answer is fixed.")];
-    if (v <= 10) return [T(`Top-k ${v}: only the ${v} most likely words are allowed at each step. See the chart: everything after word ${v} is greyed out.`), S("Why use a fixed number instead of top-p?"), T("It's simpler, but less smart: sometimes the top 5 words are all good, sometimes only 1 is. Top-p adapts to that; top-k doesn't.")];
-    return [T(`Top-k ${v} allows a large list of candidates, so it barely limits the model.`), S("So big numbers mean more variety?"), T("Yes. A large k only removes very rare words. Temperature then decides how adventurous the choice is.")];
-  }
-  function talkRest(id, v, prov) {
-    switch (id) {
-      case "max_tokens": {
-        const words = Math.round(v * 0.75);
-        return [T(`Max ${v} tokens is about ${words} English words. That's the longest the answer is allowed to be.`), S(v < 100 ? "What happens if the answer needs more?" : "Will a bigger number give me a better answer?"),
-          T(v < 100 ? "It gets cut off mid-sentence. You'll see 'Why it stopped: hit the max-tokens limit' under the answer. Try it on a long question!" : "No, it's a ceiling, not a target. The model stops when it's done; you only pay for the tokens it actually writes. Set it high enough not to cut the answer short.")];
-      }
+        if (prov && !supports(P("top_k"), prov)) return [T((NOT_SUPPORTED.top_k[prov] || "This service doesn't offer top-k.") + " Use temperature or top-p instead.")];
+        if (v === 1) return [S("What is k?"), T("k is just a number: how many words to keep."), T("With k = 1, only the single most likely word is allowed."), S("That sounds like temperature 0."), T("It behaves the same way: one choice, so the answer is fixed.")];
+        return [S("What is k?"), T("k is just a number: how many words to keep."), T(`With k = ${v}, only the top ${v} words can be picked. Look at the bars: everything below word ${v} is crossed out.`), S("How is that different from top-p?"), T("Top-k always keeps the same number of words. Top-p keeps however many it takes to reach the chance p.")];
+      case "max_tokens":
+        if (prov) return [T(`${v} tokens is about ${Math.round(v * 0.75)} English words. If the answer needs more, it gets cut off.`)];
+        return [T(`Max length ${v}: the answer may be at most ${v} tokens long. (In this picture each word counts as one token.)`), S(v < 75 ? "It stopped in the middle of a sentence!" : "So now it finished?"), T(v < 75 ? "Yes. The model doesn't plan ahead; it just stops when it hits the limit. Real apps then show a cut-off answer." : "Yes. The limit is a ceiling, not a target: the model stops when it's done, and you only pay for what it writes.")];
+      case "stop":
+        return v ? [T(`The model stops the moment it would write “${v}”. Those characters are not included.`), S("Why would I want that?"), T("To end answers cleanly at a marker. Here, “4.” stops a list after 3 items, even though we asked for 10.")]
+          : [T("Type some text, such as “4.”, and watch where the list stops.")];
       case "frequency_penalty":
         if (prov === "anthropic") return [T(NOT_SUPPORTED.frequency_penalty.anthropic)];
-        if (v < 0) return [T(`A negative frequency penalty (${v}) makes words more likely the more they've been used.`), S("Why would anyone want more repetition?"), T("Rarely. Maybe for chants, slogans or keeping one key term consistent. Mostly it's a fun way to see the model loop and repeat itself.")];
-        if (v === 0) return [T("0 means no penalty: words are judged only on how well they fit."), S("So it's 'off'?"), T("Yes, and that's the usual default.")];
-        if (v <= 1) return [T(`Frequency penalty ${v}: each time a word is used, its chance drops a little more.`), S("So it stops saying 'very, very, very'?"), T("Exactly. A small positive value gently reduces repeated words and phrases in long answers.")];
-        return [T(`At ${v} repeated words are punished hard.`), S("Is more always better?"), T("No. Too high and the model avoids even normal words like 'the' or the topic's own name, so writing gets odd. Stay under about 1.")];
+        if (v < 0) return [T(`A negative value (${v}) makes words MORE likely the more they're used.`), S("Why would anyone want that?"), T("Rarely. Mostly it's a fun way to see the model loop and repeat itself.")];
+        if (v === 0) return [T("0 means no penalty. This is the usual default."), S("What happens if I raise it?"), T("Each time a word is used, its chance drops a little more, so the model repeats itself less.")];
+        if (v <= 1) return [T(`At ${v}, each time a word is used, its chance drops a little more.`), S("So it stops saying “very, very, very”?"), T("Exactly. A small value gently reduces repetition in long answers.")];
+        return [T(`At ${v}, repeated words are punished hard.`), S("Is more always better?"), T("No. Too high, and the model even avoids normal words like “the”, so the writing gets odd. Stay under about 1.")];
       case "presence_penalty":
         if (prov === "anthropic") return [T(NOT_SUPPORTED.presence_penalty.anthropic)];
-        if (v < 0) return [T(`A negative presence penalty (${v}) nudges the model to stay on words and ideas it has already used.`), S("So it stays more focused?"), T("A bit, yes, but it can also get repetitive. It's rarely needed.")];
-        if (v === 0) return [T("0 means no presence penalty, which is the usual default."), S("What's the difference from the frequency penalty?"), T("Frequency grows each time a word repeats. Presence is a one-time nudge: as soon as a word has appeared at all, it gets the same small penalty.")];
-        return [T(`Presence penalty ${v}: any word already used gets a one-time penalty, pushing the model towards new words and new ideas.`), S("Good for brainstorming then?"), T("Yes. It helps a list of ideas cover more ground instead of circling the same theme. Too high, and it drifts off-topic.")];
-      case "stop":
-        return v ? [T(`The model will stop the moment it writes "${v}". Those characters themselves are not included in the answer.`), S("How would I use that?"), T("Ask for 'a numbered list of 10 fruits' and set the stop sequence to '4.'. You'll get exactly 3 items. Apps use stop sequences to end answers cleanly at a marker.")]
-          : [T("A stop sequence is text that makes the model stop immediately when it writes it."), S("What should I type?"), T("Try '4.' with a numbered-list prompt, or a blank line. Type it in the box, then run.")];
+        if (v < 0) return [T(`A negative value (${v}) nudges the model to stay on words it has already used.`), S("So it stays focused?"), T("A bit, but it can get repetitive. It's rarely needed.")];
+        if (v === 0) return [T("0 means no nudge. This is the usual default."), S("How is it different from the repeat penalty?"), T("The repeat penalty grows every time a word repeats. This one is a one-time push: once a word has appeared at all, it's slightly less likely.")];
+        return [T(`At ${v}, any word already used gets a one-time push down, so the model reaches for new words and ideas.`), S("Good for brainstorming then?"), T("Yes. A list of ideas covers more ground. Too high, and it drifts off-topic.")];
       case "seed":
         if (prov === "anthropic") return [T(NOT_SUPPORTED.seed.anthropic)];
-        return [T(`Seed ${v} fixes the model's 'dice'. With the same prompt, settings and seed, you should get the same answer again, even at a high temperature.`), S("Then why does it sometimes still change?"), T("Providers only promise 'mostly' repeatable results: their servers and model versions can change. Seeds are handy for testing and for comparing settings fairly.")];
+        return [T("Normally the model rolls dice for every word, so each run is a bit different."), S("And the seed?"), T(`The seed (here ${v}) fixes the dice. Same prompt, same settings, same seed: you should get the same answer again, even at a high temperature. Any number works; it just has to be the same each time.`)];
       case "thinking":
-        return [T(`Thinking "${v}": reasoning models can think privately before answering. More thinking usually means better answers on hard, multi-step problems.`), S("Do I get to see the thinking?"), T(`Usually not, but you pay for it in tokens and time. It only works on reasoning models; other models will ignore it or return an error, which is a good lesson too.${prov === "anthropic" ? " For Claude, turning thinking on also turns off temperature and top-k." : ""}`)];
+        return [T(`Thinking “${v}”: reasoning models can think privately, step by step, before they answer.`), S("Is more thinking always better?"), T(`It helps on hard problems like maths or planning, but it's slower and uses more tokens. Only reasoning models can do it; other models ignore it or give an error.${prov === "anthropic" ? " For Claude, thinking also switches off temperature and top-k." : ""}`)];
       case "system":
-        return [T("The system prompt is the hidden instruction behind the whole conversation: the model's role, rules and style."), S("How is that different from my normal prompt?"), T("Your prompt is the question. The system prompt is the job description. Try 'Answer like a pirate in one sentence' and run the same question.")];
+        return [T("The system prompt is the hidden instruction behind the conversation: the model's role, rules and style."), S("How is it different from my normal prompt?"), T("Your prompt is the question. The system prompt is the job description. With the pirate system prompt, even “What is machine learning?” gets a pirate answer.")];
     }
     return [];
   }
 
-  /* ---------- The next-word chart: what the current temperature, top-k and top-p allow ---------- */
+  /* ---------- Pictures for Part 1 ---------- */
   const NEXT = [["mat", 0.38], ["sofa", 0.18], ["floor", 0.14], ["chair", 0.1], ["windowsill", 0.07], ["roof", 0.05], ["keyboard", 0.04], ["moon", 0.02], ["spaceship", 0.01], ["banana", 0.01]];
-  function allowed(prm, prov) {
-    const tOn = prm.temperature && prm.temperature.on, kOn = prm.top_k && prm.top_k.on && PARAMS[2].prov.includes(prov), pOn = prm.top_p && prm.top_p.on;
-    let T0 = tOn ? Number(prm.temperature.v) : 1;
-    if (prov === "anthropic") T0 = Math.min(T0, 1);
-    let probs = T0 < 0.05 ? NEXT.map((_, i) => (i === 0 ? 1 : 0)) : (() => { const e = NEXT.map(([, p]) => Math.exp(Math.log(p) / T0)), s = e.reduce((a, b) => a + b, 0); return e.map((x) => x / s); })();
-    const keep = probs.map(() => true);
-    if (kOn) probs.forEach((_, i) => { if (i >= Number(prm.top_k.v)) keep[i] = false; });
-    if (pOn) { let acc = 0; probs.forEach((p, i) => { if (!keep[i]) return; if (acc >= Number(prm.top_p.v) - 1e-9) keep[i] = false; acc += p; }); }
+  function chances(temp, topP, topK) {
+    const probs = temp < 0.05 ? NEXT.map((_, i) => (i === 0 ? 1 : 0)) : (() => { const e = NEXT.map(([, p]) => Math.exp(Math.log(p) / temp)), s = e.reduce((a, b) => a + b, 0); return e.map((x) => x / s); })();
+    const keep = probs.map((_, i) => topK == null || i < topK);
+    if (topP != null) { let acc = 0; probs.forEach((p, i) => { if (acc >= topP - 1e-9) keep[i] = false; acc += p; }); }
     const s = probs.reduce((a, p, i) => a + (keep[i] ? p : 0), 0) || 1;
     return probs.map((p, i) => ({ w: NEXT[i][0], p: keep[i] ? p / s : 0, cut: !keep[i] }));
   }
-  const chart = (prm, prov) => `<div class="pgchart"><p class="lbl">“The cat sat on the ___”: chances with these settings</p>${allowed(prm, prov).map((x) => `<div class="pgbar ${x.cut ? "cut" : ""}"><span class="w">${esc(x.w)}</span><span class="track"><span class="fill" style="width:${(x.p * 100).toFixed(1)}%"></span></span><span class="pct">${x.cut ? "cut" : Math.round(x.p * 100) + "%"}</span></div>`).join("")}</div>`;
+  const bars = (rows) => `<div class="pgchart"><p class="lbl">The model is writing: “The cat sat on the ___”</p><p class="crit" style="margin:0 0 6px">Chance of each next word:</p>${rows.map((x) => `<div class="pgbar ${x.cut ? "cut" : ""}"><span class="w">${esc(x.w)}</span><span class="track"><span class="fill" style="width:${(x.p * 100).toFixed(1)}%"></span></span><span class="pct">${x.cut ? "cut" : Math.round(x.p * 100) + "%"}</span></div>`).join("")}</div>`;
+  const LONG = "Photosynthesis is how plants make their own food. They take in sunlight through their leaves, water through their roots and carbon dioxide from the air. Inside the leaves, a green substance called chlorophyll catches the light energy. The plant uses that energy to turn water and carbon dioxide into sugar, which it uses to grow. It also releases oxygen into the air, which is what we breathe.".split(" ");
+  const LIST = ["1. Apple", "2. Banana", "3. Mango", "4. Orange", "5. Grapes", "6. Pear", "7. Peach", "8. Cherry", "9. Plum", "10. Kiwi"].join("\n");
+  function picture(id, v) {
+    if (id === "temperature") return bars(chances(v, null, null));
+    if (id === "top_p") return bars(chances(1, v, null));
+    if (id === "top_k") return bars(chances(1, null, v));
+    if (id === "max_tokens") { const cut = v < LONG.length; return `<div class="pgchart"><p class="lbl">Question: “Explain how photosynthesis works.”</p><p class="pgtext">${esc(LONG.slice(0, v).join(" "))}${cut ? ' <span class="pgcut">… [cut off]</span>' : ""}</p><p class="crit" style="margin:0">${cut ? `Stopped at ${v} words: the answer needed ${LONG.length}.` : `Finished naturally after ${LONG.length} words.`}</p></div>`; }
+    if (id === "stop") { const i = v ? LIST.indexOf(v) : -1; return `<div class="pgchart"><p class="lbl">Prompt: “List 10 fruits, numbered.”</p><pre class="pgtext">${i < 0 ? esc(LIST) : `${esc(LIST.slice(0, i))}<span class="pgcut">${esc(LIST.slice(i))}</span>`}</pre><p class="crit" style="margin:0">${i < 0 ? "The stop text never appears, so the whole list is written." : "The crossed-out part is never written."}</p></div>`; }
+    return "";
+  }
 
   /* ---------- State ---------- */
-  const freshParams = () => Object.fromEntries(PARAMS.map((p) => [p.id, { on: !!p.on, v: p.def }]));
-  const blankSlot = () => ({ p: "", m: "", params: freshParams(), system: "" });
+  const blankSlot = () => ({ p: "", m: "", v: {} });   // v[id] = value, or missing = model's default
   let st;
   try { st = JSON.parse(localStorage.getItem(STORE) || "null"); } catch (e) { st = null; }
-  if (!st || !Array.isArray(st.slots)) st = { slots: [blankSlot(), blankSlot()], edit: 0, prompt: "Give me 5 names for a new coffee shop.", runs: 1 };
-  st.slots.forEach((s) => { const f = freshParams(); s.params = Object.assign(f, s.params || {}); if (s.system == null) s.system = ""; });
+  if (!st || !Array.isArray(st.slots)) st = { learn: "temperature", lv: {}, slots: [blankSlot(), blankSlot()], prompt: "Give me 5 names for a new coffee shop.", runs: 1, exp: -1 };
   const save = () => { try { localStorage.setItem(STORE, JSON.stringify(st)); } catch (e) {} };
+  const learnVal = (p) => (st.lv[p.id] !== undefined ? st.lv[p.id] : (p.learn && p.learn.def !== undefined ? p.learn.def : p.def));
   const results = [], busy = { on: false };
 
   function resolveSlot(i) {
@@ -119,99 +117,129 @@
     if (!avail.length) return s;
     if (!avail.includes(s.p)) s.p = avail[0];
     const list = C().models(s.p);
-    if (list && !list.some((m) => m.id === s.m)) { const pool = C().defaultModels(s.p); s.m = (pool[i] || pool[0] || list[0] || {}).id || ""; }
+    if (list && list.length && !list.some((m) => m.id === s.m)) { const pool = C().defaultModels(s.p); s.m = (pool[i] || pool[0] || list[0] || {}).id || ""; }
     return s;
   }
   const modelName = (s) => { const list = s.p && C() && C().models(s.p); const m = list && list.find((x) => x.id === s.m); return m ? m.name : s.m || "—"; };
-  const sentParams = (s) => Object.fromEntries(PARAMS.filter((p) => s.params[p.id].on && p.prov.includes(s.p) && !(NOT_SUPPORTED[p.id] || {})[s.p]).map((p) => [p.id, p.type === "number" || p.type === undefined ? Number(s.params[p.id].v) : s.params[p.id].v]).map(([k, v]) => [k, k === "temperature" && s.p === "anthropic" ? Math.min(v, 1) : v]));
-  const summaryLine = (s) => { const e = Object.entries(sentParams(s)); return e.length ? e.map(([k, v]) => `${k.replace(/_/g, " ")} ${v}`).join(" · ") : "all defaults"; };
+  function sentParams(s) {
+    const out = {};
+    PARAMS.forEach((p) => { if (p.id === "system" || s.v[p.id] === undefined || !supports(p, s.p)) return; out[p.id] = p.id === "temperature" && s.p === "anthropic" ? Math.min(s.v[p.id], 1) : s.v[p.id]; });
+    return out;
+  }
+  const summaryLine = (s) => { const e = Object.entries(sentParams(s)).map(([k, v]) => `${P(k).name.toLowerCase()} ${v}`); if (s.v.system) e.push("system prompt"); return e.length ? e.join(" · ") : "all settings on default"; };
 
-  /* ---------- Guided experiments ---------- */
+  /* ---------- Ready-made experiments, each with what to notice ---------- */
   const EXPS = [
-    { t: "Cold vs hot", d: "Same model, temperature 0 vs 1.8, run twice each. Which one changes between runs?", prompt: "Give me 5 names for a new coffee shop.", runs: 2, set: [{ temperature: 0 }, { temperature: 1.8 }] },
-    { t: "Cut off by max tokens", d: "Max tokens 40 vs 600 on a question that needs a long answer.", prompt: "Explain how photosynthesis works.", runs: 1, set: [{ max_tokens: 40 }, { max_tokens: 600 }] },
-    { t: "Stop sequence", d: "Ask for 10 items but stop at \"4.\" on model A.", prompt: "List 10 fruits as a numbered list, one per line.", runs: 1, set: [{ stop: "4." }, {}] },
-    { t: "Repetition dial", d: "Frequency penalty −1.5 vs +1.5 on a long description.", prompt: "Write a 120-word paragraph about cats.", runs: 1, set: [{ frequency_penalty: -1.5, max_tokens: 250 }, { frequency_penalty: 1.5, max_tokens: 250 }] },
-    { t: "Same seed, same answer?", d: "Temperature 1.2 with seed 42 on both runs, vs no seed.", prompt: "Write a one-sentence story about a dragon.", runs: 2, set: [{ temperature: 1.2, seed: 42 }, { temperature: 1.2 }] },
-    { t: "System prompt", d: "Model A gets a pirate system prompt; model B gets none.", prompt: "What is machine learning?", runs: 1, set: [{ system: "You are a cheerful pirate. Answer in one short sentence, in pirate speak." }, {}] },
+    { t: "Cold vs hot", d: "Temperature 0 vs 1.8, two runs each.", prompt: "Give me 5 names for a new coffee shop.", runs: 2, set: [{ temperature: 0 }, { temperature: 1.8 }],
+      notice: "Model A (temperature 0) should give almost the same names in both runs. Model B (1.8) should give different, wilder names each time, maybe with odd words." },
+    { t: "Cut off by max length", d: "Max length 40 vs 600 tokens.", prompt: "Explain how photosynthesis works.", runs: 1, set: [{ max_tokens: 40 }, { max_tokens: 600 }],
+      notice: "Model A stops mid-sentence, and under it you'll see that it hit the max-length limit. Model B finishes its explanation." },
+    { t: "Stop sequence", d: "Ask for 10 fruits, but stop at “4.” on model A.", prompt: "List 10 fruits as a numbered list, one per line.", runs: 1, set: [{ stop: "4." }, {}],
+      notice: "Model A stops before item 4, so you only get 3 fruits. Model B lists all 10." },
+    { t: "Repetition dial", d: "Repeat penalty −1.5 vs +1.5.", prompt: "Write a 120-word paragraph about cats.", runs: 1, set: [{ frequency_penalty: -1.5, max_tokens: 250 }, { frequency_penalty: 1.5, max_tokens: 250 }],
+      notice: "Model A (−1.5) tends to repeat words like “cats” again and again, or even loop. Model B (+1.5) avoids repeats and may reach for unusual words." },
+    { t: "Same seed, same answer?", d: "Temperature 1.2, with and without a seed, two runs each.", prompt: "Write a one-sentence story about a dragon.", runs: 2, set: [{ temperature: 1.2, seed: 42 }, { temperature: 1.2 }],
+      notice: "Model A's two runs (same seed) should match or be very close. Model B's two runs should differ. If A's don't match exactly, that's normal: services only promise “mostly” the same." },
+    { t: "System prompt", d: "A pirate system prompt on model A only.", prompt: "What is machine learning?", runs: 1, set: [{ system: "You are a cheerful pirate. Answer in one sentence, in pirate speak." }, {}],
+      notice: "Model A answers like a pirate; Model B answers normally. Same question, different hidden instructions." },
   ];
   function applyExp(i) {
     const e = EXPS[i];
     resolveSlot(0);
-    const base = { p: st.slots[0].p, m: st.slots[0].m };
-    st.slots = e.set.map((over) => {
-      const s = { p: base.p, m: base.m, params: freshParams(), system: over.system || "" };
-      Object.entries(over).forEach(([k, v]) => { if (k !== "system") s.params[k] = { on: true, v }; });
-      return s;
-    });
-    st.prompt = e.prompt; st.runs = e.runs; st.edit = 0; results.length = 0; save(); render();
+    const base = st.slots[0];
+    st.slots = e.set.map((v) => ({ p: base.p, m: base.m, v: Object.assign({}, v) }));
+    st.prompt = e.prompt; st.runs = e.runs; st.exp = i; results.length = 0; save(); render();
+    const r = root && root.querySelector("#pgtry"); if (r) r.scrollIntoView({ behavior: "smooth", block: "start" });
   }
 
-  /* ---------- HTML ---------- */
+  /* ---------- Part 1: Learn the dials ---------- */
   const talkHTML = (lines) => `<div class="pgtalk">${lines.map(([who, txt]) => `<p class="${who === "T" ? "t" : "s"}"><b>${who === "T" ? "Teacher" : "Student"}</b>${esc(txt)}</p>`).join("")}</div>`;
-  function paramRow(s, p) {
-    const ps = s.params[p.id], unsupported = !p.prov.includes(s.p) || (NOT_SUPPORTED[p.id] || {})[s.p];
-    const max = p.id === "temperature" && s.p === "anthropic" ? 1 : p.max;
-    let ctl;
-    if (p.type === "text") ctl = `<input type="text" data-pgv="${p.id}" value="${esc(ps.v)}" placeholder="e.g. 4." ${ps.on && !unsupported ? "" : "disabled"}>`;
-    else if (p.type === "number") ctl = `<input type="number" data-pgv="${p.id}" value="${esc(ps.v)}" min="0" step="1" ${ps.on && !unsupported ? "" : "disabled"}>`;
-    else if (p.type === "choice") ctl = `<select data-pgv="${p.id}" ${ps.on && !unsupported ? "" : "disabled"}>${p.choices.map((c) => `<option ${c === ps.v ? "selected" : ""}>${c}</option>`).join("")}</select>`;
-    else ctl = `<input type="range" class="slider" data-pgv="${p.id}" min="${p.min}" max="${max}" step="${p.step}" value="${Math.min(ps.v, max)}" ${ps.on && !unsupported ? "" : "disabled"}><span class="pgval" id="pgval-${p.id}">${Math.min(ps.v, max)}</span>`;
-    return `<div class="pgrow ${unsupported ? "off" : ""}" id="pgrow-${p.id}">
-      <div class="pghead"><label class="pgsend"><input type="checkbox" data-pgon="${p.id}" ${ps.on && !unsupported ? "checked" : ""} ${unsupported ? "disabled" : ""}> <b>${esc(p.label)}</b></label>
-        <span class="crit">${unsupported ? "Not available for " + esc(C().providers[s.p] ? C().providers[s.p].name : "this provider") : ps.on ? "Sent to the model" : "Off: model uses its own default"}</span></div>
-      <div class="pgctl">${ctl}</div>
-      <div id="pgtalk-${p.id}">${talkHTML(unsupported ? [T((NOT_SUPPORTED[p.id] || {})[s.p] || "This provider doesn't support this setting.")] : talk(p.id, p.type === "number" || !p.type ? Number(ps.v) : ps.v, s.p))}</div>
-    </div>`;
+  function learnControl(p, v) {
+    if (p.type === "text") return `<input type="text" data-pglv="${p.id}" value="${esc(v)}" placeholder="e.g. 4.">`;
+    if (p.type === "number") return `<input type="number" data-pglv="${p.id}" value="${esc(v)}" min="0" step="1">`;
+    if (p.type === "choice") return `<select data-pglv="${p.id}">${p.choices.map((c) => `<option ${c === v ? "selected" : ""}>${c}</option>`).join("")}</select>`;
+    if (p.type === "system") return `<textarea data-pglv="${p.id}" rows="2">${esc(v)}</textarea>`;
+    const L = Object.assign({ min: p.min, max: p.max, step: p.step }, p.learn || {});
+    return `<input type="range" data-pglv="${p.id}" min="${L.min}" max="${L.max}" step="${L.step}" value="${v}"><b class="pgbig" id="pglval">${v}</b>`;
   }
-  function html() {
-    if (!C()) return "";
+  function learnHTML() {
+    const p = P(st.learn) || PARAMS[0], v = learnVal(p), idx = PARAMS.indexOf(p);
+    const works = C() ? ALL.filter((x) => supports(p, x)).map(provName) : [];
+    return `<div class="pgchips" role="tablist">${PARAMS.map((x, i) => `<button role="tab" class="pgchip ${x === p ? "on" : ""}" aria-selected="${x === p}" data-pglearn="${x.id}"><span>${i + 1}</span>${esc(x.name)}</button>`).join("")}</div>
+      <div class="pglesson">
+        <div class="pglhead"><h3>${esc(p.name)}</h3><code>${esc(p.api)}</code></div>
+        <p class="pgwhat">${esc(p.what)}</p>
+        <div class="pgctl">${learnControl(p, v)}</div>
+        <div class="pglgrid"><div id="pglpic">${picture(p.id, v)}</div><div id="pgltalk">${talkHTML(talk(p.id, v, ""))}</div></div>
+        ${works.length && works.length < ALL.length ? `<p class="crit">Works on: ${esc(works.join(", "))}.</p>` : ""}
+        <div class="btnrow">${idx > 0 ? `<button class="btn sm" data-pglearn="${PARAMS[idx - 1].id}">← ${esc(PARAMS[idx - 1].name)}</button>` : ""}${idx < PARAMS.length - 1 ? `<button class="btn sm primary" data-pglearn="${PARAMS[idx + 1].id}">Next: ${esc(PARAMS[idx + 1].name)} →</button>` : `<a class="btn sm primary" href="#pgtry" data-pgjump>Now try it for real ↓</a>`}</div>
+      </div>`;
+  }
+
+  /* ---------- Part 2: Try it for real ---------- */
+  function setRow(i, s, p) {
+    const on = s.v[p.id] !== undefined, v = on ? s.v[p.id] : p.def, key = `${i}:${p.id}`;
+    const q = `<button class="pgq" data-pglearn="${p.id}" data-pgjumpup title="What is ${esc(p.name)}?">?</button>`;
+    if (!supports(p, s.p)) return `<div class="pgset na"><span class="pgsname">${esc(p.name)} ${q}</span><span class="crit">Not offered by ${esc(provName(s.p))}</span></div>`;
+    let ctl;
+    if (p.type === "text") ctl = `<input type="text" data-pgsv="${key}" value="${on ? esc(v) : ""}" placeholder="none">`;
+    else if (p.type === "number") ctl = `<input type="number" data-pgsv="${key}" value="${on ? esc(v) : ""}" placeholder="none" min="0" step="1">`;
+    else if (p.type === "choice") ctl = `<select data-pgsv="${key}"><option value="">default</option>${p.choices.map((c) => `<option ${on && c === v ? "selected" : ""}>${c}</option>`).join("")}</select>`;
+    else if (p.type === "system") ctl = `<textarea data-pgsv="${key}" rows="2" placeholder="none">${on ? esc(v) : ""}</textarea>`;
+    else { const max = p.id === "temperature" && s.p === "anthropic" ? 1 : p.max; ctl = `<input type="range" data-pgsv="${key}" min="${p.min}" max="${max}" step="${p.step}" value="${Math.min(v, max)}"><span class="pgsval">${on ? v : "default"}</span>`; }
+    return `<div class="pgset ${on ? "on" : ""} ${p.type === "system" ? "wide" : ""}"><span class="pgsname">${esc(p.name)} ${q}<button class="pgreset" data-pgdef="${key}" title="Back to the model's default">↺ default</button></span><span class="pgsctl">${ctl}</span></div>`;
+  }
+  function tryHTML() {
     const avail = C().providersWithKeys();
-    const head = `<header><p class="kicker">Hands-on lab · uses your own API keys</p><h2>Model playground</h2>
-      <p>Every app that uses an AI model sends a few settings along with your prompt. Here you control them yourself. Pick up to three models, give each its own settings, run the same prompt, and compare. As you move a control, the Teacher and Student explain what it does.</p></header>`;
-    if (!avail.length) return `<section class="m2sec" style="max-width:none">${head}${C().keysPanel()}<div class="card2"><p style="margin:0">Add at least one API key above to start. A free OpenRouter or Google Gemini key is enough.</p></div></section>`;
+    if (!avail.length) return `<div class="card2 pgstart"><h3>You need a free key first</h3>
+        <p>A key is like a password that lets this page send your prompt to an AI company. The quickest free one is OpenRouter:</p>
+        <ol><li>Open <a href="https://openrouter.ai/keys" target="_blank" rel="noopener">openrouter.ai/keys ↗</a> and sign in (a Google account works).</li><li>Click <b>Create key</b>, give it any name, and copy the key.</li><li>Paste it into the <b>OpenRouter</b> box below and press <b>Check</b>.</li></ol>
+        <p class="crit" style="margin:0">Your key stays in this browser only. It never goes to your teacher or this course.</p></div>${C().keysPanel()}`;
     st.slots.forEach((_, i) => resolveSlot(i));
-    const e = st.slots[st.edit] || st.slots[0];
-    return `<section class="m2sec" style="max-width:none">${head}${C().keysPanel()}
-      <div class="card2"><p class="kicker">Try a guided experiment</p><div class="pgexps">${EXPS.map((x, i) => `<button class="pgexp" data-pgexp="${i}"><b>${esc(x.t)}</b><span>${esc(x.d)}</span></button>`).join("")}</div></div>
-      <div class="card2"><p class="kicker">1 · The prompt</p>
-        <div class="field" style="margin:0"><label for="pgprompt">Your prompt (sent to every model)</label><textarea id="pgprompt" rows="3">${esc(st.prompt)}</textarea></div>
-      </div>
-      <div class="card2"><p class="kicker">2 · The models</p>
-        <div class="pgmodels">${st.slots.map((s, i) => { const list = C().models(s.p); return `<div class="pgmodel ${i === st.edit ? "sel" : ""}">
+    const e = EXPS[st.exp];
+    return `${C().keysPanel()}
+      <div class="card2"><p class="kicker">Ready-made experiments</p><p class="crit">Pick one: it fills in the prompt and the settings for you. Then press Run.</p>
+        <div class="pgexps">${EXPS.map((x, i) => `<button class="pgexp ${i === st.exp ? "on" : ""}" data-pgexp="${i}"><b>${esc(x.t)}</b><span>${esc(x.d)}</span></button>`).join("")}</div></div>
+      <div class="card2"><p class="kicker">Your prompt</p><textarea id="pgprompt" rows="2" aria-label="Your prompt">${esc(st.prompt)}</textarea></div>
+      <div class="pgmodels">${st.slots.map((s, i) => { const list = C().models(s.p), pool = s.p === "openrouter" && list && list.length ? C().defaultModels(s.p).slice(0, 5) : [];
+        const opt = (m) => `<option value="${esc(m.id)}" ${m.id === s.m ? "selected" : ""}>${esc(m.name)}${m.free ? " · free" : ""}</option>`;
+        return `<div class="card2 pgmodel">
           <div class="pgmhead"><b>Model ${"ABC"[i]}</b>${st.slots.length > 1 ? `<button class="linkish" data-pgremove="${i}">Remove</button>` : ""}</div>
-          <select data-pgprov="${i}" aria-label="Model ${"ABC"[i]} provider">${avail.map((p) => `<option value="${p}" ${p === s.p ? "selected" : ""}>${esc(C().providers[p].name)}</option>`).join("")}</select>
-          <select data-pgmodel="${i}" aria-label="Model ${"ABC"[i]}">${list ? list.map((m) => `<option value="${esc(m.id)}" ${m.id === s.m ? "selected" : ""}>${esc(m.name)}${m.free ? " · free" : ""}</option>`).join("") : `<option>Loading models…</option>`}</select>
-          <p class="crit pgsum">${esc(summaryLine(s))}${s.system ? " · system prompt" : ""}</p>
-          <button class="btn sm ${i === st.edit ? "primary" : ""}" data-pgedit="${i}">${i === st.edit ? "Editing these settings ↓" : "Edit settings"}</button></div>`; }).join("")}
-          ${st.slots.length < 3 ? `<button class="pgadd" data-pgadd>+ Add a model</button>` : ""}</div>
-      </div>
-      <div class="card2"><p class="kicker">3 · Settings for model ${"ABC"[st.edit]}: ${esc(modelName(e))}</p>
-        <div class="btnrow" style="margin:0 0 10px"><button class="btn sm" data-pgcopy>Copy these settings to all models</button><button class="btn sm" data-pgreset>Reset to defaults</button></div>
-        <div class="pglayout"><div class="pgrows">
-          <div class="pgrow"><div class="pghead"><b>System prompt</b><span class="crit">${e.system ? "Sent to the model" : "Empty: no system prompt"}</span></div>
-            <textarea id="pgsystem" rows="2" placeholder="e.g. You are a patient teacher. Answer in two sentences.">${esc(e.system)}</textarea>${talkHTML(talk("system"))}</div>
-          ${PARAMS.map((p) => paramRow(e, p)).join("")}
-        </div><div class="pgside" id="pgside">${chart(e.params, e.p)}<p class="crit">The chart is a simplified example sentence, not your prompt. It shows how temperature, top-k and top-p together decide which next words are still possible.</p></div></div>
-      </div>
-      <div class="card2"><p class="kicker">4 · Run and compare</p>
-        <div class="btnrow" style="margin:0"><button class="btn primary" data-pgrun ${busy.on ? "disabled" : ""}>${busy.on ? "Running…" : "Run all models"}</button>
-          <label class="cmpremember">Runs per model <select id="pgruns">${[1, 2, 3].map((n) => `<option ${n === st.runs ? "selected" : ""}>${n}</option>`).join("")}</select></label></div>
-        <p class="crit">Run more than once to see how much answers vary with each model's settings.</p>
+          <label class="pgfield">Service<select data-pgprov="${i}">${avail.map((p) => `<option value="${p}" ${p === s.p ? "selected" : ""}>${esc(provName(p))}</option>`).join("")}</select></label>
+          <label class="pgfield">Model<select data-pgmodel="${i}">${!list ? `<option>Loading models…</option>` : !list.length ? `<option>No models: check your key above</option>` : pool.length ? `<optgroup label="Suggested">${pool.map(opt).join("")}</optgroup><optgroup label="All models">${list.filter((m) => !pool.includes(m)).map(opt).join("")}</optgroup>` : list.map(opt).join("")}</select></label>
+          <p class="lbl" style="margin:8px 0 2px">Settings</p><p class="crit" style="margin:0 0 6px">Everything starts on the model's own default. Move a setting to change it.</p>
+          <div class="pgsets">${PARAMS.map((p) => setRow(i, s, p)).join("")}</div>
+        </div>`; }).join("")}
+        ${st.slots.length < 3 ? `<button class="pgadd" data-pgadd>+ Add a model</button>` : ""}</div>
+      <div class="card2"><div class="btnrow" style="margin:0;align-items:center"><button class="btn primary" data-pgrun ${busy.on ? "disabled" : ""}>${busy.on ? "Running…" : "Run all models"}</button>
+        <label class="cmpremember">Runs per model <select id="pgruns">${[1, 2, 3].map((n) => `<option ${n === st.runs ? "selected" : ""}>${n}</option>`).join("")}</select></label>
+        <span class="crit">Run twice to see how much answers change.</span></div>
+        ${e ? `<div class="pgnotice"><b>What to notice</b>${esc(e.notice)}</div>` : ""}
         <div class="pgresults">${st.slots.map((s, i) => `<div class="cmpcard"><div class="cmphead"><b>Model ${"ABC"[i]}: ${esc(modelName(s))}</b><span>${esc(summaryLine(s))}</span></div>
           ${(results[i] || []).map((r, j) => `<div class="pgrun"><p class="lbl">Run ${j + 1}${r.pending ? "" : r.err ? " · error" : ` · ${(r.ms / 1000).toFixed(1)} s${r.usage ? " · " + esc(r.usage) : ""}`}</p>
             <div class="cmpout">${r.pending ? `<span class="crit">Thinking…</span>` : r.err ? `<span class="err">${esc(r.err)}</span>` : esc(r.text || "(empty answer)")}</div>
             ${r.pending || r.err ? "" : `<p class="crit pgfinish">Why it stopped: ${esc(finishText(r.finish))}</p><details class="pgreq"><summary>Show the request that was sent</summary><pre>${esc(JSON.stringify(r.body, null, 2))}</pre></details>`}</div>`).join("") || `<p class="crit" style="padding:10px;margin:0">No answers yet.</p>`}</div>`).join("")}</div>
-      </div>
-    </section>`;
+      </div>`;
   }
   function finishText(f) {
     const x = String(f || "").toLowerCase();
-    if (/length|max_tokens/.test(x)) return "it hit the max-tokens limit, so the answer was cut off.";
-    if (/stop_sequence/.test(x)) return "it wrote your stop sequence.";
+    if (/length|max_tokens/.test(x)) return "it hit the max-length limit, so the answer was cut off.";
+    if (/stop_sequence/.test(x)) return "it reached your stop sequence.";
     if (/safety|content_filter|recitation/.test(x)) return "a safety filter blocked or stopped it.";
-    if (/stop|end_turn/.test(x)) return "it finished naturally (or hit your stop sequence).";
-    return x ? x : "not reported by this provider.";
+    if (/stop|end_turn/.test(x)) return "it finished naturally (or reached your stop sequence).";
+    return x ? x : "not reported by this service.";
+  }
+  function html() {
+    if (!C()) return "";
+    return `<section class="m2sec" style="max-width:none">
+      <header><p class="kicker">Hands-on lab</p><h2>Model playground</h2>
+        <p>When an app sends your prompt to an AI model, it also sends a few <b>settings</b> that change how the model answers. This page has two parts:</p>
+        <ol class="pgsteps"><li><b>Learn the dials.</b> Move one setting at a time and see what it does. No key needed.</li><li><b>Try it for real.</b> Send a prompt to real AI models with your own settings and compare the answers. Needs a free key.</li></ol></header>
+      <h3 class="pgpart"><span>1</span> Learn the dials</h3>
+      <div class="card2" id="pglearn">${learnHTML()}</div>
+      <h3 class="pgpart" id="pgtry"><span>2</span> Try it for real</h3>
+      ${tryHTML()}
+    </section>`;
   }
 
   /* ---------- Running ---------- */
@@ -222,8 +250,8 @@
     render();
     await Promise.all(st.slots.map((s, i) => (async () => {
       for (let j = 0; j < st.runs; j++) {
-        try { Object.assign(results[i][j], await C().callModel(s.p, s.m, { prompt, system: s.system.trim(), params: sentParams(s) }), { pending: false }); }
-        catch (err) { Object.assign(results[i][j], { pending: false, err: C().friendly(err, s.p) + (err && err.status === 400 ? " Tip: this model may not accept one of your settings. Switch it off and try again: that's a real lesson in how providers differ." : "") }); }
+        try { Object.assign(results[i][j], await C().callModel(s.p, s.m, { prompt, system: String(s.v.system || "").trim(), params: sentParams(s) }), { pending: false }); }
+        catch (err) { Object.assign(results[i][j], { pending: false, err: C().friendly(err, s.p) + (err && err.status === 400 ? " Tip: this model may not accept one of your settings. Set it back to default (↺) and try again." : "") }); }
         render();
       }
     })()));
@@ -235,46 +263,55 @@
   function render() {
     const sec = root && root.querySelector("#pgsection");
     if (!sec) return;
-    const y = window.scrollY, a = document.activeElement, focusId = a && a.id, kp = sec.querySelector(".cmpkeys"), open = kp ? kp.open : null;
+    const y = window.scrollY, a = document.activeElement, focusKey = a && (a.id || (a.dataset && (a.dataset.pgsv || a.dataset.pglv))), kp = sec.querySelector(".cmpkeys"), open = kp ? kp.open : null;
     sec.innerHTML = html();
     const nk = sec.querySelector(".cmpkeys"); if (nk && open !== null) nk.open = open;
-    if (focusId && (focusId === "pgprompt" || focusId === "pgsystem")) { const el = document.getElementById(focusId); if (el) { el.focus(); el.setSelectionRange(el.value.length, el.value.length); } }
+    if (focusKey) { const el = document.getElementById(focusKey) || sec.querySelector(`[data-pgsv="${focusKey}"],[data-pglv="${focusKey}"]`); if (el && el.type !== "range") { el.focus(); if (el.setSelectionRange && el.type !== "number") el.setSelectionRange(el.value.length, el.value.length); } }
     window.scrollTo(0, y);
   }
-  function updateRow(id) {
-    const s = st.slots[st.edit], p = PARAMS.find((x) => x.id === id); if (!p) return;
-    const v = s.params[id].v, val = document.getElementById("pgval-" + id), tk = document.getElementById("pgtalk-" + id);
-    if (val) val.textContent = v;
-    if (tk) tk.innerHTML = talkHTML(talk(id, p.type === "number" || !p.type ? Number(v) : v, s.p));
-    const side = document.getElementById("pgside"); if (side && p.visual) side.firstElementChild.outerHTML = chart(s.params, s.p);
-    const sum = root.querySelectorAll(".pgsum")[st.edit]; if (sum) sum.textContent = summaryLine(s) + (s.system ? " · system prompt" : "");
+  function renderLearn() { const el = root.querySelector("#pglearn"); if (el) el.innerHTML = learnHTML(); }
+  function updateLearn(p, v) {
+    const val = root.querySelector("#pglval"); if (val) val.textContent = v;
+    const pic = root.querySelector("#pglpic"); if (pic) pic.innerHTML = picture(p.id, v);
+    const tk = root.querySelector("#pgltalk"); if (tk) tk.innerHTML = talkHTML(talk(p.id, v, ""));
+  }
+  function updateSet(el, i, p) {
+    const s = st.slots[i], row = el.closest(".pgset"), on = s.v[p.id] !== undefined;
+    if (row) row.classList.toggle("on", on);
+    const sv = row && row.querySelector(".pgsval"); if (sv) sv.textContent = on ? s.v[p.id] : "default";
+    const sum = root.querySelectorAll(".cmphead span")[i]; if (sum) sum.textContent = summaryLine(s);
   }
   function bind() {
     if (bound) return; bound = true;
+    const mine = () => !!root.querySelector("#pgsection");
     root.addEventListener("input", (e) => {
-      if (!root.querySelector("#pgsection")) return;
+      if (!mine()) return;
       const d = e.target.dataset || {};
-      if (e.target.id === "pgprompt") { st.prompt = e.target.value; save(); return; }
-      if (e.target.id === "pgsystem") { st.slots[st.edit].system = e.target.value; save(); return; }
-      if (d.pgv) { const p = PARAMS.find((x) => x.id === d.pgv); st.slots[st.edit].params[d.pgv].v = p.type === "text" || p.type === "choice" ? e.target.value : Number(e.target.value); save(); updateRow(d.pgv); }
+      if (e.target.id === "pgprompt") { st.prompt = e.target.value; st.exp = -1; save(); return; }
+      if (d.pglv) { const p = P(d.pglv), v = p.type && p.type !== "number" ? e.target.value : Number(e.target.value); st.lv[p.id] = v; save(); updateLearn(p, v); return; }
+      if (d.pgsv) {
+        const [i, id] = d.pgsv.split(":"), p = P(id), s = st.slots[+i], raw = e.target.value;
+        if (p.type && p.type !== "number" ? raw === "" : raw === "") delete s.v[id]; else s.v[id] = p.type && p.type !== "number" ? raw : Number(raw);
+        st.exp = -1; save(); updateSet(e.target, +i, p);
+      }
     });
     root.addEventListener("change", (e) => {
-      if (!root.querySelector("#pgsection")) return;
+      if (!mine()) return;
       const d = e.target.dataset || {};
-      if (d.pgon) { st.slots[st.edit].params[d.pgon].on = e.target.checked; save(); render(); return; }
       if (d.pgprov) { st.slots[+d.pgprov].p = e.target.value; st.slots[+d.pgprov].m = ""; save(); render(); return; }
       if (d.pgmodel) { st.slots[+d.pgmodel].m = e.target.value; save(); render(); return; }
       if (e.target.id === "pgruns") { st.runs = +e.target.value; save(); return; }
+      if (d.pgsv && e.target.tagName === "SELECT") { const [i, id] = d.pgsv.split(":"); updateSet(e.target, +i, P(id)); }
     });
     root.addEventListener("click", (e) => {
-      if (!root.querySelector("#pgsection")) return;
-      const t = e.target.closest("[data-pgedit],[data-pgremove],[data-pgadd],[data-pgcopy],[data-pgreset],[data-pgrun],[data-pgexp]"); if (!t) return;
+      if (!mine()) return;
+      const t = e.target.closest("[data-pglearn],[data-pgjump],[data-pgdef],[data-pgremove],[data-pgadd],[data-pgrun],[data-pgexp]"); if (!t) return;
       const d = t.dataset;
-      if (d.pgedit !== undefined) { st.edit = +d.pgedit; }
-      else if (d.pgremove !== undefined) { st.slots.splice(+d.pgremove, 1); results.splice(+d.pgremove, 1); st.edit = 0; }
-      else if (d.pgadd !== undefined) { const s = blankSlot(); s.p = st.slots[0].p; st.slots.push(s); st.edit = st.slots.length - 1; }
-      else if (d.pgcopy !== undefined) { const src = st.slots[st.edit]; st.slots.forEach((s) => { s.params = JSON.parse(JSON.stringify(src.params)); s.system = src.system; }); }
-      else if (d.pgreset !== undefined) { st.slots[st.edit].params = freshParams(); st.slots[st.edit].system = ""; }
+      if (d.pglearn) { e.preventDefault(); st.learn = d.pglearn; save(); renderLearn(); if (d.pgjumpup !== undefined || t.closest(".pglesson")) root.querySelector("#pglearn").scrollIntoView({ behavior: "smooth", block: "start" }); return; }
+      if (d.pgjump !== undefined) { e.preventDefault(); root.querySelector("#pgtry").scrollIntoView({ behavior: "smooth", block: "start" }); return; }
+      if (d.pgdef) { const [i, id] = d.pgdef.split(":"); delete st.slots[+i].v[id]; st.exp = -1; }
+      else if (d.pgremove !== undefined) { st.slots.splice(+d.pgremove, 1); results.splice(+d.pgremove, 1); }
+      else if (d.pgadd !== undefined) { const s = blankSlot(); s.p = st.slots[0].p; st.slots.push(s); }
       else if (d.pgrun !== undefined) { runAll(); return; }
       else if (d.pgexp !== undefined) { applyExp(+d.pgexp); return; }
       save(); render();
@@ -282,7 +319,7 @@
   }
   function mount(el) {
     root = el; bind();
-    if (C()) { C().mount(el, []); C().onChange(() => { if (root && root.querySelector("#pgsection") && !busy.on && !(document.activeElement && document.activeElement.dataset && document.activeElement.dataset.cmpkey)) render(); }); }
+    if (C()) { C().mount(el, []); C().onChange(() => { const a = document.activeElement; if (root && root.querySelector("#pgsection") && !busy.on && !(a && a.dataset && (a.dataset.cmpkey || a.dataset.pgsv || a.dataset.pglv)) && a.id !== "pgprompt") render(); }); }
   }
 
   window.WB_PLAY = { html: () => `<div id="pgsection">${html()}</div>`, mount };
