@@ -1,0 +1,26 @@
+/* Module 4 Deep dive Level 5 · Designer (m4-design.js) */
+.dzsec{margin-top:12px}
+.dzgrid{display:grid;grid-template-columns:1fr 2fr;gap:12px;margin-top:14px}
+.dzown{display:flex;align-items:center;gap:8px;margin-top:12px;font-size:.92rem;cursor:pointer}
+.dzq{padding:12px 0;border-top:1px solid var(--line)}
+.dzq:first-child{border-top:0;padding-top:0}
+.dzlbl{margin:0;font-weight:700}
+.dzscores{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
+.dzscores>div{padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:var(--bg);display:flex;flex-direction:column;gap:2px}
+.dzscores span{font-weight:600}
+.dzscores small{color:var(--muted);font-size:.78rem}
+.dzmeter{font:700 1.1rem var(--mono);letter-spacing:2px;color:var(--accent)}
+.dzmeter i{font-style:normal;color:var(--line)}
+.dzpipe .off{opacity:.45;border-style:dashed}
+.dzchecks{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
+.dzchecks li{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px;padding:10px 12px;border:1px solid var(--line);border-left:4px solid var(--bad);border-radius:8px;background:var(--bg)}
+.dzchecks li span{flex:1 1 260px}
+.dztests{display:flex;flex-wrap:wrap;gap:8px}
+.dztest{font:inherit;font-size:.88rem;text-align:left;padding:8px 12px;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--fg);cursor:pointer;max-width:100%}
+.dztest:hover,.dztest.on{border-color:var(--accent)}
+.dzreply{margin-top:10px;padding:10px 14px;border-radius:0 8px 8px 0;background:var(--bg);border-left:4px solid var(--good)}
+.dzreply.no{border-left-color:var(--bad)}
+.dzreply.ok b{color:var(--good)}.dzreply.no b{color:var(--bad)}
+.dzreply p{margin:4px 0 0}
+#dzprompt{white-space:pre-wrap}
+@media (max-width:700px){.dzgrid{grid-template-columns:1fr}}

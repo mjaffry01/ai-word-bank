@@ -69,10 +69,12 @@ The cat sat on the mat  →  and (21%)   .  (19%)   while (8%)   …</pre>
     ["practitioner", "Level 2 · Practitioner", "The application around the model"],
     ["engineer", "Level 3 · Engineer", "Inside the model, one token at a time"],
     ["architect", "Level 4 · Architect", "Serving chatbots at scale"],
+    ["designer", "Level 5 · Designer", "Design your own chatbot"],
   ];
   let dlv = store.get("wb-m4-dlv", "basic");
   const card = (kicker, title, body) => `<div class="card2"><p class="kicker">${kicker}</p><h3>${title}</h3>${body}</div>`;
   const DEEP = {
+    designer: () => (window.WB_DESIGN ? window.WB_DESIGN.html() : ""),
     basic: () => [
       card("The journey of one message", "Seven steps between Send and the reply", `
         <ol class="steps3">
@@ -203,7 +205,7 @@ The cat sat on the mat  →  and (21%)   .  (19%)   while (8%)   …</pre>
     ].join(""),
   };
   const deep = () => `<section class="m2sec">
-    <header><p class="kicker">Deep dive · from basic to architect</p><h2>Inside a chatbot: one message, followed all the way</h2>
+    <header><p class="kicker">Deep dive · from basic to designer</p><h2>Inside a chatbot: one message, followed all the way</h2>
       <p>Each level follows the same journey, from pressing Send to reading the reply, one layer deeper. Start at Level 1 and only move on once it feels obvious.</p></header>
     <div class="tech" style="grid-template-columns:repeat(auto-fit,minmax(170px,1fr))">${DLEVELS.map(([k, n, d]) => `<button class="rbtn" data-dlv="${k}" aria-pressed="${dlv === k}" style="${dlv === k ? "border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent)" : ""}"><b>${n}</b><small>${d}</small></button>`).join("")}</div>
     ${DEEP[dlv]()}
@@ -612,6 +614,7 @@ The cat sat on the mat  →  and (21%)   .  (19%)   while (8%)   …</pre>
   function render() {
     $("m4body").innerHTML = `<nav class="m2tabs" role="tablist">${TABS.map(([k, l], i) => `<button role="tab" data-tab="${k}" aria-selected="${tab === k}"><span class="step">${i + 1}</span>${l}</button>`).join("")}</nav>${VIEWS[tab]()}`;
     if (tab === "tokens") updateTokens();
+    if (tab === "deep" && dlv === "designer" && window.WB_DESIGN) window.WB_DESIGN.mount($("m4body"));
     if (tab === "attn" && window.WB_ATTN) window.WB_ATTN.mount($("m4body"));
   }
   function goTab(k) { tab = k; store.set("wb-m4-tab", k); render(); window.scrollTo({ top: $("m4").offsetTop - 8 }); }
