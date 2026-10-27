@@ -1,0 +1,30 @@
+/* Module 2 Practice tasks: run a prompt in several real models side by side (m2-compare.js) */
+.cmpkeys summary{cursor:pointer;list-style:none}
+.cmpkeys summary::-webkit-details-marker{display:none}
+.cmpkeys summary h3{margin:4px 0 6px}
+.cmpkeys summary::after{content:"Show ▾";float:right;font:600 .78rem var(--mono);color:var(--accent);margin-top:-1.6em}
+.cmpkeys[open] summary::after{content:"Hide ▴"}
+.cmpnote{margin:14px 0 10px;padding:10px 12px;border-radius:10px;border:1px solid var(--accent);background:var(--bg);font-size:.92rem}
+.cmprows{display:grid;gap:12px}
+.cmprow{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.1fr);gap:6px 14px;align-items:start;padding-top:12px;border-top:1px solid var(--line)}
+.cmprow .savemsg{grid-column:1/-1;margin:0}
+.cmprow .savemsg:empty{display:none}
+.cmpkeyin{display:flex;gap:6px}
+.cmpkeyin input{flex:1;min-width:0;font:500 .9rem var(--mono);padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--fg)}
+.cmpremember{display:inline-flex;gap:8px;align-items:center;font-size:.9rem;cursor:pointer}
+.cmpremember input{width:16px;height:16px;accent-color:var(--accent)}
+.cmpbox{padding:12px 14px;border:1px dashed var(--line);border-radius:10px;background:var(--bg)}
+.cmpwhich{display:flex;gap:16px;flex-wrap:wrap;font-size:.9rem;margin:4px 0 10px}
+.cmpwhich label{display:inline-flex;gap:6px;align-items:center;cursor:pointer}
+.cmpslots{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.cmpslot{display:flex;flex-direction:column;gap:5px;min-width:0}
+.cmpslot select{font:inherit;font-size:.88rem;padding:7px 8px;border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--fg);min-width:0;width:100%}
+.cmpres{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:10px}
+.cmpcard{border:1px solid var(--line);border-radius:10px;background:var(--surface);display:flex;flex-direction:column;min-width:0}
+.cmpcard.bad{border-color:var(--bad)}
+.cmphead{display:flex;flex-direction:column;gap:2px;padding:8px 10px;border-bottom:1px solid var(--line)}
+.cmphead b{font-size:.9rem;overflow-wrap:anywhere}
+.cmphead span{font:500 .72rem var(--mono);color:var(--muted)}
+.cmpout{padding:10px;font-size:.9rem;line-height:1.5;white-space:pre-wrap;overflow-wrap:anywhere;max-height:340px;overflow:auto}
+.cmpout .err{color:var(--bad)}
+@media (max-width:760px){.cmprow{grid-template-columns:1fr}.cmpslots{grid-template-columns:1fr}}

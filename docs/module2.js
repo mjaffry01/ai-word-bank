@@ -10,7 +10,7 @@
   };
   const word = (term, label) => `<button class="wordlink" data-word="${esc(term)}" title="Open in the learning web">${esc(label || term)}</button>`;
 
-  const TABS = [["learn", "Lesson"], ["build", "Prompt builder"], ["tech", "Techniques"], ["api", "AI settings (API)"],["hunt", "Hallucination hunt"], ["tasks", "Practice tasks"], ["quiz", "Quiz"]];
+  const TABS = [["learn", "Lesson"], ["build", "Prompt builder"], ["tech", "Techniques"], ["api", "AI settings (API)"], ["play", "Model playground"], ["hunt", "Hallucination hunt"], ["tasks", "Practice tasks"], ["quiz", "Quiz"]];
   let tab = store.get("wb-m2-tab", "learn");
 
   /* ---------- Module switching ---------- */
@@ -234,6 +234,7 @@ Question: (your question here)</pre>
     return `<section class="m2sec">
       <header><p class="kicker">Hand-in · goes to your teacher</p><h2>Practice tasks</h2>
         <p>Do each task in an AI tool of your choice. When you're happy with the result, paste your final prompt here and say what you changed. Your teacher sees every hand-in.</p></header>
+      ${window.WB_CMP ? window.WB_CMP.keysPanel() : ""}
       ${TASKS.map((t) => `<div class="card2 chal">
         <div class="meta"><h3 style="margin:0">${esc(t.title)}</h3><span class="pill2 ${done[t.id] ? "done" : ""}">${done[t.id] ? "Handed in" : "To do"}</span></div>
         <p style="margin:0">${esc(t.goal)}</p>
@@ -241,6 +242,7 @@ Question: (your question here)</pre>
         <p class="crit"><b>A good answer:</b> ${t.crit.map(esc).join(" · ")}</p>
         <div class="field" style="margin:0"><label for="t-tool-${t.id}">AI tool used</label><select id="t-tool-${t.id}">${TOOLS.map((x) => `<option>${x}</option>`).join("")}</select></div>
         <div class="field" style="margin:0"><label for="t-prompt-${t.id}">${t.id === "hunt" ? "Bait prompt, what the AI invented, and your fixed prompt" : "Your final prompt"}</label><textarea id="t-prompt-${t.id}" rows="5"></textarea></div>
+        ${window.WB_CMP && t.id !== "hunt" ? window.WB_CMP.slot(t) : ""}
         <div class="field" style="margin:0"><label for="t-ref-${t.id}">${t.id === "hunt" ? "How you caught it" : "What you changed, and how the answer improved"}</label><textarea id="t-ref-${t.id}" rows="3"></textarea></div>
         <div class="btnrow" style="margin:0"><button class="btn primary" data-submit="${t.id}">Hand in</button></div>
         <p class="savemsg" id="t-msg-${t.id}" hidden></p>
@@ -249,7 +251,9 @@ Question: (your question here)</pre>
   };
   async function submitTask(id) {
     const t = TASKS.find((x) => x.id === id), msg = $("t-msg-" + id);
-    const prompt = $("t-prompt-" + id).value.trim(), reflection = $("t-ref-" + id).value.trim();
+    const prompt = $("t-prompt-" + id).value.trim();
+    const extra = window.WB_CMP ? window.WB_CMP.summary(id) : "";
+    const reflection = ($("t-ref-" + id).value.trim().slice(0, 2990 - extra.length) + extra).trim();
     msg.hidden = false;
     if (!prompt) { msg.className = "savemsg err"; msg.textContent = "Paste your final prompt first."; return; }
     if (!window.WB || !window.WB.call) { msg.className = "savemsg err"; msg.textContent = "You need to be signed in and approved to hand in work."; return; }
@@ -383,11 +387,13 @@ Question: (your question here)</pre>
   }
 
   /* ---------- Rendering and events ---------- */
-  const VIEWS = { learn: lesson, build: builder, tech: techniques, api: () => (window.WB_M2API ? window.WB_M2API.html() : ""), hunt, tasks, quiz };
+  const VIEWS = { learn: lesson, build: builder, tech: techniques, api: () => (window.WB_M2API ? window.WB_M2API.html() : ""), play: () => (window.WB_PLAY ? window.WB_PLAY.html() : ""), hunt, tasks, quiz };
   function render() {
     $("m2body").innerHTML = `<nav class="m2tabs" role="tablist">${TABS.map(([k, l], i) => `<button role="tab" data-tab="${k}" aria-selected="${tab === k}"><span class="step">${i + 1}</span>${l}</button>`).join("")}</nav>${VIEWS[tab]()}`;
     if (tab === "build") updateBuilder();
     if (tab === "api" && window.WB_M2API) window.WB_M2API.mount($("m2body"));
+    if (tab === "play" && window.WB_PLAY) window.WB_PLAY.mount($("m2body"));
+    if (tab === "tasks" && window.WB_CMP) window.WB_CMP.mount($("m2body"), TASKS);
   }
   function goTab(k) { tab = k; store.set("wb-m2-tab", k); render(); window.scrollTo({ top: $("m2").offsetTop - 8 }); }
 
