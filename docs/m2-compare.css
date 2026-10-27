@@ -13,6 +13,11 @@
 .cmpkeyin input{flex:1;min-width:0;font:500 .9rem var(--mono);padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--fg)}
 .cmpremember{display:inline-flex;gap:8px;align-items:center;font-size:.9rem;cursor:pointer}
 .cmpremember input{width:16px;height:16px;accent-color:var(--accent)}
+.cmpintro{margin:4px 0 0;font-size:.92rem}
+.cmpothers{margin-top:14px;padding-top:12px;border-top:1px solid var(--line)}
+.cmpothers summary{cursor:pointer;font-weight:600;color:var(--accent)}
+.cmpothers ul{margin:8px 0 0;padding-left:1.2em;font-size:.92rem}
+.cmpothers li{margin:6px 0}
 .cmpbox{padding:12px 14px;border:1px dashed var(--line);border-radius:10px;background:var(--bg)}
 .cmpwhich{display:flex;gap:16px;flex-wrap:wrap;font-size:.9rem;margin:4px 0 10px}
 .cmpwhich label{display:inline-flex;gap:6px;align-items:center;cursor:pointer}

@@ -1,5 +1,6 @@
 // Module 2 Practice tasks: run a prompt in up to three real AI models side by side, using the student's OWN API keys.
-// Keys stay in the student's browser and go straight to the AI company (OpenRouter, Google Gemini, OpenAI, Anthropic);
+// Keys stay in the student's browser and go straight to the AI company (OpenRouter, Google Gemini, Groq, Hugging Face,
+// Mistral, OpenAI, Anthropic);
 // they are never sent to the course server or the teacher's Sheet. Model lists are loaded live from each provider.
 // Module 2 calls WB_CMP.keysPanel() and WB_CMP.slot(task) while building the tab, WB_CMP.mount(root) after rendering,
 // and WB_CMP.summary(taskId) when a task is handed in.
@@ -8,12 +9,43 @@
   const esc = (s) => String(s == null ? "" : s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
   const MAX_OUT = 1200;
 
+  // `base` marks an OpenAI-style service: same request format, so one code path handles them all.
   const PROVIDERS = {
-    openrouter: { name: "OpenRouter", free: true, keyUrl: "https://openrouter.ai/keys", hint: "One key gives you hundreds of models from many companies, including free ones marked “free”.", ph: "sk-or-…" },
-    gemini: { name: "Google Gemini", free: true, keyUrl: "https://aistudio.google.com/apikey", hint: "Free tier with daily limits. Sign in to Google AI Studio and create a key.", ph: "AIza…" },
-    openai: { name: "OpenAI (GPT)", free: false, keyUrl: "https://platform.openai.com/api-keys", hint: "Paid: your OpenAI account needs billing set up. Each run costs a fraction of a cent.", ph: "sk-…" },
-    anthropic: { name: "Anthropic (Claude)", free: false, keyUrl: "https://console.anthropic.com/settings/keys", hint: "Paid: your Anthropic account needs credit. Each run costs a fraction of a cent.", ph: "sk-ant-…" },
+    openrouter: { name: "OpenRouter", free: true, keyUrl: "https://openrouter.ai/keys", ph: "sk-or-…",
+      intro: "A “one key, many models” service. One account gives you hundreds of models from OpenAI, Google, Anthropic, Meta, Mistral, DeepSeek and more, and many of them are free (marked “free”). The best first choice for comparing models.",
+      hint: "Free models have daily limits, and some free providers may keep your prompts, so don't paste anything private." },
+    gemini: { name: "Google Gemini", free: true, keyUrl: "https://aistudio.google.com/apikey", ph: "AIza…",
+      intro: "Google's own models: the big Gemini models and the smaller open Gemma models. Google AI Studio gives you a free key with a daily allowance.",
+      hint: "Sign in to Google AI Studio with a Google account and create a key." },
+    groq: { name: "Groq", free: true, base: "https://api.groq.com/openai/v1", keyUrl: "https://console.groq.com/keys", ph: "gsk_…",
+      intro: "A company that runs open models (such as Llama and Qwen) on its own super-fast chips. Answers often arrive in under a second. Run the same prompt here and on another service to see how much speed differs.",
+      hint: "Free tier with per-minute and daily limits. Sign up at the Groq console and create a key." },
+    huggingface: { name: "Hugging Face", free: true, base: "https://router.huggingface.co/v1", keyUrl: "https://huggingface.co/settings/tokens", ph: "hf_…",
+      intro: "The biggest home of open AI models online, a bit like a “GitHub for AI”. One Hugging Face token lets you run many open models, which partner companies host for you.",
+      hint: "Free accounts get a small monthly credit; after that it's paid. Create a fine-grained token with the “Make calls to Inference Providers” permission." },
+    mistral: { name: "Mistral", free: true, base: "https://api.mistral.ai/v1", keyUrl: "https://console.mistral.ai/api-keys", ph: "",
+      intro: "A French AI company that makes its own models, from small and fast ones to large ones. Good for comparing a European model with American and Chinese ones.",
+      hint: "The free “Experiment” plan is for testing, with low limits; sign-up may ask you to verify a phone number." },
+    openai: { name: "OpenAI (GPT)", free: false, keyUrl: "https://platform.openai.com/api-keys", ph: "sk-…",
+      intro: "The company behind ChatGPT, with the GPT models.",
+      hint: "Paid: your OpenAI account needs billing set up. Each run costs a fraction of a cent. OpenRouter often has OpenAI's open models for free." },
+    anthropic: { name: "Anthropic (Claude)", free: false, keyUrl: "https://console.anthropic.com/settings/keys", ph: "sk-ant-…",
+      intro: "The company behind Claude, with the Claude models.",
+      hint: "Paid: your Anthropic account needs credit. Each run costs a fraction of a cent." },
   };
+  // Services like OpenRouter that can't be added here: shown as a reading list under the key boxes.
+  const OTHERS = [
+    ["GitHub Models", "https://github.com/marketplace/models", "Free with a GitHub account: a catalogue of models from OpenAI, Meta, Mistral, DeepSeek and others, with its own playground for comparing two models side by side. Not on this page because GitHub blocks requests from other websites, so use it on GitHub."],
+    ["Cerebras", "https://cloud.cerebras.ai", "Like Groq: runs open models on its own very fast hardware, with a free tier. Not on this page because it blocks requests from other websites."],
+    ["Together AI", "https://www.together.ai", "Hosts hundreds of open models (Llama, Qwen, DeepSeek and more). Pay as you go, sometimes with starter credit."],
+    ["Fireworks AI", "https://fireworks.ai", "Fast hosting for open models, aimed at developers building apps. Pay as you go."],
+    ["DeepInfra", "https://deepinfra.com", "One of the cheapest places to run open models. Pay as you go."],
+    ["Cloudflare Workers AI", "https://developers.cloudflare.com/workers-ai/", "Runs open models on Cloudflare's network, with a free daily allowance. Mostly for developers building websites on Cloudflare."],
+    ["Eden AI and Vercel AI Gateway", "https://www.edenai.co", "Gateways like OpenRouter (one key, many companies), aimed at businesses. Paid."],
+    ["LiteLLM", "https://github.com/BerriAI/litellm", "Free, open-source software you run yourself to get one key and one format for many AI companies. For developers, not students."],
+    ["LMArena", "https://lmarena.ai", "No key needed: chat with two anonymous models at once, vote for the better answer, then see which models they were. The votes build a public leaderboard."],
+    ["Poe", "https://poe.com", "A chat app with many models from different companies in one place, with free daily points. It has no API for this page."],
+  ];
 
   /* ---------- Keys: in memory, saved to sessionStorage (or localStorage if the student ticks "remember") ---------- */
   const KEY_STORE = "wb-ai-keys", REMEMBER = "wb-ai-remember";
@@ -54,6 +86,12 @@
       return (d.models || []).filter((m) => (m.supportedGenerationMethods || []).includes("generateContent") && /gemini|gemma/i.test(m.name) && !/image|tts|audio|live|embedding|vision/i.test(m.name))
         .map((m) => ({ id: m.name.replace(/^models\//, ""), name: m.displayName || m.name })).reverse();
     }
+    if (PROVIDERS[p].base) {
+      const d = await jsonOrThrow(await fetch(PROVIDERS[p].base + "/models", { headers: { Authorization: "Bearer " + k } }));
+      const seen = new Set();
+      return (d.data || []).filter((m) => !/whisper|tts|audio|embed|guard|moderation|ocr|transcri|image/i.test(m.id) && !seen.has(m.id) && seen.add(m.id))
+        .map((m) => ({ id: m.id, name: m.name || m.id })).sort((a, b) => a.name.localeCompare(b.name));
+    }
     if (p === "openai") {
       const d = await jsonOrThrow(await fetch("https://api.openai.com/v1/models", { headers: { Authorization: "Bearer " + k } }));
       return (d.data || []).map((m) => m.id).filter((id) => /^(gpt-|o\d|chatgpt)/.test(id) && !/audio|realtime|tts|transcribe|image|search|instruct|embedding|codex/.test(id))
@@ -69,6 +107,7 @@
     keyStatus[p] = { state: "checking" }; refresh();
     try {
       if (p === "openrouter") await jsonOrThrow(await fetch("https://openrouter.ai/api/v1/key", { headers: { Authorization: "Bearer " + keys[p] } }));
+      if (p === "huggingface") await jsonOrThrow(await fetch("https://huggingface.co/api/whoami-v2", { headers: { Authorization: "Bearer " + keys[p] } }));
       models[p] = await listModels(p);
       keyStatus[p] = { state: "ok", text: `Key works · ${models[p].length} models${p === "openrouter" ? ` (${models[p].filter((m) => m.free).length} free)` : ""}` };
     } catch (e) {
@@ -86,8 +125,8 @@
   async function runOne(p, model, prompt) {
     const k = keys[p], t0 = performance.now();
     let text = "", usage = "";
-    if (p === "openrouter" || p === "openai") {
-      const url = p === "openrouter" ? "https://openrouter.ai/api/v1/chat/completions" : "https://api.openai.com/v1/chat/completions";
+    if (p === "openrouter" || p === "openai" || PROVIDERS[p].base) {
+      const url = PROVIDERS[p].base ? PROVIDERS[p].base + "/chat/completions" : p === "openrouter" ? "https://openrouter.ai/api/v1/chat/completions" : "https://api.openai.com/v1/chat/completions";
       const headers = { Authorization: "Bearer " + k, "Content-Type": "application/json" };
       if (p === "openrouter") { headers["HTTP-Referer"] = location.origin; headers["X-Title"] = "AI Concepts course"; }
       const body = { model, messages: [{ role: "user", content: prompt }] };
@@ -123,16 +162,17 @@
     if (opts.system && p !== "anthropic" && p !== "gemini") msgs.push({ role: "system", content: opts.system });
     msgs.push({ role: "user", content: opts.prompt });
     let url, headers, body;
-    if (p === "openrouter" || p === "openai") {
-      url = p === "openrouter" ? "https://openrouter.ai/api/v1/chat/completions" : "https://api.openai.com/v1/chat/completions";
+    if (p === "openrouter" || p === "openai" || PROVIDERS[p].base) {
+      url = PROVIDERS[p].base ? PROVIDERS[p].base + "/chat/completions" : p === "openrouter" ? "https://openrouter.ai/api/v1/chat/completions" : "https://api.openai.com/v1/chat/completions";
       headers = { Authorization: "Bearer " + k, "Content-Type": "application/json" };
       if (p === "openrouter") { headers["HTTP-Referer"] = location.origin; headers["X-Title"] = "AI Concepts course"; }
       body = { model, messages: msgs };
       ["temperature", "top_p", "frequency_penalty", "presence_penalty", "seed"].forEach((n) => { if (has(n)) body[n] = prm[n]; });
+      if (p === "mistral" && has("seed")) { body.random_seed = body.seed; delete body.seed; }
       if (has("top_k") && p === "openrouter") body.top_k = prm.top_k;
       if (has("max_tokens")) body[p === "openai" ? "max_completion_tokens" : "max_tokens"] = prm.max_tokens;
       if (has("stop")) body.stop = [prm.stop];
-      if (has("thinking")) { if (p === "openai") body.reasoning_effort = prm.thinking; else body.reasoning = { effort: prm.thinking }; }
+      if (has("thinking")) { if (p === "openrouter") body.reasoning = { effort: prm.thinking }; else body.reasoning_effort = prm.thinking; }
     } else if (p === "gemini") {
       url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`;
       headers = { "x-goog-api-key": k, "Content-Type": "application/json" };
@@ -233,15 +273,18 @@
     return `<details class="card2 cmpkeys" ${n ? "" : "open"}><summary><span class="kicker" style="display:inline">Optional · your own API keys</span><h3>Compare answers from real AI models</h3>
       <p class="crit" style="margin:0">${n ? `${n} key${n > 1 ? "s" : ""} added. Open to change them.` : "Add an API key to run your prompts in up to three AI models side by side, right here on this page."}</p></summary>
       <div class="cmpnote"><b>Your key stays with you.</b> It is kept only in this browser and sent straight to the AI company when you press Run. It never goes to your teacher or this course's server. Treat it like a password: don't share it or paste it anywhere else.</div>
-      <p class="crit">Start with a <b>free</b> one: OpenRouter (many free models with one key) or Google Gemini (free daily allowance).</p>
+      <p class="crit">Start with a <b>free</b> one: OpenRouter (many free models with one key) or Google Gemini (free daily allowance). Add Groq too if you want to see how fast an answer can be.</p>
       <div class="cmprows">${Object.entries(PROVIDERS).map(([p, P]) => { const st = keyStatus[p] || {}; return `<div class="cmprow">
-        <div><b>${esc(P.name)}</b> <span class="pill2 ${P.free ? "done" : ""}">${P.free ? "Free option" : "Paid"}</span><p class="crit" style="margin:2px 0 0">${esc(P.hint)} <a href="${P.keyUrl}" target="_blank" rel="noopener">Get a key ↗</a></p></div>
+        <div><b>${esc(P.name)}</b> <span class="pill2 ${P.free ? "done" : ""}">${P.free ? "Free option" : "Paid"}</span><p class="cmpintro">${esc(P.intro)}</p><p class="crit" style="margin:2px 0 0">${esc(P.hint)} <a href="${P.keyUrl}" target="_blank" rel="noopener">Get a key ↗</a></p></div>
         <div class="cmpkeyin"><input type="password" autocomplete="off" spellcheck="false" placeholder="${esc(P.ph)}" data-cmpkey="${p}" value="${esc(keys[p] || "")}" aria-label="${esc(P.name)} API key">
           <button class="btn sm" data-cmpcheck="${p}" ${haveKey(p) ? "" : "disabled"}>Check</button></div>
         <p class="savemsg ${st.state === "ok" ? "ok" : st.state === "bad" ? "err" : ""}" data-cmpstatus="${p}">${st.state === "checking" ? "Checking…" : esc(st.text || "")}</p>
       </div>`; }).join("")}</div>
       <div class="btnrow"><label class="cmpremember"><input type="checkbox" data-cmpremember ${remember ? "checked" : ""}> Remember my keys on this device</label><button class="btn sm" data-cmpforget>Forget all keys</button></div>
       <p class="crit" style="margin:6px 0 0">Not ticked: keys are forgotten when you close this browser tab. Only tick it on your own device.</p>
+      <details class="cmpothers"><summary>Other services like OpenRouter (not on this page)</summary>
+        <p class="crit">Worth knowing about. Free plans and limits change often, so check each site's current terms.</p>
+        <ul>${OTHERS.map(([n, u, d]) => `<li><a href="${u}" target="_blank" rel="noopener"><b>${esc(n)}</b> ↗</a> ${esc(d)}</li>`).join("")}</ul></details>
     </details>`;
   };
   const slot = (t) => `<div class="cmpbox" data-cmpslot="${esc(t.id)}"></div>`;

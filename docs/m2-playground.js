@@ -9,16 +9,16 @@
   const STORE = "wb-pg-state";
 
   /* ---------- The settings, with what each provider supports ---------- */
-  const ALL = ["openrouter", "openai", "gemini", "anthropic"];
+  const ALL = ["openrouter", "openai", "gemini", "anthropic", "groq", "huggingface", "mistral"], COMPAT = ["groq", "huggingface", "mistral"];
   const PARAMS = [
     { id: "temperature", label: "Temperature", min: 0, max: 2, step: 0.1, def: 1, on: true, prov: ALL, visual: true },
     { id: "top_p", label: "Top-p (p = how much of the chance to keep)", min: 0.05, max: 1, step: 0.05, def: 0.9, prov: ALL, visual: true },
     { id: "top_k", label: "Top-k (k = how many words to keep)", min: 1, max: 50, step: 1, def: 5, prov: ["openrouter", "gemini", "anthropic"], visual: true },
     { id: "max_tokens", label: "Max output tokens", min: 16, max: 2000, step: 16, def: 400, on: true, prov: ALL },
-    { id: "frequency_penalty", label: "Frequency penalty", min: -2, max: 2, step: 0.1, def: 0.5, prov: ["openrouter", "openai", "gemini"] },
-    { id: "presence_penalty", label: "Presence penalty", min: -2, max: 2, step: 0.1, def: 0.5, prov: ["openrouter", "openai", "gemini"] },
+    { id: "frequency_penalty", label: "Frequency penalty", min: -2, max: 2, step: 0.1, def: 0.5, prov: ["openrouter", "openai", "gemini", ...COMPAT] },
+    { id: "presence_penalty", label: "Presence penalty", min: -2, max: 2, step: 0.1, def: 0.5, prov: ["openrouter", "openai", "gemini", ...COMPAT] },
     { id: "stop", label: "Stop sequence", type: "text", def: "", prov: ALL },
-    { id: "seed", label: "Seed", type: "number", def: 42, prov: ["openrouter", "openai", "gemini"] },
+    { id: "seed", label: "Seed", type: "number", def: 42, prov: ["openrouter", "openai", "gemini", ...COMPAT] },
     { id: "thinking", label: "Thinking (reasoning effort)", type: "choice", choices: ["low", "medium", "high"], def: "low", prov: ALL },
   ];
   const NOT_SUPPORTED = {
@@ -42,7 +42,7 @@
       case "top_p":
         return [S("What does the p in top-p mean?"), T("Before each word, the model lists the words that could come next, most likely first, each with a chance. p means probability (chance). Top-p keeps words from the top of that list until their chances add up to p, and throws the rest away.")].concat(topP(v));
       case "top_k":
-        if (prov === "openai") return [T(NOT_SUPPORTED.top_k.openai)];
+        if (!PARAMS[2].prov.includes(prov)) return [T(NOT_SUPPORTED.top_k[prov] || "This service doesn't offer top-k. Use temperature or top-p instead.")];
         return [S("And what is k?"), T("k is just a number. The model lists the words that could come next, most likely first, and top-k keeps only the first k words on that list.")].concat(topK(v));
     }
     return talkRest(id, v, prov);
@@ -92,7 +92,7 @@
   /* ---------- The next-word chart: what the current temperature, top-k and top-p allow ---------- */
   const NEXT = [["mat", 0.38], ["sofa", 0.18], ["floor", 0.14], ["chair", 0.1], ["windowsill", 0.07], ["roof", 0.05], ["keyboard", 0.04], ["moon", 0.02], ["spaceship", 0.01], ["banana", 0.01]];
   function allowed(prm, prov) {
-    const tOn = prm.temperature && prm.temperature.on, kOn = prm.top_k && prm.top_k.on && prov !== "openai", pOn = prm.top_p && prm.top_p.on;
+    const tOn = prm.temperature && prm.temperature.on, kOn = prm.top_k && prm.top_k.on && PARAMS[2].prov.includes(prov), pOn = prm.top_p && prm.top_p.on;
     let T0 = tOn ? Number(prm.temperature.v) : 1;
     if (prov === "anthropic") T0 = Math.min(T0, 1);
     let probs = T0 < 0.05 ? NEXT.map((_, i) => (i === 0 ? 1 : 0)) : (() => { const e = NEXT.map(([, p]) => Math.exp(Math.log(p) / T0)), s = e.reduce((a, b) => a + b, 0); return e.map((x) => x / s); })();
