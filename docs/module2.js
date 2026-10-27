@@ -16,14 +16,25 @@
   /* ---------- Module switching ---------- */
   // Shows one module at a time. Each later module registers its render function in window.WB_MODULES.
   // OPEN: the modules students can use. The rest show a lock until the teacher adds their number here.
-  const OPEN = ["1"];
-  const MODULES = [...document.querySelectorAll("[data-module]")].map((b) => b.dataset.module);
-  document.querySelectorAll("[data-module]").forEach((b) => {
-    if (OPEN.includes(b.dataset.module)) return;
-    b.classList.add("locked"); b.setAttribute("aria-disabled", "true");
-    b.title = "Locked. Your teacher will open this module.";
-    b.insertAdjacentHTML("beforeend", `<svg class="lock" viewBox="0 0 24 24" width="13" height="13" aria-label="locked"><path fill="currentColor" d="M7 10V7a5 5 0 0110 0v3h1a1 1 0 011 1v10a1 1 0 01-1 1H6a1 1 0 01-1-1V11a1 1 0 011-1h1zm2 0h6V7a3 3 0 00-6 0v3z"/></svg>`);
-  });
+  // TEACHERS: Google accounts that see every module, locked or not (applied once sign-in says who it is).
+  let OPEN = ["1"];
+  const TEACHERS = ["mjaffry02@gmail.com"];
+  const ALL = [...document.querySelectorAll("[data-module]")].map((b) => b.dataset.module), MODULES = ALL;
+  const LOCK = `<svg class="lock" viewBox="0 0 24 24" width="13" height="13" aria-label="locked"><path fill="currentColor" d="M7 10V7a5 5 0 0110 0v3h1a1 1 0 011 1v10a1 1 0 01-1 1H6a1 1 0 01-1-1V11a1 1 0 011-1h1zm2 0h6V7a3 3 0 00-6 0v3z"/></svg>`;
+  function applyLocks() {
+    document.querySelectorAll("[data-module]").forEach((b) => {
+      const locked = !OPEN.includes(b.dataset.module);
+      b.classList.toggle("locked", locked);
+      if (locked) { b.setAttribute("aria-disabled", "true"); b.title = "Locked. Your teacher will open this module."; if (!b.querySelector(".lock")) b.insertAdjacentHTML("beforeend", LOCK); }
+      else { b.removeAttribute("aria-disabled"); b.removeAttribute("title"); const l = b.querySelector(".lock"); if (l) l.remove(); }
+    });
+  }
+  applyLocks();
+  const wanted = store.get("wb-module", "1"); // the module to return to once a teacher is recognised
+  window.WB_signedInAs = (email) => {
+    if (!TEACHERS.includes(String(email || "").toLowerCase()) || OPEN.length === ALL.length) return;
+    OPEN = ALL.slice(); applyLocks(); setModule(wanted);
+  };
   function lockedNote(b) {
     let n = $("locknote");
     if (!n) { n = document.createElement("p"); n.id = "locknote"; n.className = "locknote"; n.setAttribute("role", "status"); document.querySelector(".modnav").after(n); }
@@ -463,5 +474,5 @@ Question: (your question here)</pre>
     const k = "1234abcd".indexOf(e.key.toLowerCase()); if (k >= 0) answer(k % 4);
   });
 
-  setModule(store.get("wb-module", "1"));
+  setModule(wanted);
 })();

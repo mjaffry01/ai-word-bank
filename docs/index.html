@@ -1614,7 +1614,7 @@ renderChips();render();
   function clearSession() { sess = null; try { localStorage.removeItem(SESSION_KEY); } catch (e) {} }
 
   function showGate(html) { appEl.hidden = true; gate.hidden = false; gateBody.innerHTML = html; bindSignOut(); }
-  function showApp() { gate.hidden = true; appEl.hidden = false; window.WB.refresh(); }
+  function showApp() { gate.hidden = true; appEl.hidden = false; window.WB.refresh(); if (window.WB_signedInAs && sess) window.WB_signedInAs(sess.email); }
   const signOutLink = `<button class="linkish" data-signout>Sign out</button>`;
   function bindSignOut() { document.querySelectorAll("[data-signout]").forEach((b) => { b.onclick = signOut; }); }
 
