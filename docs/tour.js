@@ -96,6 +96,12 @@
   const savePrefs = () => { try { localStorage.setItem(PREFS, JSON.stringify(prefs)); } catch (e) {} };
   const canSpeak = () => !!(window.WB_READ && window.WB_READ.say);
   const plain = (h) => { const d = document.createElement("div"); d.innerHTML = h; return d.textContent; };
+  const english = () => !window.WB_LANG || window.WB_LANG.code === "en";
+  const spoken = (s) => {
+    if (english() || !card) return s.t + ". " + plain(s.x);
+    const h = card.querySelector("h3"), p = card.querySelector("h3 + p");
+    return (h ? h.textContent : s.t) + ". " + (p ? p.textContent : plain(s.x));
+  };
   let timer = 0, safety = 0;
   function hush() { clearTimeout(timer); clearTimeout(safety); timer = safety = 0; if (canSpeak()) window.WB_READ.quiet(); }
   // About how long reading the step takes, at the chosen speed
@@ -105,7 +111,9 @@
     const s = steps[i], at = i; if (!s || !box) return;
     const onward = (ms) => { clearTimeout(timer); timer = setTimeout(() => { if (box && prefs.auto && i === at && i < steps.length - 1) next(); }, ms); };
     if (prefs.voice && canSpeak()) {
-      window.WB_READ.say(s.t + ". " + plain(s.x), () => { if (prefs.auto) onward(900); });
+      const speak = () => { if (box && i === at) window.WB_READ.say(spoken(s), () => { if (prefs.auto) onward(900); }); };
+      // In another language, wait for the translator, then read the card as it now reads
+      if (english()) speak(); else timer = setTimeout(speak, 1200);
       // In case the browser never says it has finished
       if (prefs.auto) safety = setTimeout(() => onward(0), readTime(s) * 1.8 + 5000);
     } else if (prefs.auto) onward(readTime(s) + 2500);

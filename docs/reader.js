@@ -15,19 +15,35 @@
   /* ---------- Voices ---------- */
   let voices = [];
   const natural = (v) => /natural|online/i.test(v.name);
-  // English first, then Edge's natural voices, then the rest by name
+  // The page's language (lang.js), e.g. "ur" or "zh-CN"; voices in it come first
+  const langTag = () => (window.WB_LANG && window.WB_LANG.tag) || "en";
+  const inLang = (v, t = langTag()) => {
+    const l = v.lang.toLowerCase().replace("_", "-"), w = t.toLowerCase();
+    if (w.startsWith("zh")) return l.startsWith(w) || (w === "zh-tw" && l.startsWith("zh-hk")); // the two Chinese scripts
+    return l.split("-")[0] === w.split("-")[0];
+  };
+  // The page's language first, then Edge's natural voices, then the rest by name
   function loadVoices() {
-    voices = synth.getVoices().slice().sort((a, b) => (b.lang.startsWith("en") - a.lang.startsWith("en")) || (natural(b) - natural(a)) || a.name.localeCompare(b.name));
+    voices = synth.getVoices().slice().sort((a, b) => (inLang(b) - inLang(a)) || (b.lang.startsWith("en") - a.lang.startsWith("en")) || (natural(b) - natural(a)) || a.name.localeCompare(b.name));
     if (window.WB_LOOK_REFRESH) window.WB_LOOK_REFRESH();
   }
   loadVoices();
   if ("onvoiceschanged" in synth) synth.addEventListener("voiceschanged", loadVoices);
+  window.addEventListener("wb-lang", () => { stop(); loadVoices(); if (menu && !menu.hidden) menu.innerHTML = menuHTML(); });
   function voice() {
+    const t = langTag();
+    if (!t.startsWith("en")) {
+      // The chosen voice if it speaks the page's language, otherwise the best voice that does
+      return voices.find((v) => v.name === cfg.voice && inLang(v, t)) || voices.find((v) => inLang(v, t) && natural(v)) || voices.find((v) => inLang(v, t))
+        || voices.find((v) => v.name === cfg.voice) || voices.find((v) => v.default) || voices[0] || null;
+    }
     return voices.find((v) => v.name === cfg.voice)
       || voices.find((v) => natural(v) && /^en-(GB|US)/.test(v.lang) && /Aria|Jenny|Sonia|Libby|Guy/.test(v.name))
       || voices.find((v) => natural(v) && v.lang.startsWith("en"))
       || voices.find((v) => v.default) || voices[0] || null;
   }
+  const hasLangVoice = () => langTag().startsWith("en") || voices.some((v) => inLang(v));
+  const noVoiceNote = () => (hasLangVoice() || !voices.length ? "" : `This device has no ${esc((window.WB_LANG && window.WB_LANG.name) || "")} voice, so another voice will read. Microsoft Edge has voices for many more languages. `);
   // "Microsoft Aria Online (Natural) - English (United States)" → "Aria"
   const short = (v) => v.name.replace(/^(Microsoft|Google)\s+/, "").replace(/\s+-\s+.*$/, "").replace(/\s*\(Natural\)/, "").replace(/\s+Online\b/, "").trim() || v.name;
 
@@ -110,7 +126,7 @@
     if (!voices.length) return `<p class="wbvnote">No voices found yet. Try again in a moment.</p>`;
     return `<p class="wbvhead">Choose a voice</p>
       <div class="wbvlist" role="listbox" aria-label="Voices">${voices.map((x) => `<button type="button" role="option" data-voice="${esc(x.name)}" aria-selected="${!!(v && x.name === v.name)}">${esc(short(x))}${natural(x) ? " ★" : ""} <small>${esc(x.lang)}</small></button>`).join("")}</div>
-      <p class="wbvnote">${edge ? "★ natural voices sound most human." : "For natural, human-sounding voices, open this page in Microsoft Edge."} Speed is in Aa Display.</p>`;
+      <p class="wbvnote">${noVoiceNote()}${edge ? "★ natural voices sound most human." : "For natural, human-sounding voices, open this page in Microsoft Edge."} Speed is in Aa Display.</p>`;
   }
   function openMenu() {
     if (!menu) {
@@ -204,7 +220,7 @@
       <div class="lookvoice"><label for="wbvoice">Voice</label><select id="wbvoice" data-readin="voice">${voices.length ? voices.map((x) => `<option value="${esc(x.name)}" ${v && x.name === v.name ? "selected" : ""}>${esc(short(x))}${natural(x) ? " ★" : ""} (${esc(x.lang)})</option>`).join("") : `<option>Loading voices…</option>`}</select></div>
       <div class="looksize"><span class="lookrate">Speed</span><input type="range" min="0.6" max="1.6" step="0.1" value="${cfg.rate}" data-readin="rate" aria-label="Reading speed"><span class="lookrate" id="wbrate">${cfg.rate.toFixed(1)}×</span></div>
       <div class="lookfoot" style="margin-top:8px"><button data-read="test">🔊 Test this voice</button></div>
-      <p class="looknote" style="text-align:left">${edge ? "★ marks natural voices, which sound most human." : "For natural, human-sounding voices, open this page in Microsoft Edge."} Point at a paragraph and press 🔊, or select some text to hear just that part. Press Esc to stop.</p>`;
+      <p class="looknote" style="text-align:left">${noVoiceNote()}${edge ? "★ marks natural voices, which sound most human." : "For natural, human-sounding voices, open this page in Microsoft Edge."} Point at a paragraph and press 🔊, or select some text to hear just that part. Press Esc to stop.</p>`;
   }
   function click(e) {
     if (e.target.closest("[data-read=test]")) { speak("Hello! This is how I will read the course to you.", null); return true; }

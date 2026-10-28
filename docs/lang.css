@@ -1,0 +1,21 @@
+/* Language picker (lang.js) and tidying up after Google's page translator */
+.langbtn{display:inline-flex;align-items:center;gap:7px;padding:7px 14px;border:1px solid var(--line);border-radius:999px;background:var(--surface);color:var(--fg);font:600 .9rem var(--body);cursor:pointer;white-space:nowrap}
+.langbtn:hover{border-color:var(--accent)}
+.gatelook .langbtn{margin-inline-start:8px}
+.langpop{position:absolute;z-index:70;padding:12px;border-radius:12px;background:var(--surface);color:var(--fg);border:1px solid var(--line);box-shadow:0 10px 30px rgba(0,0,0,.25);display:flex;flex-direction:column;gap:8px}
+.langh{margin:0;font-weight:600;font-size:.9rem}
+.langq{font:inherit;padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--fg)}
+.langlist{display:flex;flex-direction:column;gap:2px;max-height:min(320px,50vh);overflow:auto}
+.langlist button{display:flex;justify-content:space-between;align-items:baseline;gap:8px;text-align:start;padding:7px 10px;border:1px solid transparent;border-radius:8px;background:none;color:inherit;font:inherit;font-size:.92rem;cursor:pointer}
+.langlist button:hover,.langlist button:focus-visible{background:var(--bg);border-color:var(--line)}
+.langlist button[aria-selected=true]{border-color:var(--accent);color:var(--accent);font-weight:600}
+.langlist small{color:var(--muted);font-weight:400;font-size:.78rem}
+.langall{font:600 .85rem var(--body);padding:7px 10px;border:1px dashed var(--line);border-radius:8px;background:none;color:var(--accent);cursor:pointer}
+.langnone{margin:6px 0;color:var(--muted);font-size:.88rem}
+.langnote{margin:0;color:var(--muted);font-size:.76rem;line-height:1.4}
+/* Google's translator: hide its banner and tooltips, and stop it pushing the page down */
+body{top:0!important}
+.skiptranslate iframe,iframe.skiptranslate,.goog-te-banner-frame,#goog-gt-tt,.goog-te-balloon-frame,.VIpgJd-ZVi9od-ORHb-OEVmcd,.VIpgJd-ZVi9od-aZ2wEe-wOHMyf{display:none!important}
+#wb-gte{display:none!important}
+.goog-text-highlight{background:none!important;box-shadow:none!important}
+@media print{.langbtn,.langpop{display:none}}
