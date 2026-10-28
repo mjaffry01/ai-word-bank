@@ -18,7 +18,7 @@
   // Shows one module at a time. Each later module registers its render function in window.WB_MODULES.
   // OPEN: the modules students can use. The rest show a lock until the teacher adds their number here.
   // TEACHERS: Google accounts that see every module, locked or not (applied once sign-in says who it is).
-  let OPEN = ["1"];
+  let OPEN = ["1", "2"];
   const TEACHERS = ["mjaffry02@gmail.com"];
   const ALL = [...document.querySelectorAll("[data-module]")].map((b) => b.dataset.module), MODULES = ALL;
   const LOCK = `<svg class="lock" viewBox="0 0 24 24" width="13" height="13" aria-label="locked"><path fill="currentColor" d="M7 10V7a5 5 0 0110 0v3h1a1 1 0 011 1v10a1 1 0 01-1 1H6a1 1 0 01-1-1V11a1 1 0 011-1h1zm2 0h6V7a3 3 0 00-6 0v3z"/></svg>`;

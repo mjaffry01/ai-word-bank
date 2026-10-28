@@ -552,6 +552,16 @@ ${outline()}`;
     fab.innerHTML = `<span aria-hidden="true">✦</span><span>AI Tutor</span>`;
     fab.addEventListener("click", () => { if (panel && !panel.hidden && !panel.classList.contains("peek")) close(); else { peek(false); open(); } });
     document.body.appendChild(fab);
+    // A second way in: in the header, under "Aa Display"
+    const side = document.querySelector(".mastside");
+    if (side && !side.querySelector(".tutside")) {
+      side.insertAdjacentHTML("beforeend", `<button class="tutside" type="button" aria-haspopup="dialog" title="Study any AI topic in depth with your own AI model"><span aria-hidden="true">✦</span><span>AI Tutor</span></button>`);
+      const tb = side.querySelector(".tutside");
+      tb.addEventListener("click", () => { peek(false); open(); });
+      // appearance.js may add its button after this runs: keep ours below it
+      const below = () => { const lb = side.querySelector(".lookbtn"); if (lb) lb.after(tb); };
+      below(); document.addEventListener("DOMContentLoaded", below); setTimeout(below, 0);
+    }
     // Only inside the course, not on the sign-in screen
     const app = document.getElementById("app");
     const sync = () => { fab.hidden = !!(app && app.hidden); if (fab.hidden) close(); };

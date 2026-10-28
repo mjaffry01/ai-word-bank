@@ -1,6 +1,8 @@
 /* AI Tutor (tutor.js): the launcher, the chat panel, visuals and the on-page spotlight */
 .tutfab{position:fixed;right:18px;bottom:18px;z-index:60;display:inline-flex;align-items:center;gap:8px;padding:12px 18px;border:0;border-radius:999px;background:var(--accent);color:var(--accent-ink);font:600 .95rem var(--display);cursor:pointer;box-shadow:0 6px 20px rgba(0,0,0,.22)}
 .tutfab span:first-child{font-size:1.1rem}
+.tutside{display:inline-flex;align-items:center;gap:7px;padding:7px 14px;border:1px solid var(--accent);border-radius:999px;background:var(--accent);color:var(--accent-ink);font:600 .9rem var(--body);cursor:pointer;white-space:nowrap}
+.tutside:hover{filter:brightness(1.08)}
 .tutfab:hover{filter:brightness(1.08)}
 .tutfab[hidden]{display:none}
 .tut-open .tutfab:not(.peeking){display:none}
