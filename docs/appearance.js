@@ -86,11 +86,13 @@
         <label>Text colour <input type="color" value="${esc(look.theme === "custom" ? look.fg : shown("--fg"))}" data-lookin="fg"></label></div>
       <p class="lookwarn" aria-live="polite">${warnHTML()}</p>
       <p class="looksample">The quick brown fox jumps over the lazy dog. <b>Tokens</b>, <i>prompts</i> and models.</p>
+      ${window.WB_READ ? window.WB_READ.panelHTML() : ""}
       <div class="lookfoot"><button data-look="reset">Reset to the course look</button></div>
       <p class="looknote">Saved in this browser only.</p>`;
   }
   let panel = null, opener = null;
   function render() { if (panel) panel.innerHTML = panelHTML(); }
+  window.WB_LOOK_REFRESH = () => { if (panel && !panel.hidden) render(); }; // the voice list arrives late
   function open(btn) {
     opener = btn;
     if (!panel) {
@@ -111,6 +113,7 @@
   const set = (k, v) => { look[k] = v; save(); apply(); };
   function onClick(e) {
     const t = e.target;
+    if (window.WB_READ && window.WB_READ.click(e)) return;
     const a = t.closest("[data-look]"); if (a) {
       const k = a.dataset.look;
       if (k === "close") return close();
@@ -122,6 +125,7 @@
     const th = t.closest("[data-looktheme]"); if (th) { set("theme", th.dataset.looktheme); return render(); }
   }
   function onInput(e) {
+    if (window.WB_READ && window.WB_READ.input(e)) return;
     const k = e.target.dataset.lookin; if (!k) return;
     if (k === "size") { set("size", +e.target.value); panel.querySelector(".looklbl span").textContent = look.size + "%"; return; }
     // Picking a colour switches to "My colours", starting from the other colour on screen now
@@ -131,7 +135,7 @@
     panel.querySelectorAll("[data-looktheme]").forEach((b) => b.setAttribute("aria-pressed", "false"));
     panel.querySelector(".lookwarn").innerHTML = warnHTML();
   }
-  const BTN = `<button class="lookbtn" type="button" aria-haspopup="dialog" aria-expanded="false" title="Display settings: text size, font and colours"><span aria-hidden="true">Aa</span><span>Display</span></button>`;
+  const BTN = `<button class="lookbtn" type="button" aria-haspopup="dialog" aria-expanded="false" title="Display settings: text size, font, colours and read aloud"><span aria-hidden="true">Aa</span><span>Display</span></button>`;
   function addButtons() {
     // Under the signed-in name in the course, and under the sign-in box on the sign-in screen
     const side = document.querySelector(".mastside"); if (side && !side.querySelector(".lookbtn")) side.insertAdjacentHTML("beforeend", BTN);

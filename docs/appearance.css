@@ -25,3 +25,16 @@
 .lookfoot{margin-top:12px}
 .lookfoot button{width:100%}
 .looknote{margin:6px 0 0;font-size:.78rem;color:var(--muted);text-align:center}
+/* Read aloud (reader.js) */
+.wbread{position:absolute;z-index:40;width:30px;height:30px;display:grid;place-items:center;padding:0;border:1px solid var(--accent);border-radius:50%;background:var(--surface);color:var(--accent);font-size:.9rem;line-height:1;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.15)}
+.wbread:hover,.wbread.on{background:var(--accent);color:var(--accent-ink)}
+.wbread.sel{width:auto;padding:0 10px;border-radius:999px}
+.wbread.sel::after{content:"Read selection";font:600 .78rem var(--body);margin-left:6px}
+.wbread.sel.on::after{content:"Stop"}
+.wbread[hidden]{display:none}
+.wb-reading{background:color-mix(in srgb,var(--accent) 14%,transparent);outline:2px solid color-mix(in srgb,var(--accent) 50%,transparent);outline-offset:3px;border-radius:4px}
+.lookrow{display:flex;align-items:center;gap:8px;font-size:.92rem}
+.lookvoice{display:flex;align-items:center;gap:8px;margin:8px 0;font-size:.9rem}
+.lookvoice select{flex:1;min-width:0;font:inherit;padding:6px 8px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--fg)}
+.lookrate{font-size:.85rem;color:var(--muted);min-width:2.6em}
+@media print{.wbread{display:none}}
