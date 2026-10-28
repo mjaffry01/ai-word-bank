@@ -1,0 +1,90 @@
+/* AI Tutor (tutor.js): the launcher, the chat panel, visuals and the on-page spotlight */
+.tutfab{position:fixed;right:18px;bottom:18px;z-index:60;display:inline-flex;align-items:center;gap:8px;padding:12px 18px;border:0;border-radius:999px;background:var(--accent);color:var(--accent-ink);font:600 .95rem var(--display);cursor:pointer;box-shadow:0 6px 20px rgba(0,0,0,.22)}
+.tutfab span:first-child{font-size:1.1rem}
+.tutfab:hover{filter:brightness(1.08)}
+.tutfab[hidden]{display:none}
+.tut-open .tutfab:not(.peeking){display:none}
+.tut{position:fixed;top:0;right:0;bottom:0;z-index:59;width:min(460px,100vw);display:flex;flex-direction:column;background:var(--surface);color:var(--fg);border-left:1px solid var(--line);box-shadow:-8px 0 30px rgba(0,0,0,.15)}
+.tut[hidden],.tut.peek{display:none}
+.tuthead{display:flex;align-items:center;gap:8px;padding:12px 14px;border-bottom:1px solid var(--line)}
+.tuthead b{font:700 1.05rem var(--display)}
+.tutmodel{font:500 .72rem var(--mono);color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+.tuthbtns{margin-left:auto;display:flex;gap:4px;flex-shrink:0}
+.tuthbtns button,.tutacts button,.tutstart button,.tutfoot button,.tutkey button,.tutsteps button{font:inherit;font-size:.85rem;padding:6px 10px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--fg);cursor:pointer}
+.tuthbtns button:hover,.tutacts button:hover,.tutstart button:hover,.tutkey button:hover,.tutsteps button:hover:not(:disabled){border-color:var(--accent);color:var(--accent)}
+.tutprimary,.tutfoot .tutprimary{background:var(--accent);color:var(--accent-ink);border:1px solid var(--accent);border-radius:8px;padding:8px 16px;font:600 .9rem var(--body);cursor:pointer}
+.tutprimary.stop{background:var(--bad);border-color:var(--bad)}
+/* Setup */
+.tutsetup{padding:14px;overflow:auto;display:flex;flex-direction:column;gap:6px}
+.tutlbl{margin:10px 0 2px;font-weight:600;font-size:.9rem;display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap}
+.tutlbl a{font-weight:500;color:var(--accent)}
+.tutprov{display:flex;flex-direction:column;gap:6px}
+.tutprov button{text-align:left;padding:9px 12px;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--fg);font:inherit;cursor:pointer}
+.tutprov button[aria-pressed=true]{border:2px solid var(--accent);color:var(--accent);font-weight:600}
+.tutkey{display:flex;gap:6px}
+.tutkey input,.tutsetup select,.tuttopic input{flex:1;min-width:0;font:inherit;padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--fg)}
+.tutkey input[data-k=key],.tutkey input[data-k=model],.tutkey input[data-k=img]{font-family:var(--mono);font-size:.85rem}
+.tutrow{display:flex;gap:8px;align-items:flex-start;font-size:.88rem}
+.tutsafe{margin:4px 0;padding:8px 10px;border-radius:8px;background:color-mix(in srgb,var(--accent) 8%,transparent);font-size:.82rem;line-height:1.45}
+.tutsmall{display:block;color:var(--muted);font-size:.8rem;margin-top:4px}
+.tutfoot{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
+.tuterr{color:var(--bad);font-size:.88rem;margin:6px 0}
+.tuterr:empty{display:none}
+.tutlink{background:none;border:0;padding:0;color:var(--accent);text-decoration:underline;font:inherit;cursor:pointer}
+/* Chat */
+.tuttopic{display:flex;align-items:center;gap:8px;padding:8px 14px;border-bottom:1px solid var(--line);font-size:.85rem}
+.tuttopic label{font-weight:600;color:var(--muted)}
+.tutmsgs{flex:1;overflow:auto;padding:14px;display:flex;flex-direction:column;gap:12px}
+.tutmsg{max-width:100%;font-size:.95rem;line-height:1.55}
+.tutmsg p{margin:0 0 8px}
+.tutmsg p:last-child{margin-bottom:0}
+.tutmsg.me{align-self:flex-end;max-width:85%;padding:9px 13px;border-radius:14px 14px 4px 14px;background:var(--accent);color:var(--accent-ink)}
+.tutmsg.note{align-self:center;font-size:.85rem;color:var(--muted);text-align:center}
+.tutmsg.ai ul,.tutmsg.ai ol{margin:4px 0 8px;padding-left:22px}
+.tutmsg.ai li{margin:2px 0}
+.tutmsg.ai code{font:500 .85em var(--mono);padding:1px 4px;border-radius:4px;background:var(--bg)}
+.tuth{font:700 1rem var(--display);margin:10px 0 6px!important}
+.tutmsg .wordlink{font:inherit}
+.tuttable{overflow:auto;margin:6px 0 10px}
+.tuttable table{border-collapse:collapse;font-size:.88rem;width:100%}
+.tuttable th,.tuttable td{border:1px solid var(--line);padding:5px 8px;text-align:left;vertical-align:top}
+.tuttable th{background:var(--bg)}
+.tutcode{font:500 .8rem var(--mono);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:8px 10px;overflow:auto;white-space:pre-wrap;margin:6px 0}
+.tutwait{color:var(--muted);font-style:italic}
+.tutwait::before{content:"";display:inline-block;width:8px;height:8px;margin-right:8px;border-radius:50%;background:var(--accent);animation:tutblink 1s ease-in-out infinite}
+@keyframes tutblink{50%{opacity:.25}}
+.tutacts{display:flex;gap:6px;padding:8px 14px 0;overflow-x:auto;flex-shrink:0}
+.tutacts:empty{display:none}
+.tutacts button{white-space:nowrap;border-radius:999px;font-size:.8rem}
+.tutcompose{display:flex;gap:8px;padding:10px 14px 14px;align-items:flex-end}
+.tutcompose textarea{flex:1;min-width:0;resize:none;font:inherit;padding:9px 11px;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--fg);max-height:160px}
+.tutempty{padding:6px 2px}
+.tutstart{display:flex;flex-direction:column;gap:6px;margin-top:12px}
+.tutstart button{text-align:left;border-radius:10px;padding:9px 12px}
+/* Visuals */
+.tutvis{margin:10px 0}
+.tutsvg,.tutpic{display:block;width:100%;height:auto;border-radius:10px;background:#fff;border:1px solid var(--line);cursor:zoom-in}
+.tutframe{min-height:120px}
+.tutcap{font-size:.88rem;margin:6px 0 4px!important}
+.tutsteps{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.tutsteps button:disabled{opacity:.4;cursor:default}
+.tutdots{display:inline-flex;gap:4px;margin-left:6px}
+.tutdots i{width:7px;height:7px;border-radius:50%;background:var(--line)}
+.tutdots i.on{background:var(--accent)}
+.tutguide{display:inline-flex;align-items:center;gap:6px;padding:8px 14px;border:1px solid var(--accent);border-radius:999px;background:color-mix(in srgb,var(--accent) 10%,transparent);color:var(--accent);font:600 .88rem var(--body);cursor:pointer}
+.tutguide:hover{background:var(--accent);color:var(--accent-ink)}
+.tutbtn2{padding:7px 14px;border:1px solid var(--accent);border-radius:8px;background:var(--accent);color:var(--accent-ink);font:600 .85rem var(--body);cursor:pointer}
+.tutzoom{position:fixed;inset:0;z-index:80;display:grid;place-items:center;padding:20px;background:rgba(0,0,0,.75);cursor:zoom-out}
+.tutzoom img{max-width:100%;max-height:100%;background:#fff;border-radius:10px}
+.tutzoom button{position:absolute;top:14px;right:14px;width:40px;height:40px;border-radius:50%;border:0;background:#fff;color:#000;font-size:1.1rem;cursor:pointer}
+/* Pointing at the page */
+.tut-spot{outline:3px solid var(--accent)!important;outline-offset:4px;border-radius:6px;animation:tutspot 1.4s ease-in-out 3}
+@keyframes tutspot{50%{outline-color:transparent;box-shadow:0 0 0 10px color-mix(in srgb,var(--accent) 25%,transparent)}}
+.tutcallout{position:absolute;z-index:61;padding:10px 12px;border-radius:10px;background:var(--accent);color:var(--accent-ink);font-size:.9rem;line-height:1.45;box-shadow:0 8px 24px rgba(0,0,0,.25)}
+.tutcallbtns{display:flex;gap:6px;margin-top:8px}
+.tutcallbtns button{padding:5px 10px;border-radius:6px;border:1px solid currentColor;background:none;color:inherit;font:600 .8rem var(--body);cursor:pointer}
+/* Make room for the panel on wide screens */
+@media (min-width:1100px){body.tut-open{margin-right:460px}}
+@media (max-width:760px){.tut{width:100vw;border-left:0}.tutfab{right:12px;bottom:12px;padding:11px 15px}}
+@media (prefers-reduced-motion:reduce){.tut-spot,.tutwait::before{animation:none}}
+@media print{.tutfab,.tut,.tutcallout{display:none}}
