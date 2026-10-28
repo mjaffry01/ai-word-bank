@@ -74,7 +74,7 @@
 
   /* ---------- The floating button ---------- */
   const BLOCKS = "p, li, dd, dt, h1, h2, h3, h4, blockquote, td, th, summary, figcaption, .botmsg, .deep, .def, .card .big, .qprompt, .opt";
-  const SKIP = ".lookpanel, .wbread, .wbvbtn, .wbvmenu, input, textarea, select, [contenteditable], .modnav, .m2tabs, nav";
+  const SKIP = ".lookpanel, .tour, .tourmenu, .touroffer, .wbread, .wbvbtn, .wbvmenu, input, textarea, select, [contenteditable], .modnav, .m2tabs, nav";
   function blockAt(node) {
     const el = node && node.nodeType === 1 ? node : node && node.parentElement;
     if (!el || el.closest(SKIP)) return null;
@@ -217,5 +217,6 @@
     else if (k === "rate") { cfg.rate = +e.target.value; const r = document.getElementById("wbrate"); if (r) r.textContent = cfg.rate.toFixed(1) + "×"; }
     save(); return true;
   }
-  window.WB_READ = { panelHTML, click, input, stop };
+  // point(el): show the 🔊 button by a paragraph (the guided tour uses this)
+  window.WB_READ = { panelHTML, click, input, stop, point: (el) => { if (cfg.on && el) show(el); } };
 })();
