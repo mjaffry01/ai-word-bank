@@ -103,7 +103,7 @@
     if (side && !side.querySelector(".langbtn")) {
       side.insertAdjacentHTML("beforeend", BTN());
       // Keep it last, after the buttons other scripts add around now
-      const last = () => { const b = side.querySelector(".langbtn"); if (b) side.appendChild(b); };
+      const last = () => { const b = side.querySelector(".langbtn"); if (b) (side.querySelector(".toolkit") || side).appendChild(b); };
       document.addEventListener("DOMContentLoaded", last); setTimeout(last, 0); setTimeout(last, 50);
     }
     // On the sign-in screen, next to Display

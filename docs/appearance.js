@@ -136,9 +136,23 @@
     panel.querySelector(".lookwarn").innerHTML = warnHTML();
   }
   const BTN = `<button class="lookbtn" type="button" aria-haspopup="dialog" aria-expanded="false" title="Display settings: text size, font, colours and read aloud"><span aria-hidden="true">Aa</span><span>Display</span></button>`;
+  // Open (true) or close the Toolkit; remember=false for a temporary change, such as during the tour
+  function toolkit(open, remember = true) {
+    const box = document.querySelector(".toolkit"), lbl = document.querySelector(".toolkitlbl"); if (!box) return;
+    box.hidden = !open; if (lbl) lbl.setAttribute("aria-expanded", String(!!open));
+    if (remember) try { localStorage.setItem("wb-toolkit", open ? "open" : "closed"); } catch (e) {}
+  }
+  window.WB_TOOLKIT = { open: (on, remember) => toolkit(on, remember), isOpen: () => { const b = document.querySelector(".toolkit"); return !!b && !b.hidden; } };
   function addButtons() {
     // Under the signed-in name in the course, and under the sign-in box on the sign-in screen
-    const side = document.querySelector(".mastside"); if (side && !side.querySelector(".lookbtn")) side.insertAdjacentHTML("beforeend", `<p class="toolkitlbl">Toolkit</p>${BTN}`); // the AI Tutor, tour and language buttons follow
+    // The Toolkit: a heading that opens and closes the course-wide tools. The AI Tutor, tour and language
+    // buttons are added inside .toolkit by their own scripts. Open or closed is remembered ("wb-toolkit").
+    const side = document.querySelector(".mastside");
+    if (side && !side.querySelector(".lookbtn")) {
+      let shut = true; try { shut = localStorage.getItem("wb-toolkit") !== "open"; } catch (e) {}
+      side.insertAdjacentHTML("beforeend", `<button type="button" class="toolkitlbl" aria-expanded="${!shut}" aria-controls="toolkit"><span>Toolkit</span><span class="tkchev" aria-hidden="true">▾</span></button><div class="toolkit" id="toolkit"${shut ? " hidden" : ""}>${BTN}</div>`);
+      side.querySelector(".toolkitlbl").addEventListener("click", () => toolkit(side.querySelector(".toolkit").hidden));
+    }
     const gate = document.querySelector(".gatewish"); if (gate && !document.querySelector(".gatelook")) gate.insertAdjacentHTML("afterend", `<p class="gatelook">${BTN}</p>`);
     document.addEventListener("click", (e) => {
       const b = e.target.closest(".lookbtn"); if (b) { if (panel && !panel.hidden) close(); else open(b); return; }

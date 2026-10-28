@@ -22,7 +22,7 @@
     { sel: "#panel", t: "The word panel", x: "When you pick a word, it shows here: what it means, an example and which words to learn first. <b>← Back</b> returns to the word before." },
     { sel: "#mCards, #mQuiz", t: "Test yourself", x: "When a ring feels familiar, try <b>Flashcards</b> and the <b>Ring quiz</b> to check what stuck." },
     // The Toolkit in the header, then each of its tools
-    { sel: ".toolkitlbl, .mastside .lookbtn, .mastside .tutside, .mastside .tourbtn, .mastside .langbtn", t: "Your Toolkit", x: "At the top right of every page, the <b>Toolkit</b> holds tools that work across the whole course: <b>Display</b> for easier reading, the <b>AI Tutor</b>, <b>Take the tour</b> and the <b>language</b> button. Let's see what each one does.", go: () => window.scrollTo(0, 0) },
+    { sel: ".toolkitlbl, .mastside .lookbtn, .mastside .tutside, .mastside .tourbtn, .mastside .langbtn", t: "Your Toolkit", x: "At the top right of every page, the <b>Toolkit</b> holds tools that work across the whole course: <b>Display</b> for easier reading, the <b>AI Tutor</b>, <b>Take the tour</b> and the <b>language</b> button. Press <b>Toolkit ▾</b> to show or hide them. Let's see what each one does.", go: () => window.scrollTo(0, 0) },
     // Read aloud: show the real buttons on a real paragraph
     { sel: () => [para(), ...$$(".wbread, .wbvbtn")], still: true, keep: () => pointAt(), t: "Read aloud: one paragraph at a time", x: "Point at any paragraph (on a phone, tap it) and a <b>🔊</b> button appears beside it, like here. Press it to hear <b>just that paragraph</b>, highlighted as it's read. Press it again (■) or <b>Esc</b> to stop.", go: async () => { clearSel(); const p = para(); if (!p) return; p.scrollIntoView({ block: "center" }); await wait(300); if (window.WB_READ && window.WB_READ.point) window.WB_READ.point(p); } },
     { sel: ".wbvbtn, .wbvmenu", still: true, keep: () => { pointAt(); const v = document.querySelector(".wbvbtn"); if (v && !document.querySelector(".wbvmenu:not([hidden])")) v.click(); }, t: "Choose the voice", x: "The <b>🗣</b> button under 🔊 lists the voices. Pick one to hear a short sample; it's remembered. In <b>Microsoft Edge</b>, the ★ voices sound the most human.", go: async () => { const v = document.querySelector(".wbvbtn"); if (v && !v.hidden) { if (!document.querySelector(".wbvmenu:not([hidden])")) v.click(); } }, leave: () => { const m = document.querySelector(".wbvmenu:not([hidden])"); if (m) document.querySelector(".wbvbtn").click(); } },
@@ -90,7 +90,7 @@
   const WISH = { sel: ".wishbtn", t: "Training wish list", x: "Is there a topic you'd like to learn that isn't here yet? Open the <b>★ Training wish list</b> to suggest the training you'd like, so your teacher knows what to plan next." };
   const END = { t: "You're ready!", x: "Start with Module 1's learning web, then move on to Module 2. You can take this tour again any time from <b>🧭 Take the tour</b> in the Toolkit." };
 
-  let steps = [], i = 0, box = null, hole = null, card = null, target = [];
+  let steps = [], i = 0, box = null, hole = null, card = null, target = [], kitWas = null;
 
   /* ---------- Playing by itself, and the spoken guide ---------- */
   // auto: move on by itself after each step. voice: read each step aloud (with the voice chosen in Aa Display).
@@ -155,6 +155,9 @@
     stop(); build(which); i = 0;
     document.querySelectorAll(".touroffer").forEach((x) => x.remove());
     try { localStorage.setItem(mine("wb-tour-seen"), "1"); } catch (e) {}
+    // Show the Toolkit's buttons while touring, and put it back as it was afterwards
+    kitWas = window.WB_TOOLKIT ? window.WB_TOOLKIT.isOpen() : null;
+    if (window.WB_TOOLKIT) window.WB_TOOLKIT.open(true, false);
     box = document.createElement("div"); box.className = "tour";
     box.innerHTML = `<div class="tourhole"></div><div class="tourcard" role="dialog" aria-modal="true" aria-labelledby="tourt"></div>`;
     document.body.appendChild(box);
@@ -169,6 +172,7 @@
     if (!box) return;
     leave(); hush();
     box.remove(); box = null;
+    if (window.WB_TOOLKIT && kitWas !== null) window.WB_TOOLKIT.open(kitWas, false);
     document.removeEventListener("keydown", onKey, true);
     window.removeEventListener("resize", place); window.removeEventListener("scroll", place, true);
     try { localStorage.setItem(mine("wb-tour-seen"), "1"); } catch (e) {}
@@ -284,7 +288,7 @@
     const b = side.querySelector(".tourbtn");
     b.addEventListener("click", () => { if (document.querySelector(".tourmenu")) closeMenu(); else menu(b); });
     // Keep it last, under Display and AI Tutor, which other scripts add around now
-    const last = () => side.appendChild(b);
+    const last = () => (side.querySelector(".toolkit") || side).appendChild(b);
     document.addEventListener("DOMContentLoaded", last); setTimeout(last, 0);
     // Offer the tour once the course is showing (not on the sign-in screen)
     const app = document.getElementById("app");

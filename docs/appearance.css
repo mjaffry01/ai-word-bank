@@ -50,5 +50,11 @@
 .wbvnote{margin:8px 0 0;font-size:.78rem;color:var(--muted)}
 @media print{.wbread,.wbvbtn,.wbvmenu{display:none}}
 /* "Toolkit" heading over Display, AI Tutor, the tour and Language in the header */
-.toolkitlbl{margin:6px 0 -4px;padding-top:10px;border-top:1px solid var(--line);align-self:stretch;text-align:end;font:600 .7rem var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
-@media (max-width:640px){.toolkitlbl{text-align:start}}
+.toolkitlbl{display:inline-flex;align-items:center;gap:8px;margin-top:2px;padding:7px 14px;border:1px solid var(--line);border-radius:999px;background:var(--surface);color:var(--fg);font:600 .78rem var(--mono);letter-spacing:.08em;text-transform:uppercase;cursor:pointer}
+.toolkitlbl:hover{border-color:var(--accent)}
+.tkchev{display:inline-block;transition:transform .2s ease;color:var(--accent)}
+.toolkitlbl[aria-expanded=false] .tkchev{transform:rotate(-90deg)}
+.toolkit{display:flex;flex-direction:column;align-items:flex-end;gap:12px;padding-inline-end:10px;border-inline-end:2px solid var(--line)}
+.toolkit[hidden]{display:none}
+@media (max-width:640px){.toolkit{align-items:flex-start;padding-inline-end:0;border-inline-end:0;padding-inline-start:10px;border-inline-start:2px solid var(--line)}}
+@media (prefers-reduced-motion:reduce){.tkchev{transition:none}}
