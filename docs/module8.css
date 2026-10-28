@@ -19,3 +19,33 @@
 .m8opts .choice.m8wrong{border-color:var(--bad);color:var(--bad)}
 @media (max-width:760px){.m8grid{grid-template-columns:1fr 1fr}.m8stats{grid-template-columns:1fr 1fr}}
 @media (max-width:480px){.m8grid{grid-template-columns:1fr}}
+/* AI on Kubernetes (m8-k8s.js) */
+.m8kctl{display:flex;flex-wrap:wrap;gap:12px 20px;align-items:flex-end;margin-bottom:12px}
+.m8kctl>label:first-child{display:flex;flex-direction:column;gap:4px;flex:1 1 220px}
+.m8kctl input[type=range]{accent-color:var(--accent)}
+.m8svc{display:flex;flex-wrap:wrap;gap:6px 14px;align-items:center;padding:10px 12px;border:2px solid var(--accent);border-radius:10px;background:var(--surface);margin-bottom:10px}
+.m8health{font-weight:600}
+.m8health.good{color:var(--good)}
+.m8health.warn{color:var(--accent)}
+.m8health.bad{color:var(--bad)}
+.m8nodes{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.m8node,.m8pending{padding:10px;border:1px solid var(--line);border-radius:10px;background:var(--bg)}
+.m8node .dzlbl,.m8pending .dzlbl{margin:0 0 6px}
+.m8pending{margin-top:10px;border-style:dashed}
+.m8slots{display:flex;flex-wrap:wrap;gap:6px}
+.m8pod{flex:1 1 70px;min-height:52px;padding:6px 8px;border-radius:8px;border:2px solid var(--line);background:var(--surface);display:flex;flex-direction:column;justify-content:center;transition:border-color .3s,opacity .3s}
+.m8pod small{color:var(--muted);font-size:.75rem}
+.m8pod.empty{border-style:dashed;background:none;align-items:center}
+.m8pod.ready{border-color:var(--good)}
+.m8pod.starting{border-color:var(--accent);animation:m8pulse 1.2s ease-in-out infinite}
+.m8pod.crashed,.m8pod.failing{border-color:var(--bad)}
+.m8pod.crashed{opacity:.5}
+.m8pod.failing small,.m8pod.crashed small{color:var(--bad)}
+.m8pod.pending{border-style:dashed}
+@keyframes m8pulse{50%{opacity:.55}}
+@media (prefers-reduced-motion:reduce){.m8pod.starting{animation:none}}
+.m8rep{display:inline-flex;align-items:center;gap:6px;margin-left:auto}
+.m8events{margin:0;padding-left:0;list-style:none;display:flex;flex-direction:column;gap:4px;font-size:.88rem;max-height:220px;overflow:auto}
+.m8events li span{font:500 .75rem var(--mono);color:var(--muted);display:inline-block;min-width:3.6em}
+.m8events li:first-child{font-weight:500}
+@media (max-width:760px){.m8nodes{grid-template-columns:1fr}}

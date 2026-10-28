@@ -15,7 +15,7 @@
   const json = (o) => JSON.stringify(o, null, 2);
   const money = (x) => x >= 100 || x === Math.round(x) ? "$" + Math.round(x).toLocaleString("en-US") : "$" + x.toFixed(2);
 
-  const TABS = [["learn", "Lesson"], ["host", "Where to host"], ["keys", "Keep keys secret"], ["flow", "Watch a request"], ["cost", "Cost calculator"], ["live", "Launch day"], ["plan", "Plan a launch"], ["quiz", "Quiz"]];
+  const TABS = [["learn", "Lesson"], ["host", "Where to host"], ["k8s", "AI on Kubernetes"], ["keys", "Keep keys secret"], ["flow", "Watch a request"], ["cost", "Cost calculator"], ["live", "Launch day"], ["plan", "Plan a launch"], ["quiz", "Quiz"]];
   let tab = store.get("wb-m8-tab", "learn");
   if (!TABS.some((t) => t[0] === tab)) tab = "learn";
 
@@ -60,7 +60,7 @@
     static: { name: "Static hosting", eg: "GitHub Pages, Netlify, Cloudflare Pages", how: "Serves your HTML, CSS and JS files exactly as they are. No code runs on the host.", good: "Free, fast and simple. Perfect for pages, and for chatbots where each visitor brings their own key (like Module 4's Host it on GitHub).", bad: "There's nowhere to hide a secret: everything you upload is public." },
     func: { name: "Static page + serverless function", eg: "Vercel or Netlify Functions, Cloudflare Workers, AWS Lambda", how: "Your page is static, plus a small function on the host's servers that runs only when called, e.g. /api/chat.", good: "The function holds your API key, so visitors don't need one. Usually free or cheap at small scale. The most common set-up for small AI apps.", bad: "Functions have time limits, and you must add your own limits so strangers can't run up your bill." },
     server: { name: "Your own server or container", eg: "Render, Railway, Fly.io, a cloud virtual machine, Docker", how: "A program that runs all the time, with its own back-end code and database.", good: "Full control: sign-in, databases, long jobs, queues.", bad: "More to set up, update and pay for, even when nobody is using it." },
-    gpu: { name: "Hosting the model yourself", eg: "A cloud GPU, Hugging Face Inference Endpoints, Ollama on a server", how: "You run an open model (like Llama, Qwen or Mistral) on graphics cards you rent.", good: "Your data never leaves your servers, and you can use your own fine-tuned model.", bad: "GPUs are expensive and need expert care. Most apps just call a model API instead." },
+    gpu: { name: "Hosting the model yourself", eg: "A cloud GPU, Hugging Face Inference Endpoints, a Kubernetes cluster with GPU nodes", how: "You run an open model (like Llama, Qwen or Mistral) on graphics cards you rent.", good: "Your data never leaves your servers, and you can use your own fine-tuned model.", bad: "GPUs are expensive and need expert care. Most apps just call a model API instead." },
   };
   const NEEDS = [
     { q: "A class page where each student pastes their own free OpenRouter key.", best: "static", why: "No secret of yours is needed, so plain static hosting is enough. This is exactly the Module 4 Host it on GitHub set-up." },
@@ -79,7 +79,7 @@
       <ol class="m7risks">${NEEDS.map((n, i) => { const p = hostPick[i]; return `<li class="m7tool ${p == null ? "" : p === n.best ? "ok" : "no"}"><p style="margin-top:0">${esc(n.q)}</p>
         <div class="chips4" style="margin:0">${Object.keys(HOSTS).map((k) => `<button class="choice" data-m8need="${i}:${k}" aria-pressed="${p === k}" ${p != null ? "disabled" : ""}>${HOSTS[k].name}</button>`).join("")}</div>
         ${p != null ? `<p class="crit" style="margin:8px 0 0">${p === n.best ? "✓ Good choice." : `✗ Best fit: <b>${HOSTS[n.best].name}</b>.`} ${n.why}</p>` : ""}</li>`; }).join("")}</ol>
-      ${Object.keys(hostPick).length === NEEDS.length ? `<div class="btnrow"><button class="btn sm" data-m8needreset>Try again</button><button class="btn primary sm" data-tab="keys">Next: keep keys secret →</button></div>` : ""}</div>
+      ${Object.keys(hostPick).length === NEEDS.length ? `<div class="btnrow"><button class="btn sm" data-m8needreset>Try again</button><button class="btn primary sm" data-tab="k8s">Next: AI on Kubernetes →</button></div>` : ""}</div>
   </section>`;
   };
 
@@ -298,6 +298,8 @@
     { q: "What does streaming a reply do?", o: ["Shows the answer word by word as it's generated, so it feels faster", "Makes the reply cheaper", "Saves the chat to a file", "Uses a video connection"], why: "Streaming doesn't change the total time much, but the first words appear almost at once." },
     { q: "What's the best protection against a surprise bill?", o: ["A spending limit and per-user message limits", "A bigger model", "Turning off logs", "Using a longer system prompt"], why: "Caps mean a bug, abuser or leaked key can only cost so much." },
     { q: "Your new system prompt makes answers worse in production. What now?", o: ["Roll back to the last good version, then test changes on staging", "Keep editing production until it works", "Delete the app", "Ignore it"], why: "Versioned prompts and code make rollback quick; staging stops it happening again." },
+    { q: "In Kubernetes, what does a Deployment do?", o: ["Keeps the number of pods you asked for running, replacing any that crash", "Trains the model on new data", "Writes the app's code for you", "Stores the API key in the page"], why: "You describe what you want; Kubernetes keeps checking and fixes any difference, which is why crashed pods come back." },
+    { q: "A new model pod on Kubernetes stays “Pending”. What's the most likely reason?", o: ["Every GPU is already in use, so there's nowhere to place it", "The model is too accurate", "The Service has too many users", "The page has no CSS"], why: "Each model pod asks for a GPU. If none is free, Kubernetes waits until one is." },
     { q: "When might a team host an open model on its own GPUs instead of calling an API?", o: ["When its data must not leave its own servers", "Always: it's the cheapest option", "When the app is a simple class page", "Never: it isn't possible"], why: "Self-hosting is costly and complex, but keeps data in-house and allows custom models." },
   ];
   const QZ = { qs: null, i: 0, picked: null, score: 0, missed: [], save: null, result: null };
@@ -349,9 +351,10 @@
   }
 
   /* ---------- Rendering and events ---------- */
-  const VIEWS = { learn: lesson, host, keys, flow, cost: costView, live, plan: planView, quiz };
+  const VIEWS = { learn: lesson, host, k8s: () => (window.WB_M8K8S ? window.WB_M8K8S.view() : ""), keys, flow, cost: costView, live, plan: planView, quiz };
   function render() {
     $("m8body").innerHTML = `<nav class="m2tabs" role="tablist">${TABS.map(([k, l], i) => `<button role="tab" data-tab="${k}" aria-selected="${tab === k}"><span class="step">${i + 1}</span>${l}</button>`).join("")}</nav>${VIEWS[tab]()}`;
+    if (tab === "k8s" && window.WB_M8K8S) window.WB_M8K8S.mount($("m8body"));
   }
   function goTab(k) { tab = k; store.set("wb-m8-tab", k); render(); window.scrollTo({ top: $("m8").offsetTop - 8 }); }
   const put = (id, html) => { const el = $(id); if (el) el.innerHTML = html; };
