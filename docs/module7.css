@@ -1,0 +1,39 @@
+/* Module 7: MCP (module7.js). Builds on the Module 2/4 layout classes. */
+.m7plug{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:10px}
+.m7plug>div{padding:12px;border:1px solid var(--line);border-radius:10px;background:var(--bg)}
+.m7plug>div:last-child{border-color:var(--accent)}
+.m7plug p{margin:4px 0 0;font-size:.92rem}
+.m7prim{padding:12px 14px;border-left:4px solid var(--accent);background:var(--bg);border-radius:0 10px 10px 0}
+.m7prim p:first-child{margin-top:0}
+.m7sliders{display:flex;flex-wrap:wrap;gap:16px;margin-bottom:12px}
+.m7sliders label{display:flex;flex-direction:column;gap:4px;flex:1 1 200px}
+.m7sliders input{accent-color:var(--accent)}
+.m7nm{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.m7nm>div{padding:12px;border:1px solid var(--line);border-radius:10px;background:var(--bg);min-width:0}
+.m7nm p{margin:6px 0 0}
+.m7svg{width:100%;height:auto;display:block}
+.m7svg line{stroke:var(--muted);stroke-width:1;opacity:.6}
+.m7svg .a{fill:var(--accent)}
+.m7svg .s{fill:var(--good)}
+.m7svg .hub{fill:var(--surface);stroke:var(--accent);stroke-width:2}
+.m7svg text{font:700 11px var(--mono);fill:var(--fg)}
+.m7big{font:700 1.6rem var(--mono);color:var(--accent)}
+.m7simgrid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.3fr);gap:12px;margin-top:12px;align-items:start}
+.m7chat{position:sticky;top:60px}
+.m7ask{align-self:stretch;padding:10px 12px;border:2px solid var(--accent);border-radius:10px;background:var(--surface)}
+.m7ask b{display:block}
+.m7ask code{display:block;margin-top:4px;font-size:.8rem;overflow-wrap:anywhere}
+.m7log{margin:0;padding-left:1.4em;display:flex;flex-direction:column;gap:8px}
+.m7log li{opacity:.6}
+.m7log li.now{opacity:1}
+.m7log p{margin:2px 0 0;font-size:.92rem}
+.m7who{font:600 .72rem var(--mono);letter-spacing:.04em;text-transform:uppercase;color:var(--accent)}
+.m7json{white-space:pre-wrap;overflow-wrap:anywhere;font-size:.78rem;margin-top:6px}
+.m7desc{display:flex;flex-direction:column;gap:10px}
+.m7tool{padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:var(--bg)}
+.m7tool .choice{text-align:left;white-space:normal}
+.m7risks{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:10px}
+.m7risks li.ok{border-color:var(--good)}
+.m7risks li.no{border-color:var(--bad)}
+.m7risks .btn.on{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+@media (max-width:760px){.m7plug,.m7nm,.m7simgrid{grid-template-columns:1fr}.m7chat{position:static}}
