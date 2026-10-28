@@ -87,6 +87,48 @@
   const END = { t: "You're ready!", x: "Start with Module 1's learning web, then move on to Module 2. You can take this tour again any time from <b>🧭 Take the tour</b> at the top of the page." };
 
   let steps = [], i = 0, box = null, hole = null, card = null, target = [];
+
+  /* ---------- Playing by itself, and the spoken guide ---------- */
+  // auto: move on by itself after each step. voice: read each step aloud (with the voice chosen in Aa Display).
+  const PREFS = "wb-tour-prefs";
+  let prefs = { auto: true, voice: true };
+  try { prefs = Object.assign(prefs, JSON.parse(localStorage.getItem(PREFS) || "{}")); } catch (e) {}
+  const savePrefs = () => { try { localStorage.setItem(PREFS, JSON.stringify(prefs)); } catch (e) {} };
+  const canSpeak = () => !!(window.WB_READ && window.WB_READ.say);
+  const plain = (h) => { const d = document.createElement("div"); d.innerHTML = h; return d.textContent; };
+  let timer = 0, safety = 0;
+  function hush() { clearTimeout(timer); clearTimeout(safety); timer = safety = 0; if (canSpeak()) window.WB_READ.quiet(); }
+  // About how long reading the step takes, at the chosen speed
+  const readTime = (s) => { const words = plain(s.t + " " + s.x).split(/\s+/).length, rate = canSpeak() && window.WB_READ.rate ? window.WB_READ.rate() : 1; return (words / (2.6 * rate)) * 1000; };
+  function narrate() {
+    hush();
+    const s = steps[i], at = i; if (!s || !box) return;
+    const onward = (ms) => { clearTimeout(timer); timer = setTimeout(() => { if (box && prefs.auto && i === at && i < steps.length - 1) next(); }, ms); };
+    if (prefs.voice && canSpeak()) {
+      window.WB_READ.say(s.t + ". " + plain(s.x), () => { if (prefs.auto) onward(900); });
+      // In case the browser never says it has finished
+      if (prefs.auto) safety = setTimeout(() => onward(0), readTime(s) * 1.8 + 5000);
+    } else if (prefs.auto) onward(readTime(s) + 2500);
+  }
+  function controls() {
+    return `<span class="tourctl">
+      <button type="button" data-tour="auto" aria-pressed="${prefs.auto}" title="${prefs.auto ? "Pause: move on only when I click Next" : "Play: move on by itself"}">${prefs.auto ? "❚❚ Pause" : "▶ Play"}</button>
+      ${canSpeak() ? `<button type="button" data-tour="voice" aria-pressed="${prefs.voice}" title="${prefs.voice ? "Mute the spoken guide" : "Turn the spoken guide on"}" aria-label="${prefs.voice ? "Mute the voice" : "Turn the voice on"}">${prefs.voice ? "🔊 Voice" : "🔇 Muted"}</button>` : ""}
+    </span>`;
+  }
+  function drawControls() { const c = card && card.querySelector(".tourctl"); if (c) c.outerHTML = controls(); }
+  function toggleAuto() {
+    prefs.auto = !prefs.auto; savePrefs(); drawControls();
+    if (!prefs.auto) { clearTimeout(timer); clearTimeout(safety); return; }
+    // Playing again: carry on after the voice finishes, or now if it's quiet
+    const speaking = prefs.voice && canSpeak() && window.speechSynthesis && window.speechSynthesis.speaking;
+    if (!speaking) { timer = setTimeout(() => { if (box && prefs.auto) next(); }, 1200); }
+  }
+  function toggleVoice() {
+    prefs.voice = !prefs.voice; savePrefs(); drawControls();
+    if (prefs.voice) narrate();
+    else { hush(); if (prefs.auto) { const at = i; timer = setTimeout(() => { if (box && prefs.auto && i === at) next(); }, 2500); } }
+  }
   function build(which) {
     steps = [];
     if (which !== "2") steps.push(...M1);
@@ -113,7 +155,7 @@
   }
   function stop() {
     if (!box) return;
-    leave();
+    leave(); hush();
     box.remove(); box = null;
     document.removeEventListener("keydown", onKey, true);
     window.removeEventListener("resize", place); window.removeEventListener("scroll", place, true);
@@ -124,7 +166,7 @@
   function leave() { if (active && active.leave) { try { active.leave(); } catch (e) {} } active = null; }
   async function show() {
     const s = steps[i]; if (!s) return stop();
-    leave();
+    hush(); leave();
     await wait(0); // let the Next click finish first, or it would close a menu the step opens
     if (s.go) { try { await s.go(); } catch (e) {} await wait(150); }
     active = s;
@@ -136,12 +178,13 @@
       const first = target[0];
       first.scrollIntoView({ block: "center", inline: "center", behavior: "auto" });
     }
-    card.innerHTML = `<p class="tourstep">${i + 1} of ${steps.length}</p><h3 id="tourt">${esc(s.t)}</h3><p>${s.x}</p>
+    card.innerHTML = `<div class="tourtop"><p class="tourstep">${i + 1} of ${steps.length}</p>${controls()}</div><h3 id="tourt">${esc(s.t)}</h3><p>${s.x}</p>
       <div class="tourbtns"><button type="button" data-tour="skip" class="tourskip">${i === steps.length - 1 ? "Close" : "Skip tour"}</button>
         <span>${i ? `<button type="button" data-tour="back">← Back</button>` : ""}<button type="button" data-tour="next" class="tourgo">${i === steps.length - 1 ? "Finish ✓" : "Next →"}</button></span></div>
       <div class="tourbar"><i style="width:${((i + 1) / steps.length) * 100}%"></i></div>`;
     place();
     const go = card.querySelector(".tourgo"); if (go) go.focus({ preventScroll: true });
+    narrate();
   }
   function rect() {
     if (!target.length) return null;
@@ -175,7 +218,7 @@
   function back() { if (i > 0) { i--; show(); } }
   function onClick(e) {
     const b = e.target.closest("[data-tour]"); if (!b) return;
-    ({ next, back, skip: stop })[b.dataset.tour]();
+    ({ next, back, skip: stop, auto: toggleAuto, voice: toggleVoice })[b.dataset.tour]();
   }
   function onKey(e) {
     if (!box) return;
@@ -194,7 +237,7 @@
   function menu(anchor) {
     closeMenu();
     const m = document.createElement("div"); m.className = "tourmenu"; m.setAttribute("role", "menu");
-    m.innerHTML = `<p>Which tour?</p>
+    m.innerHTML = `<p>Which tour?</p><small class="tourhint">It plays by itself with a spoken guide. Use ❚❚ to click through at your own pace, or 🔇 to mute.</small>
       <button type="button" role="menuitem" data-pick="both">Modules 1 and 2 <small>about 5 minutes</small></button>
       <button type="button" role="menuitem" data-pick="1">Module 1 and the reading tools <small>about 4 minutes</small></button>
       <button type="button" role="menuitem" data-pick="2">Module 2: Prompting &amp; AI tools <small>about 1 minute</small></button>`;

@@ -56,7 +56,7 @@
   function next() {
     if (!reading) return;
     const t = queue.shift();
-    if (!t) { stop(); return; }
+    if (!t) { const done = reading.done; stop(); if (done) done(); return; }
     const u = new SpeechSynthesisUtterance(t), v = voice();
     if (v) { u.voice = v; u.lang = v.lang; }
     u.rate = cfg.rate;
@@ -137,7 +137,7 @@
   function closeMenu() { if (menu && !menu.hidden) { menu.hidden = true; vbtn.setAttribute("aria-expanded", "false"); } }
   function paint() {
     if (!btn) return;
-    const playing = reading && (selText ? !reading.el : reading.el === target);
+    const playing = reading && !reading.done && (selText ? !reading.el : reading.el === target); // the tour's spoken guide isn't the reader's own playing
     btn.innerHTML = playing ? `<span aria-hidden="true">■</span>` : `<span aria-hidden="true">🔊</span>`;
     btn.setAttribute("aria-label", playing ? "Stop reading" : selText ? "Read the selected text aloud" : "Read this paragraph aloud");
     btn.title = btn.getAttribute("aria-label");
@@ -217,6 +217,13 @@
     else if (k === "rate") { cfg.rate = +e.target.value; const r = document.getElementById("wbrate"); if (r) r.textContent = cfg.rate.toFixed(1) + "×"; }
     save(); return true;
   }
-  // point(el): show the 🔊 button by a paragraph (the guided tour uses this)
-  window.WB_READ = { panelHTML, click, input, stop, point: (el) => { if (cfg.on && el) show(el); } };
+  // For the guided tour: point(el) shows the 🔊 button by a paragraph; say(text, done) speaks with the chosen
+  // voice and speed, then calls done (not called if it's stopped early); quiet() stops it.
+  function say(text, done) {
+    stop();
+    text = String(text || "").replace(/[\u{1F300}-\u{1FAFF}☀-➿★■✦←→↗]️?/gu, "").replace(/\s+/g, " ").trim();
+    if (!text) { if (done) done(); return; }
+    reading = { el: null, done }; queue = chunks(text); next(); paint();
+  }
+  window.WB_READ = { panelHTML, click, input, stop, say, quiet: stop, rate: () => cfg.rate, point: (el) => { if (cfg.on && el) show(el); } };
 })();
