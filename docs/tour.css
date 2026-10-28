@@ -1,0 +1,27 @@
+/* Guided tour (tour.js) */
+.tourbtn{display:inline-flex;align-items:center;gap:7px;padding:7px 14px;border:1px solid var(--line);border-radius:999px;background:var(--surface);color:var(--fg);font:600 .9rem var(--body);cursor:pointer;white-space:nowrap}
+.tourbtn:hover{border-color:var(--accent)}
+.tour{position:fixed;inset:0;z-index:90}
+.tourhole{position:fixed;border-radius:10px;box-shadow:0 0 0 9999px rgba(0,0,0,.6);outline:3px solid var(--accent);outline-offset:0;transition:all .25s ease;pointer-events:none}
+.tourcard{position:fixed;padding:16px 18px 12px;border-radius:12px;background:var(--surface);color:var(--fg);border:1px solid var(--line);box-shadow:0 12px 36px rgba(0,0,0,.35);transition:top .25s ease,left .25s ease}
+.tourcard h3{margin:2px 0 6px;font:700 1.1rem/1.25 var(--display)}
+.tourcard p{margin:0 0 12px;font-size:.95rem;line-height:1.5}
+.tourstep{margin:0!important;font:600 .7rem var(--mono)!important;letter-spacing:.08em;text-transform:uppercase;color:var(--accent)}
+.tourbtns{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.tourbtns span{display:flex;gap:6px}
+.tourbtns button,.touroffer button,.tourmenu button{font:600 .88rem var(--body);padding:7px 14px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--fg);cursor:pointer}
+.tourbtns .tourgo,.touroffer .tourgo{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.tourbtns .tourskip{border:0;background:none;color:var(--muted);padding:7px 4px;text-decoration:underline}
+.tourbar{height:3px;margin-top:12px;border-radius:3px;background:var(--line);overflow:hidden}
+.tourbar i{display:block;height:100%;background:var(--accent);transition:width .25s ease}
+.tourmenu{position:absolute;z-index:70;padding:10px;border-radius:12px;background:var(--surface);border:1px solid var(--line);box-shadow:0 10px 30px rgba(0,0,0,.25);display:flex;flex-direction:column;gap:6px}
+.tourmenu p{margin:0 0 2px;font-weight:600;font-size:.9rem}
+.tourmenu button{text-align:left;display:flex;flex-direction:column;gap:2px}
+.tourmenu button:hover{border-color:var(--accent)}
+.tourmenu small{font-weight:400;color:var(--muted);font-size:.78rem}
+.touroffer{position:fixed;left:18px;bottom:18px;z-index:58;max-width:min(340px,calc(100vw - 36px));padding:14px 16px;border-radius:12px;background:var(--surface);color:var(--fg);border:1px solid var(--accent);box-shadow:0 10px 30px rgba(0,0,0,.25)}
+.touroffer p{margin:0 0 10px;font-size:.92rem}
+.touroffer div{display:flex;gap:8px;flex-wrap:wrap}
+@media (max-width:760px){.touroffer{left:12px;bottom:76px}}
+@media (prefers-reduced-motion:reduce){.tourhole,.tourcard,.tourbar i{transition:none}}
+@media print{.tour,.tourbtn,.touroffer,.tourmenu{display:none}}
