@@ -14,7 +14,7 @@
   const word = (term, label) => `<button class="wordlink" data-word="${esc(term)}" title="Open in the learning web">${esc(label || term)}</button>`;
   const json = (o) => JSON.stringify(o, null, 2);
 
-  const TABS = [["learn", "Lesson"], ["nm", "Why a standard"], ["sim", "Watch MCP work"], ["desc", "Tool descriptions"], ["safe", "Safety"], ["build", "Design a server"], ["quiz", "Quiz"]];
+  const TABS = [["learn", "Lesson"], ["nm", "Why a standard"], ["sim", "Watch MCP work"], ["server", "Inside a server"], ["qa", "Questions & answers"], ["desc", "Tool descriptions"], ["safe", "Safety"], ["build", "Design a server"], ["quiz", "Quiz"]];
   let tab = store.get("wb-m7-tab", "learn");
   if (!TABS.some((t) => t[0] === tab)) tab = "learn";
 
@@ -37,9 +37,10 @@
       <div class="pipeline">
         <div><span class="n">Host</span><b>The AI app you use</b><small>e.g. Claude Desktop, ChatGPT, VS Code. It holds the conversation and the model.</small></div>
         <div><span class="n">Client</span><b>A connector inside the host</b><small>One per server. It speaks MCP and passes messages back and forth.</small></div>
-        <div><span class="n">Server</span><b>A small program that offers things</b><small>e.g. a GitHub server, a weather server. It runs on your computer or on the internet.</small></div>
+        <div><span class="n">Server</span><b>A small program that offers things</b><small>e.g. a GitHub server, a weather server. An ordinary program with no AI inside, on your computer or on the internet.</small></div>
       </div>
-      <p class="tip" style="margin-top:12px">The model never talks to the server directly. The model <i>asks</i>; the host decides, the client sends, the server does the work.</p></div>
+      <p class="tip" style="margin-top:12px">The model never talks to the server directly. The model <i>asks</i>; the host decides, the client sends, the server does the work.</p>
+      <p class="crit" style="margin:8px 0 0">Who builds the server, and what is it really? See <button class="wordlink" data-tab="server">Inside a server</button> and <button class="wordlink" data-tab="qa">Questions & answers</button>.</p></div>
     <div class="card2"><p class="kicker">3 · What a server offers</p><h3>Tools, resources and prompts</h3>
       <div class="chips4" style="margin:0 0 12px">${Object.keys(PRIMS).map((k) => `<button class="choice" data-m7prim="${k}" aria-pressed="${k === prim}">${k[0].toUpperCase() + k.slice(1)}</button>`).join("")}</div>
       <div class="m7prim"><p><b>${P.what}.</b> ${P.who}.</p><ul>${P.eg.map((x) => `<li><code>${esc(x.split(": ")[0])}</code>: ${esc(x.split(": ")[1])}</li>`).join("")}</ul><p class="crit" style="margin:0">${P.note}</p></div></div>
@@ -338,9 +339,10 @@
   }
 
   /* ---------- Rendering and events ---------- */
-  const VIEWS = { learn: lesson, nm, sim, desc, safe, build, quiz };
+  const VIEWS = { learn: lesson, nm, sim, server: () => (window.WB_M7SRV ? window.WB_M7SRV.server() : ""), qa: () => (window.WB_M7SRV ? window.WB_M7SRV.qa() : ""), desc, safe, build, quiz };
   function render() {
     $("m7body").innerHTML = `<nav class="m2tabs" role="tablist">${TABS.map(([k, l], i) => `<button role="tab" data-tab="${k}" aria-selected="${tab === k}"><span class="step">${i + 1}</span>${l}</button>`).join("")}</nav>${VIEWS[tab]()}`;
+    if ((tab === "server" || tab === "qa") && window.WB_M7SRV) window.WB_M7SRV.mount($("m7body"));
   }
   function goTab(k) { tab = k; store.set("wb-m7-tab", k); render(); window.scrollTo({ top: $("m7").offsetTop - 8 }); }
   const put = (id, html) => { const el = $(id); if (el) el.innerHTML = html; };
