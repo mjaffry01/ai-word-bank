@@ -11,7 +11,7 @@
   const mine = (k) => (window.WB_mine ? window.WB_mine(k) : k); // a key for the signed-in student's own progress
   const word = (term, label) => `<button class="wordlink" data-word="${esc(term)}" title="Open in the learning web">${esc(label || term)}</button>`;
 
-  const TABS = [["model", "How AI answers"], ["learn", "Lesson"], ["build", "Prompt builder"], ["tech", "Techniques"], ["api", "AI settings (API)"], ["play", "Model playground"], ["hunt", "Hallucination hunt"], ["tasks", "Practice tasks"], ["quiz", "Quiz"]];
+  const TABS = [["model", "How AI answers"], ["learn", "Lesson"], ["build", "Prompt builder"], ["tech", "Techniques"], ["api", "AI settings (API)"], ["play", "Model playground"], ["open", "Open models"], ["hunt", "Hallucination hunt"], ["tasks", "Practice tasks"], ["quiz", "Quiz"]];
   let tab = store.get("wb-m2-tab", "model");
 
   /* ---------- Module switching ---------- */
@@ -427,7 +427,7 @@ Question: (your question here)</pre>
   }
 
   /* ---------- Rendering and events ---------- */
-  const VIEWS = { model: () => (window.WB_HOWAI ? window.WB_HOWAI.html() : ""), learn: lesson, build: builder, tech: techniques, api: () => (window.WB_M2API ? window.WB_M2API.html() : ""), play: () => (window.WB_PLAY ? window.WB_PLAY.html() : ""), hunt, tasks, quiz };
+  const VIEWS = { model: () => (window.WB_HOWAI ? window.WB_HOWAI.html() : ""), learn: lesson, build: builder, tech: techniques, api: () => (window.WB_M2API ? window.WB_M2API.html() : ""), play: () => (window.WB_PLAY ? window.WB_PLAY.html() : ""), open: () => (window.WB_M2OPEN ? window.WB_M2OPEN.html() : ""), hunt, tasks, quiz };
   function render() {
     $("m2body").innerHTML = `<nav class="m2tabs" role="tablist">${TABS.map(([k, l], i) => `<button role="tab" data-tab="${k}" aria-selected="${tab === k}"><span class="step">${i + 1}</span>${l}</button>`).join("")}</nav>${VIEWS[tab]()}`;
     if (tab === "build") updateBuilder();
@@ -435,6 +435,7 @@ Question: (your question here)</pre>
     if (tab === "model" && window.WB_HOWAI) window.WB_HOWAI.mount($("m2body"));
     if (tab === "hunt" && window.WB_HRATE) window.WB_HRATE.mount($("m2body"));
     if (tab === "play" && window.WB_PLAY) window.WB_PLAY.mount($("m2body"));
+    if (tab === "open" && window.WB_M2OPEN) window.WB_M2OPEN.mount($("m2body"));
     if (tab === "tasks" && window.WB_CMP) window.WB_CMP.mount($("m2body"), TASKS);
   }
   function goTab(k) { tab = k; store.set("wb-m2-tab", k); render(); window.scrollTo({ top: $("m2").offsetTop - 8 }); }

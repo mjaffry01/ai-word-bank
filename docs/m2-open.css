@@ -1,0 +1,38 @@
+/* Module 2, "Open models" tab (m2-open.js) */
+.opspec{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin:6px 0 12px}
+.opspec>div{padding:12px;border:1px solid var(--line);border-radius:10px;background:var(--bg);display:flex;flex-direction:column;gap:2px}
+.opspec>div:nth-child(2){border-color:var(--accent)}
+.opspec small{color:var(--muted);font-size:.8rem}
+.opspec p{margin:6px 0 0!important;font-size:.92rem}
+.opwhy{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:6px}
+.opwhy ul{margin:0}
+.opnote{color:var(--muted);font-size:.9rem}
+.opsearch{width:100%;font:inherit;padding:9px 12px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--fg);margin:4px 0 6px}
+.oplbl{margin:8px 0 4px!important;font:600 .75rem var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.opchips{display:flex;flex-wrap:wrap;gap:6px}
+.opchips .choice{font-size:.84rem;padding:5px 11px}
+.opcount{margin:12px 0 8px!important;font:500 .8rem var(--mono);color:var(--muted)}
+.opgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:10px}
+.opcard{padding:12px 14px;border:1px solid var(--line);border-radius:10px;background:var(--bg);display:flex;flex-direction:column;gap:4px;min-width:0}
+.opcard header{display:flex;justify-content:space-between;align-items:flex-start;gap:8px}
+.opcard h4{margin:0;font:700 1rem/1.25 var(--display)}
+.opcard p{margin:0!important;font-size:.88rem}
+.opby{color:var(--muted)}
+.optags{display:flex;flex-wrap:wrap;gap:4px;margin:2px 0!important}
+.optags span{font-size:.72rem;padding:2px 8px;border-radius:999px;border:1px solid var(--line);color:var(--muted)}
+.opln{color:var(--muted)}
+.oplic{flex-shrink:0;font:600 .7rem var(--body);padding:3px 8px;border-radius:999px;border:1px solid;white-space:nowrap}
+.oplic.free{color:var(--good);border-color:var(--good)}
+.oplic.cond{color:#b8860b;border-color:#b8860b}
+.oplic.nc{color:var(--bad);border-color:var(--bad)}
+.opbtns{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+.opbtns .btn{text-decoration:none;display:inline-flex;align-items:center}
+.opbtns code{font:500 .78rem var(--mono)}
+.opnone{color:var(--muted)}
+.opcalc{display:grid;gap:10px}
+.opcalc label{display:flex;flex-direction:column;gap:6px}
+.opcalc input[type=range]{width:100%;accent-color:var(--accent)}
+.opout{padding:12px;border-radius:10px;background:var(--bg);border:1px solid var(--line)}
+.opout p{margin:0!important}
+.opbig{font:700 1.6rem var(--display);color:var(--accent)}
+@media (max-width:760px){.opspec,.opwhy{grid-template-columns:1fr}}
