@@ -88,6 +88,20 @@
       <p class="crit" style="margin:10px 0 0">Menus and file names differ between apps and change over time. Check the app's own help page for the exact steps.</p></div>
     <div class="card2 dzsec"><p class="kicker">5 · What a good server adds</p><h3>The parts that make it safe and reliable</h3>
       <div class="pipeline"><div><span class="n">1</span><b>Check inputs</b><small>Is the city a real word? Is the number sensible?</small></div><div><span class="n">2</span><b>Check who's asking</b><small>Remote servers verify the user's sign-in for every call</small></div><div><span class="n">3</span><b>Least access</b><small>Only the folders, records and actions it needs</small></div><div><span class="n">4</span><b>Clear errors</b><small>Return isError with a message a model can explain</small></div><div><span class="n">5</span><b>Limits and logs</b><small>Timeouts, rate limits, and a record of what ran</small></div></div>
+    </div>
+    <div class="card2 dzsec"><p class="kicker">6 · Not just Anthropic</p><h3>Who uses MCP?</h3>
+      <p>MCP isn't owned by one AI company. Anthropic started it in November 2024, and in December 2025 handed it to the <b>Agentic AI Foundation</b>, part of the non-profit Linux Foundation, co-founded with OpenAI and Block and supported by Google, Microsoft and AWS. Companies take different <b>roles</b>:</p>
+      <div class="m7who"><table class="hrtable"><thead><tr><th>Company</th><th>Apps that connect to servers (hosts)</th><th>Servers they provide</th></tr></thead><tbody>
+        <tr><td><b>Anthropic</b></td><td>Claude apps and Claude Code</td><td>Example servers in the open MCP project</td></tr>
+        <tr><td><b>OpenAI</b></td><td>ChatGPT (connectors and apps) and its developer tools (Agents SDK, Responses API)</td><td>Mostly a user of other people's servers</td></tr>
+        <tr><td><b>Google</b></td><td>Gemini CLI, and experimental support in the Gemini API libraries</td><td>Managed remote servers for Google Maps, BigQuery and Google Cloud services</td></tr>
+        <tr><td><b>Microsoft</b></td><td>Copilot and VS Code</td><td>Servers for its own products, such as GitHub</td></tr>
+        <tr><td><b>Alibaba</b></td><td>Its AI platforms</td><td>An MCP marketplace on ModelScope with over 1,000 services</td></tr>
+        <tr><td><b>Baidu</b></td><td>Its AI platforms</td><td>A Baidu Maps MCP server, among the first in China</td></tr>
+        <tr><td><b>DeepSeek, Kimi, GLM and other open models</b></td><td colspan="2">Their models don't “have” MCP themselves. Any model that can call tools can be used with MCP servers through an MCP app (a host).</td></tr>
+      </tbody></table></div>
+      <p class="tip" style="margin-top:12px">The key idea: <b>MCP lives in the app, not the model.</b> A model only needs to be good at calling tools; the app around it does the MCP talking. That's why one server can work with Claude, ChatGPT, Gemini and Qwen alike.</p>
+      <p class="crit" style="margin:6px 0 0">Correct as of late 2026. Support grows fast, so check each company's own documentation for the latest.</p>
       <div class="btnrow"><button class="btn primary" data-tab="qa">Next: questions students ask →</button></div></div>
   </section>`;
   }
@@ -101,6 +115,11 @@
     ["The basics", "Is MCP the same as function calling or tool use?", "They work together. Tool use is the model's skill of asking for a tool. MCP is the standard plug that lets an app find tools from any server and call them. Tool use is the request; MCP is how the request reaches the right program.", "learn"],
     ["Who builds what", "Do I need an MCP server to use Claude?", "No. You use Claude normally with no server at all. You only add MCP servers when you want Claude to reach extra tools or data, such as your files, your calendar or GitHub.", "server"],
     ["Who builds what", "Does Claude have its own MCP server?", "Claude apps are on the other side: they're MCP <b>hosts</b> with a client inside. They connect <i>to</i> servers. The service that has the data or tools provides the server.", "server"],
+    ["Who builds what", "Does only Anthropic have MCP?", "No. Anthropic started MCP, but in December 2025 it handed it to the Agentic AI Foundation, part of the non-profit Linux Foundation, which it co-founded with OpenAI and Block. Google, Microsoft and AWS support it too. Anyone can build an MCP server or an MCP app, free.", "server"],
+    ["Who builds what", "Does OpenAI support MCP?", "Yes. ChatGPT can connect to MCP servers (as connectors or apps), and OpenAI's developer tools can use remote MCP servers. So a server you build for Claude can also work in ChatGPT. Which features you get depends on the plan and the product, so check OpenAI's documentation.", "server"],
+    ["Who builds what", "What about Google?", "Google uses MCP on both sides. Gemini CLI is an MCP host, and Google runs official remote MCP servers for services like Google Maps and BigQuery, so other AI apps can use them.", "server"],
+    ["Who builds what", "Do Chinese AI companies use MCP?", "Yes. Alibaba runs an MCP marketplace on ModelScope with over 1,000 services, and Baidu has an MCP server for Baidu Maps. Models such as DeepSeek, Qwen, Kimi and GLM can all be used with MCP servers, because MCP is handled by the app, not the model.", "server"],
+    ["Who builds what", "Does a model like DeepSeek need its own MCP server?", "No. A model never “has” MCP. What it needs is to be good at calling tools. The app around it (the host) talks MCP to the servers and turns their tools into ordinary tool definitions the model understands. So the same weather server can work with DeepSeek, Claude or GPT.", "sim"],
     ["Who builds what", "Who builds the server: me, Anthropic or the company?", "Whoever owns the tool or data. Big services often publish an official server you just add (GitHub, Slack, Google Drive and many more). For your own app, you or your developers build it. Anyone can build one: MCP is an open standard.", null],
     ["Who builds what", "If I build one server, does it work in ChatGPT and Claude?", "That's the whole point of a standard. Any app that supports MCP can use it. In practice, check that the app supports the transport you chose (local or remote) and the features you use.", "nm"],
     ["How it works", "Does the model run the server's code?", "Never. The model only <i>asks</i> for a tool by name, with inputs. The app checks with you, the client sends the request, and the server runs its own code on its own machine. The model only sees the result.", "sim"],

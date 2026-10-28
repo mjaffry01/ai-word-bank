@@ -60,3 +60,6 @@
 .m7qa[open] summary{border-bottom:1px solid var(--line)}
 .m7qa .pgtalk,.m7qa>.wordlink{margin:10px 12px}
 .m7qa>.wordlink{display:inline-block;margin-top:0}
+.m7who{overflow-x:auto}
+.m7who td{vertical-align:top}
+.m7who .hrtable td:not(:first-child),.m7who .hrtable th:not(:first-child){text-align:left;font-family:inherit}
