@@ -14,7 +14,7 @@
   const word = (term, label) => `<button class="wordlink" data-word="${esc(term)}" title="Open in the learning web">${esc(label || term)}</button>`;
   const json = (o) => JSON.stringify(o, null, 2);
 
-  const TABS = [["learn", "Lesson"], ["nm", "Why a standard"], ["sim", "Watch MCP work"], ["desc", "Tool descriptions"], ["safe", "Safety"], ["quiz", "Quiz"]];
+  const TABS = [["learn", "Lesson"], ["nm", "Why a standard"], ["sim", "Watch MCP work"], ["desc", "Tool descriptions"], ["safe", "Safety"], ["build", "Design a server"], ["quiz", "Quiz"]];
   let tab = store.get("wb-m7-tab", "learn");
   if (!TABS.some((t) => t[0] === tab)) tab = "learn";
 
@@ -185,7 +185,96 @@
       ${p != null ? `<p class="crit" style="margin:8px 0 0">${p === r.risky ? "✓ Right." : "✗ Not quite."} ${r.why}</p>` : ""}</li>`; }).join("")}</ol>
     ${Object.keys(riskPick).length === RISKS.length ? `<div class="card2"><p class="kicker">Your score: ${RISKS.filter((r, i) => riskPick[i] === r.risky).length} of ${RISKS.length}</p><h3>The four habits</h3><ul><li>Install servers only from people you trust.</li><li>Give each server the least access it needs.</li><li>Approve actions that change things, every time.</li><li>Treat anything a tool returns as information, never as orders.</li></ul><button class="btn sm" data-m7riskreset>Play again</button></div>` : ""}</section>`;
 
-  /* ---------- 6. Quiz ---------- */
+  /* ---------- 6. Hand-in: design your own MCP server ---------- */
+  const EXAMPLE = { name: "school-library", service: "Our school library's catalogue and loans", transport: "http", access: "Read the catalogue; create and cancel reservations for the signed-in student only",
+    tools: [{ name: "search_books", desc: "Search the library catalogue by title, author or topic. Returns up to 10 books with their shelf number and whether they are on loan.", inputs: "query:string", writes: false },
+      { name: "reserve_book", desc: "Reserve a book for the signed-in student. Input: the book's id. Returns the date it will be ready. Changes things: ask the user first.", inputs: "book_id:string", writes: true }],
+    resource: "library://opening-hours", resourceWhat: "This week's opening hours", ref: "" };
+  const blankTool = () => ({ name: "", desc: "", inputs: "", writes: false });
+  let srv = null, bmsg = "";
+  function loadSrv() { srv = store.get(mine("wb-m7-server"), null) || { name: "", service: "", transport: "stdio", access: "", tools: [blankTool()], resource: "", resourceWhat: "", ref: "" }; }
+  const saveSrv = () => store.set(mine("wb-m7-server"), srv);
+  const TYPES = ["string", "number", "boolean"];
+  // "query:string, limit:number" → JSON Schema properties
+  function schemaOf(inputs) {
+    const props = {}, req = [];
+    String(inputs || "").split(",").map((x) => x.trim()).filter(Boolean).forEach((x) => {
+      const [n, t] = x.split(":").map((y) => (y || "").trim());
+      if (!n) return;
+      props[n] = { type: TYPES.includes(t) ? t : "string" }; req.push(n);
+    });
+    return { type: "object", properties: props, required: req };
+  }
+  function toolList() {
+    return { jsonrpc: "2.0", id: 2, result: { tools: srv.tools.filter((t) => t.name).map((t) => Object.assign({ name: t.name, description: t.desc, inputSchema: schemaOf(t.inputs) }, t.writes ? { annotations: { readOnlyHint: false, destructiveHint: false } } : { annotations: { readOnlyHint: true } })) } };
+  }
+  // Checks a reviewer would make, each true when passed
+  function checks() {
+    const C = [], add = (ok, text) => C.push([ok, text]);
+    add(!!srv.name.trim() && !!srv.service.trim(), "The server has a name and says what it connects to.");
+    const named = srv.tools.filter((t) => t.name.trim());
+    add(named.length > 0, "It offers at least one tool.");
+    named.forEach((t) => {
+      add(/^[a-z][a-z0-9_]*$/.test(t.name), `<code>${esc(t.name)}</code>: the name is short, lower case, with underscores (like <code>search_books</code>).`);
+      add(t.desc.trim().length >= 40, `<code>${esc(t.name)}</code>: the description is a full sentence a model can choose from (at least 40 characters).`);
+      add(/return|gives|shows|list/i.test(t.desc), `<code>${esc(t.name)}</code>: the description says what comes back.`);
+      add(Object.keys(schemaOf(t.inputs).properties).length > 0 || /no input/i.test(t.desc), `<code>${esc(t.name)}</code>: its inputs are listed.`);
+      if (t.writes) add(/ask|confirm|approv/i.test(t.desc), `<code>${esc(t.name)}</code> changes things, so its description tells the host to ask the user first.`);
+    });
+    add(srv.access.trim().length >= 15, "It says exactly what access it needs, and no more (least access).");
+    return C;
+  }
+  function buildBody() {
+    const C = checks(), passed = C.filter((c) => c[0]).length, done = store.get(mine("wb-m7-build-done"), false);
+    const f = (k, label, ph, rows) => `<div class="field"><label for="m7b-${k}">${label}</label>${rows ? `<textarea id="m7b-${k}" data-m7b="${k}" rows="${rows}" placeholder="${esc(ph)}">${esc(srv[k])}</textarea>` : `<input id="m7b-${k}" data-m7b="${k}" value="${esc(srv[k])}" placeholder="${esc(ph)}">`}</div>`;
+    return `<div class="card2"><p class="kicker">Step 1 · The server</p><h3>What will your server connect AI to?</h3>
+        <p class="crit" style="margin:0 0 10px">Pick something real you know: your school's timetable, a sports club, a shop, a game, a recipe collection. <button class="wordlink" data-m7bex>Show me a finished example</button></p>
+        <div class="dzgrid">${f("name", "Server name", "e.g. school-library")}${f("service", "It connects AI to…", "e.g. our school library's catalogue and loans")}</div>
+        <p class="dzlbl">Where does it run?</p><div class="chips4" style="margin:4px 0 12px"><button class="choice" data-m7bt="stdio" aria-pressed="${srv.transport === "stdio"}">On the user's computer (stdio)</button><button class="choice" data-m7bt="http" aria-pressed="${srv.transport === "http"}">On the internet (Streamable HTTP)</button></div>
+        ${f("access", "What access does it need, and no more?", "e.g. read the catalogue; create reservations for the signed-in student only")}</div>
+      <div class="card2 dzsec"><p class="kicker">Step 2 · Tools</p><h3>What can the AI ask it to do?</h3>
+        <p class="crit" style="margin:0 0 10px">Remember the lab: the model chooses using only the name and description. Inputs are written like <code>city:string, days:number</code>.</p>
+        ${srv.tools.map((t, i) => `<div class="m7tool" style="margin-bottom:10px"><div class="dzgrid" style="margin:0"><div class="field" style="margin:0"><label for="m7t-n${i}">Tool name</label><input id="m7t-n${i}" data-m7tool="${i}:name" value="${esc(t.name)}" placeholder="e.g. search_books"></div>
+            <div class="field" style="margin:0"><label for="m7t-i${i}">Inputs</label><input id="m7t-i${i}" data-m7tool="${i}:inputs" value="${esc(t.inputs)}" placeholder="e.g. query:string"></div></div>
+          <div class="field" style="margin:8px 0 0"><label for="m7t-d${i}">Description</label><textarea id="m7t-d${i}" data-m7tool="${i}:desc" rows="2" placeholder="What it does, what to give it, what comes back, and whether it changes anything">${esc(t.desc)}</textarea></div>
+          <div class="btnrow" style="margin:8px 0 0"><label class="hostcheck" style="margin:0"><input type="checkbox" data-m7tool="${i}:writes" ${t.writes ? "checked" : ""}> It changes things (saves, sends, deletes, pays)</label>${srv.tools.length > 1 ? `<button class="btn sm" data-m7tdel="${i}">Remove</button>` : ""}</div></div>`).join("")}
+        ${srv.tools.length < 4 ? `<button class="btn sm" data-m7tadd>+ Add a tool</button>` : ""}</div>
+      <div class="card2 dzsec"><p class="kicker">Step 3 · A resource (optional)</p><h3>Something the AI can read</h3>
+        <div class="dzgrid">${f("resource", "Its address (URI)", "e.g. library://opening-hours")}${f("resourceWhat", "What it contains", "e.g. this week's opening hours")}</div></div>
+      <div class="card2 dzsec"><p class="kicker">Step 4 · Review</p><h3>${passed} of ${C.length} checks passed</h3>
+        <ul class="m7checks">${C.map(([ok, t]) => `<li class="${ok ? "ok" : ""}">${ok ? "✓" : "○"} ${t}</li>`).join("")}</ul>
+        <p class="dzlbl" style="margin-top:12px">What a host would receive from <code>tools/list</code></p>
+        <pre class="pbox m7json" id="m7blist">${esc(json(toolList()))}</pre></div>
+      <div class="card2 dzsec" id="m7bhand"><p class="kicker">Step 5 · Hand in</p><h3>Your server design <span class="pill2 ${done ? "done" : ""}" style="vertical-align:middle;margin-left:6px">${done ? "Handed in" : "To do"}</span></h3>
+        ${f("ref", "Which of your tools is riskiest, and how would you keep users safe?", "e.g. reserve_book changes things, so the host must ask first, and it can only reserve for the signed-in student.", 3)}
+        <div class="btnrow" style="margin:0"><button class="btn primary" data-m7bhand>Hand in my server</button></div>
+        <p class="crit" style="margin-top:6px">Your design is saved on this device as you type.</p>
+        <p class="savemsg ${bmsg.startsWith("✓") ? "ok" : bmsg && bmsg !== "Handing in…" ? "err" : ""}" ${bmsg ? "" : "hidden"}>${esc(bmsg.replace(/^✓ /, ""))}</p></div>`;
+  }
+  const build = () => { if (!srv) loadSrv(); return `<section class="m2sec">
+    <header><p class="kicker">Hand-in · 25 minutes · goes to your teacher</p><h2>Design your own MCP server</h2><p>Plan a server for something you know. You won't write code: you'll decide what a real developer decides first, and the page shows you the tool list your server would send.</p></header>
+    <div id="m7build">${buildBody()}</div></section>`; };
+  // Refresh only the review, so typing isn't interrupted
+  function refreshReview() {
+    const C = checks(), passed = C.filter((c) => c[0]).length, box = $("m7blist"); if (!box) return;
+    box.textContent = json(toolList());
+    const card = box.closest(".card2"); card.querySelector("h3").textContent = `${passed} of ${C.length} checks passed`;
+    card.querySelector(".m7checks").innerHTML = C.map(([ok, t]) => `<li class="${ok ? "ok" : ""}">${ok ? "✓" : "○"} ${t}</li>`).join("");
+  }
+  async function handInServer() {
+    const show = (m) => { bmsg = m; put("m7build", buildBody()); };
+    if (!srv.tools.some((t) => t.name.trim())) return show("Add at least one tool first.");
+    if (!srv.ref.trim()) return show("Answer the question about risk first.");
+    if (!window.WB || !window.WB.call) return show("You need to be signed in and approved to hand in work.");
+    show("Handing in…");
+    const C = checks(), summary = `SERVER: ${srv.name} (${srv.transport === "http" ? "Streamable HTTP" : "stdio"})\nCONNECTS TO: ${srv.service}\nACCESS: ${srv.access}\nRESOURCE: ${srv.resource || "-"} ${srv.resourceWhat ? "(" + srv.resourceWhat + ")" : ""}\nCHECKS: ${C.filter((c) => c[0]).length}/${C.length}\n\nTOOLS/LIST:\n${JSON.stringify(toolList().result.tools, null, 1)}`;
+    try {
+      await window.WB.call("saveSubmission", { submission: { module: MODULE, task: "Design your own MCP server", tool: "MCP server designer", prompt: summary.slice(0, 2990), reflection: srv.ref.slice(0, 2990) } });
+      store.set(mine("wb-m7-build-done"), true); show("✓ Handed in. Your teacher can see your server design.");
+    } catch (e) { show(e && e.error === "signed_out" ? "Your sign-in has ended. Sign in again, then hand in." : "This could not be handed in. Check your connection and try again."); }
+  }
+
+  /* ---------- 7. Quiz ---------- */
   const QS = [
     { q: "What is MCP?", o: ["An open standard for connecting AI apps to tools and data", "A new AI model made by Anthropic", "A programming language for chatbots", "A type of GPU used to train models"], why: "MCP is a protocol: a shared way for AI apps and tool providers to talk." },
     { q: "Which part is the AI app you actually use, like Claude Desktop?", o: ["The host", "The server", "The resource", "The transport"], why: "The host runs the conversation and the model, and contains one client per server." },
@@ -249,7 +338,7 @@
   }
 
   /* ---------- Rendering and events ---------- */
-  const VIEWS = { learn: lesson, nm, sim, desc, safe, quiz };
+  const VIEWS = { learn: lesson, nm, sim, desc, safe, build, quiz };
   function render() {
     $("m7body").innerHTML = `<nav class="m2tabs" role="tablist">${TABS.map(([k, l], i) => `<button role="tab" data-tab="${k}" aria-selected="${tab === k}"><span class="step">${i + 1}</span>${l}</button>`).join("")}</nav>${VIEWS[tab]()}`;
   }
@@ -272,12 +361,20 @@
     if (t.closest("[data-m7run]")) { descRun = Math.floor(Math.random() * 2); put("m7descbody", descBody()); return; }
     const rk = t.closest("[data-m7risk]"); if (rk) { const [i, v] = rk.dataset.m7risk.split(":"); riskPick[+i] = v === "1"; render(); return; }
     if (t.closest("[data-m7riskreset]")) { riskPick = {}; render(); return; }
+    const bt = t.closest("[data-m7bt]"); if (bt) { srv.transport = bt.dataset.m7bt; saveSrv(); put("m7build", buildBody()); return; }
+    if (t.closest("[data-m7tadd]")) { srv.tools.push(blankTool()); saveSrv(); put("m7build", buildBody()); return; }
+    const td = t.closest("[data-m7tdel]"); if (td) { srv.tools.splice(+td.dataset.m7tdel, 1); saveSrv(); put("m7build", buildBody()); return; }
+    if (t.closest("[data-m7bex]")) { if (srv.tools.some((x) => x.name || x.desc) && !confirm("Replace your design with the example?")) return; srv = JSON.parse(JSON.stringify(EXAMPLE)); saveSrv(); put("m7build", buildBody()); return; }
+    if (t.closest("[data-m7bhand]")) { handInServer(); return; }
     if (t.closest("[data-m7start]")) { startQuiz(); return; }
     if (t.closest("[data-m7retry]")) { if (QZ.result && window.WB && window.WB.call) { saveResult(); render(); } return; }
     const o = t.closest("[data-m7opt]"); if (o) { answer(+o.dataset.m7opt); return; }
     if (t.closest("[data-m7next]")) { QZ.i++; QZ.picked = null; render(); }
   });
   $("m7body").addEventListener("input", (e) => {
+    const bk = e.target.dataset && e.target.dataset.m7b; if (bk) { srv[bk] = e.target.value; saveSrv(); refreshReview(); return; }
+    const tk = e.target.dataset && e.target.dataset.m7tool;
+    if (tk) { const [i, k] = tk.split(":"); srv.tools[+i][k] = k === "writes" ? e.target.checked : e.target.value; saveSrv(); refreshReview(); return; }
     const k = e.target.dataset && e.target.dataset.m7nm; if (!k) return;
     if (k === "apps") apps = +e.target.value; else svcs = +e.target.value;
     put("m7a", apps); put("m7s", svcs); put("m7nmout", nmOut());
@@ -288,6 +385,7 @@
   });
   // A different student signed in (or the last one signed out): forget the open quiz and show their own progress
   window.addEventListener("wb-user", () => {
+    srv = null; bmsg = "";
     Object.assign(QZ, { qs: null, i: 0, picked: null, score: 0, missed: [], save: null, result: null });
     if (!$("m7").hidden) render();
   });

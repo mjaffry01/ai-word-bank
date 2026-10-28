@@ -37,3 +37,6 @@
 .m7risks li.no{border-color:var(--bad)}
 .m7risks .btn.on{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
 @media (max-width:760px){.m7plug,.m7nm,.m7simgrid{grid-template-columns:1fr}.m7chat{position:static}}
+.m7checks{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:4px;font-size:.92rem}
+.m7checks li{color:var(--muted)}
+.m7checks li.ok{color:var(--fg)}
