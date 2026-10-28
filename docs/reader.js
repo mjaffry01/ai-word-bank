@@ -32,7 +32,7 @@
   const short = (v) => v.name.replace(/^(Microsoft|Google)\s+/, "").replace(/\s+-\s+.*$/, "").replace(/\s*\(Natural\)/, "").replace(/\s+Online\b/, "").trim() || v.name;
 
   /* ---------- Speaking ---------- */
-  let reading = null, queue = [], btn = null, target = null, selText = "";
+  let reading = null, queue = [], btn = null, vbtn = null, menu = null, target = null, selText = "";
   // Some browsers stop long speech after about 15 seconds, so speak a sentence or two at a time
   function chunks(text) {
     const parts = text.replace(/\s+/g, " ").trim().match(/[^.!?…]+[.!?…]*["”’)]*\s*/g) || [text];
@@ -74,7 +74,7 @@
 
   /* ---------- The floating button ---------- */
   const BLOCKS = "p, li, dd, dt, h1, h2, h3, h4, blockquote, td, th, summary, figcaption, .botmsg, .deep, .def, .card .big, .qprompt, .opt";
-  const SKIP = ".lookpanel, .wbread, input, textarea, select, [contenteditable], .modnav, .m2tabs, nav";
+  const SKIP = ".lookpanel, .wbread, .wbvbtn, .wbvmenu, input, textarea, select, [contenteditable], .modnav, .m2tabs, nav";
   function blockAt(node) {
     const el = node && node.nodeType === 1 ? node : node && node.parentElement;
     if (!el || el.closest(SKIP)) return null;
@@ -94,7 +94,47 @@
       if (target) speak(textOf(target), target);
     });
     document.body.appendChild(btn);
+    // A second small button under 🔊 opens a quick list of voices
+    vbtn = document.createElement("button");
+    vbtn.type = "button"; vbtn.className = "wbvbtn"; vbtn.innerHTML = `<span aria-hidden="true">🗣</span>`;
+    vbtn.setAttribute("aria-label", "Change the reading voice"); vbtn.title = "Change voice";
+    vbtn.setAttribute("aria-haspopup", "listbox"); vbtn.setAttribute("aria-expanded", "false");
+    vbtn.addEventListener("mousedown", (e) => e.preventDefault());
+    vbtn.addEventListener("click", (e) => { e.stopPropagation(); if (menu && !menu.hidden) closeMenu(); else openMenu(); });
+    document.body.appendChild(vbtn);
   }
+
+  /* ---------- Quick voice menu ---------- */
+  function menuHTML() {
+    const v = voice(), edge = voices.some(natural);
+    if (!voices.length) return `<p class="wbvnote">No voices found yet. Try again in a moment.</p>`;
+    return `<p class="wbvhead">Choose a voice</p>
+      <div class="wbvlist" role="listbox" aria-label="Voices">${voices.map((x) => `<button type="button" role="option" data-voice="${esc(x.name)}" aria-selected="${!!(v && x.name === v.name)}">${esc(short(x))}${natural(x) ? " ★" : ""} <small>${esc(x.lang)}</small></button>`).join("")}</div>
+      <p class="wbvnote">${edge ? "★ natural voices sound most human." : "For natural, human-sounding voices, open this page in Microsoft Edge."} Speed is in Aa Display.</p>`;
+  }
+  function openMenu() {
+    if (!menu) {
+      menu = document.createElement("div"); menu.className = "wbvmenu"; menu.hidden = true;
+      menu.addEventListener("mousedown", (e) => e.preventDefault());
+      menu.addEventListener("click", (e) => {
+        e.stopPropagation();
+        const b = e.target.closest("[data-voice]"); if (!b) return;
+        cfg.voice = b.dataset.voice; save();
+        const x = voice(); speak(`Hello, I'm ${x ? short(x) : "your reader"}. This is how I sound.`, null);
+        menu.innerHTML = menuHTML(); if (window.WB_LOOK_REFRESH) window.WB_LOOK_REFRESH();
+      });
+      document.body.appendChild(menu);
+    }
+    menu.innerHTML = menuHTML(); menu.hidden = false; vbtn.setAttribute("aria-expanded", "true");
+    const r = vbtn.getBoundingClientRect(), w = Math.min(280, window.innerWidth - 16);
+    menu.style.width = w + "px";
+    menu.style.left = Math.max(8, Math.min(window.innerWidth - w - 8, r.left)) + window.scrollX + "px";
+    const below = r.bottom + 6, h = Math.min(360, window.innerHeight - 16);
+    menu.style.top = (below + h > window.innerHeight ? Math.max(8, r.top - h - 6) : below) + window.scrollY + "px";
+    const cur = menu.querySelector("[aria-selected=true]") || menu.querySelector("button");
+    if (cur) { cur.scrollIntoView({ block: "nearest" }); cur.focus({ preventScroll: true }); }
+  }
+  function closeMenu() { if (menu && !menu.hidden) { menu.hidden = true; vbtn.setAttribute("aria-expanded", "false"); } }
   function paint() {
     if (!btn) return;
     const playing = reading && (selText ? !reading.el : reading.el === target);
@@ -110,21 +150,26 @@
     btn.style.left = Math.max(4, x) + window.scrollX + "px";
     btn.style.top = rect.top + window.scrollY + Math.max(0, Math.min(rect.height, 26) - size) / 2 + "px";
     btn.hidden = false; paint();
+    vbtn.style.left = btn.style.left;
+    vbtn.style.top = parseFloat(btn.style.top) + size + 4 + "px";
+    vbtn.hidden = false;
   }
   function show(el) {
     if (!cfg.on || !el) return;
-    target = el; selText = ""; place(el.getBoundingClientRect());
+    closeMenu(); target = el; selText = ""; place(el.getBoundingClientRect());
   }
-  const hide = () => { if (btn && !reading) btn.hidden = true; };
+  const hide = () => { closeMenu(); if (btn && !reading) btn.hidden = vbtn.hidden = true; };
   function clearSel() { selText = ""; const s = window.getSelection(); if (s) s.removeAllRanges(); }
 
   document.addEventListener("mouseover", (e) => {
-    if (!cfg.on || selText || (e.target.closest && e.target.closest(".wbread"))) return;
+    if (!cfg.on || selText || (e.target.closest && e.target.closest(".wbread, .wbvbtn, .wbvmenu"))) return;
+    if (menu && !menu.hidden) return; // keep the menu with its paragraph while choosing
     if (reading && reading.el) return; // keep the button on the paragraph being read
     const b = blockAt(e.target); if (b && b !== target) show(b);
   });
   // On a phone there's no hover: a tap on text shows the button
   document.addEventListener("click", (e) => {
+    if (!e.target.closest(".wbvmenu, .wbvbtn")) closeMenu();
     if (!cfg.on || e.target.closest(".wbread") || e.target.closest("button, a, input, textarea, select, label")) return;
     if (reading && reading.el) return;
     const b = blockAt(e.target); if (b) show(b);
@@ -135,13 +180,20 @@
     document.wbSelT = setTimeout(() => {
       const s = window.getSelection(), t = s && !s.isCollapsed ? s.toString().trim() : "";
       const a = s && s.anchorNode && (s.anchorNode.nodeType === 1 ? s.anchorNode : s.anchorNode.parentElement);
+      if (menu && !menu.hidden) return;
       if (!t || t.length < 2 || !a || a.closest(SKIP)) { if (selText) { selText = ""; paint(); } return; }
       const r = s.getRangeAt(0).getBoundingClientRect(); if (!r.width && !r.height) return;
       selText = t; target = null; place(r);
     }, 250);
   });
-  window.addEventListener("scroll", () => { if (reading && reading.el && btn) place(reading.el.getBoundingClientRect()); else if (!selText) hide(); }, { passive: true, capture: true });
-  document.addEventListener("keydown", (e) => { if (e.key === "Escape" && reading) stop(); });
+  window.addEventListener("scroll", (e) => {
+    if (menu && e.target && e.target.nodeType === 1 && menu.contains(e.target)) return; // scrolling the voice list
+    closeMenu();
+    if (reading && reading.el && btn) place(reading.el.getBoundingClientRect()); else if (!selText) hide(); }, { passive: true, capture: true });
+  document.addEventListener("keydown", (e) => {
+    if (e.key !== "Escape") return;
+    if (menu && !menu.hidden) { closeMenu(); vbtn.focus(); } else if (reading) stop();
+  });
   window.addEventListener("beforeunload", () => synth.cancel());
 
   /* ---------- Settings in the Display panel ---------- */
@@ -160,7 +212,7 @@
   }
   function input(e) {
     const k = e.target.dataset && e.target.dataset.readin; if (!k) return false;
-    if (k === "on") { cfg.on = e.target.checked; if (!cfg.on) { stop(); if (btn) btn.hidden = true; } }
+    if (k === "on") { cfg.on = e.target.checked; if (!cfg.on) { stop(); closeMenu(); if (btn) btn.hidden = vbtn.hidden = true; } }
     else if (k === "voice") { cfg.voice = e.target.value; if (reading) stop(); }
     else if (k === "rate") { cfg.rate = +e.target.value; const r = document.getElementById("wbrate"); if (r) r.textContent = cfg.rate.toFixed(1) + "×"; }
     save(); return true;

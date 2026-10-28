@@ -37,4 +37,15 @@
 .lookvoice{display:flex;align-items:center;gap:8px;margin:8px 0;font-size:.9rem}
 .lookvoice select{flex:1;min-width:0;font:inherit;padding:6px 8px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--fg)}
 .lookrate{font-size:.85rem;color:var(--muted);min-width:2.6em}
-@media print{.wbread{display:none}}
+.wbvbtn{position:absolute;z-index:40;width:30px;height:30px;display:grid;place-items:center;padding:0;border:1px solid var(--line);border-radius:50%;background:var(--surface);color:var(--fg);font-size:.85rem;line-height:1;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.12)}
+.wbvbtn:hover,.wbvbtn[aria-expanded=true]{border-color:var(--accent);color:var(--accent)}
+.wbvbtn[hidden],.wbvmenu[hidden]{display:none}
+.wbvmenu{position:absolute;z-index:41;max-height:min(360px,calc(100vh - 16px));display:flex;flex-direction:column;padding:10px;border:1px solid var(--line);border-radius:12px;background:var(--surface);color:var(--fg);box-shadow:0 8px 28px rgba(0,0,0,.2)}
+.wbvhead{margin:0 0 6px;font-weight:600;font-size:.9rem}
+.wbvlist{display:flex;flex-direction:column;gap:2px;overflow:auto;min-height:0}
+.wbvlist button{display:flex;justify-content:space-between;gap:8px;text-align:left;padding:7px 10px;border:1px solid transparent;border-radius:8px;background:none;color:inherit;font:inherit;font-size:.9rem;cursor:pointer}
+.wbvlist button:hover,.wbvlist button:focus-visible{background:var(--bg);border-color:var(--line)}
+.wbvlist button[aria-selected=true]{border-color:var(--accent);color:var(--accent);font-weight:600}
+.wbvlist small{color:var(--muted);font-weight:400}
+.wbvnote{margin:8px 0 0;font-size:.78rem;color:var(--muted)}
+@media print{.wbread,.wbvbtn,.wbvmenu{display:none}}
