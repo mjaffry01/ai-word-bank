@@ -1,0 +1,27 @@
+/* Display settings button and panel (appearance.js) */
+.lookbtn{display:inline-flex;align-items:center;gap:7px;padding:7px 14px;border:1px solid var(--line);border-radius:999px;background:var(--surface);color:var(--fg);font:600 .9rem var(--body);cursor:pointer;white-space:nowrap}
+.lookbtn span:first-child{font:700 1rem var(--display);color:var(--accent)}
+.lookbtn:hover,.lookbtn[aria-expanded="true"]{border-color:var(--accent)}
+.gatewish .lookbtn{margin-left:8px}
+.lookpanel{position:fixed;z-index:50;top:max(16px,env(safe-area-inset-top,0px));right:16px;width:min(380px,calc(100vw - 32px));max-height:calc(100vh - 32px);overflow:auto;padding:14px 16px;border:1px solid var(--line);border-radius:14px;background:var(--surface);color:var(--fg);box-shadow:0 12px 40px rgba(0,0,0,.25)}
+.lookhead{display:flex;justify-content:space-between;align-items:center;font-size:1.05rem}
+.lookx{border:0;background:none;color:var(--muted);font-size:1.1rem;cursor:pointer;padding:4px 8px;border-radius:6px}
+.lookx:hover{color:var(--fg);background:var(--bg)}
+.looklbl{margin:14px 0 6px;font:600 .72rem var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--muted);display:flex;justify-content:space-between}
+.looklbl span{color:var(--fg)}
+.looksize{display:flex;align-items:center;gap:8px}
+.looksize input{flex:1;accent-color:var(--accent)}
+.looksize button,.lookfonts button,.lookthemes button,.lookfoot button{font:600 .9rem var(--body);padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--fg);cursor:pointer}
+.lookfonts,.lookthemes{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.lookfonts button{text-align:left;font-weight:500;font-size:.95rem;display:flex;flex-direction:column;gap:1px}
+.lookfonts small{font:400 .72rem var(--body);color:var(--muted)}
+.lookfonts button[aria-pressed="true"],.lookthemes button[aria-pressed="true"]{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent)}
+.lookcustom{display:flex;gap:16px;flex-wrap:wrap;margin-top:10px;font-size:.9rem}
+.lookcustom label{display:flex;align-items:center;gap:8px}
+.lookcustom input{width:44px;height:32px;padding:0;border:1px solid var(--line);border-radius:6px;background:none;cursor:pointer}
+.lookwarn{margin:8px 0 0;font-size:.85rem;min-height:1em}
+.lookwarn .bad{color:var(--bad)}
+.looksample{margin:12px 0 0;padding:10px 12px;border:1px dashed var(--line);border-radius:8px;background:var(--bg)}
+.lookfoot{margin-top:12px}
+.lookfoot button{width:100%}
+.looknote{margin:6px 0 0;font-size:.78rem;color:var(--muted);text-align:center}
