@@ -61,6 +61,13 @@
     // Code, prompts to copy, and AI Tutor messages stay as they are
     document.querySelectorAll("pre:not(.notranslate), code:not(.notranslate), .pbox:not(.notranslate), .tutmsg:not(.notranslate), .tutcode:not(.notranslate)").forEach((el) => el.classList.add("notranslate"));
   }
+  function note(msg) {
+    document.querySelectorAll(".langtoast").forEach((x) => x.remove());
+    const t = document.createElement("div"); t.className = "langtoast notranslate"; t.setAttribute("role", "status");
+    t.innerHTML = `<p>${esc(msg)}</p><button type="button">OK</button>`;
+    t.querySelector("button").addEventListener("click", () => t.remove());
+    document.body.appendChild(t); setTimeout(() => t.remove(), 20000);
+  }
   let busy = false;
   async function set(c, quiet) {
     code = c || "en";
@@ -78,9 +85,13 @@
       if (!first) { box.value = code; box.dispatchEvent(new Event("change")); }
       else if (code !== "en") setTimeout(() => { if (code !== "en" && !/translated-/.test(document.documentElement.className)) { box.value = code; box.dispatchEvent(new Event("change")); } }, 2500);
       // A long page takes a few seconds: keep showing "…" until the page title has changed language
-      if (code !== "en") for (let n = 0; n < 60 && document.title === TITLE; n++) await new Promise((r) => setTimeout(r, 300));
+      if (code !== "en") {
+        for (let n = 0; n < 70 && document.title === TITLE; n++) await new Promise((r) => setTimeout(r, 300));
+        // Google's free translator is sometimes busy: point to the browser's own translation instead
+        if (document.title === TITLE && code !== "en") note(`Google's translator didn't answer this time. Try again in a minute, or use your browser's own translation: in Edge or Chrome, right-click the page and choose “Translate to ${englishOf(code)}”.`);
+      }
       if (code === "en") document.documentElement.classList.remove("translated-ltr", "translated-rtl");
-    } catch (e) { if (!quiet) alert(e.message); }
+    } catch (e) { if (!quiet) note(e.message); }
     busy = false; paintButtons();
   }
 
@@ -97,7 +108,8 @@
     }
     // On the sign-in screen, next to Display
     const putGate = () => { const g = document.querySelector(".gatelook"); if (g && !g.querySelector(".langbtn")) g.insertAdjacentHTML("beforeend", BTN()); };
-    putGate(); setTimeout(putGate, 0); setTimeout(putGate, 50);
+    // appearance.js makes that row when the page has loaded, which can be after this runs
+    putGate(); document.addEventListener("DOMContentLoaded", putGate); window.addEventListener("load", putGate);
   }
   let pop = null, opener = null;
   function listHTML(q) {
