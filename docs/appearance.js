@@ -133,7 +133,9 @@
   }
   const BTN = `<button class="lookbtn" type="button" aria-haspopup="dialog" aria-expanded="false" title="Display settings: text size, font and colours"><span aria-hidden="true">Aa</span><span>Display</span></button>`;
   function addButtons() {
-    document.querySelectorAll(".mastside, .gatewish").forEach((el) => { if (!el.querySelector(".lookbtn")) el.insertAdjacentHTML(el.classList.contains("mastside") ? "afterbegin" : "beforeend", BTN); });
+    // Under the signed-in name in the course, and under the sign-in box on the sign-in screen
+    const side = document.querySelector(".mastside"); if (side && !side.querySelector(".lookbtn")) side.insertAdjacentHTML("beforeend", BTN);
+    const gate = document.querySelector(".gatewish"); if (gate && !document.querySelector(".gatelook")) gate.insertAdjacentHTML("afterend", `<p class="gatelook">${BTN}</p>`);
     document.addEventListener("click", (e) => {
       const b = e.target.closest(".lookbtn"); if (b) { if (panel && !panel.hidden) close(); else open(b); return; }
       if (panel && !panel.hidden && !e.target.closest(".lookpanel")) close();
