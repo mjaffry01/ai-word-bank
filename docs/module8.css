@@ -1,0 +1,21 @@
+/* Module 8: Deployment (module8.js). Builds on the Module 2/4/7 layout classes (m7log, m7sliders, m7risks…). */
+.m8grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.m8grid>div{padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:var(--bg)}
+.m8grid p{margin:4px 0 0;font-size:.92rem}
+.m8see{margin:10px 0 0;padding:8px 10px;border-radius:8px;font-weight:600;border:1px solid var(--line)}
+.m8see.everyone{border-color:var(--bad);color:var(--bad)}
+.m8see.server{border-color:var(--good);color:var(--good)}
+.m8see.visitor{border-color:var(--accent);color:var(--accent)}
+.m8verdict.bad{border-left-color:var(--bad)}
+.m8verdict.good{border-left-color:var(--good)}
+.m8stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:12px}
+.m8stats>div{padding:12px;border:1px solid var(--line);border-radius:10px;background:var(--surface);display:flex;flex-direction:column;gap:2px;min-width:0}
+.m8stats .lbl{margin:0}
+.m8stats small{color:var(--muted);font-size:.8rem}
+.m8bad{color:var(--bad)}
+.m8opts{display:flex;flex-direction:column;gap:6px}
+.m8opts .choice{text-align:left;white-space:normal}
+.m8opts .choice.m8right{border-color:var(--good);color:var(--good)}
+.m8opts .choice.m8wrong{border-color:var(--bad);color:var(--bad)}
+@media (max-width:760px){.m8grid{grid-template-columns:1fr 1fr}.m8stats{grid-template-columns:1fr 1fr}}
+@media (max-width:480px){.m8grid{grid-template-columns:1fr}}
