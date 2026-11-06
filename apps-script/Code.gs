@@ -4,6 +4,7 @@
  * The Sheet is the teacher's admin panel:
  *   Students  - one row per student. Change "Status" to approved / rejected. Type module numbers in
  *               "Extra modules" (e.g. 3, or 3, 4, or all) to open locked modules for just that student.
+ *               Modules also open by themselves after a certificate: see UNLOCK_BY_CERT.
  *   Attempts  - one row per finished ring quiz (score and percent).
  *   Answers   - one row per question answered (what was chosen, the right answer).
  *   Summary   - best score per student per ring (formula, updates itself).
@@ -199,6 +200,7 @@ function me(who) {
       status = normalizeStatus(sh.getRange(row, 3).getValue());
       sh.getRange(row, 5).setValue(new Date());
       modules = extraModules(sh.getRange(row, 6).getValue());
+      if (status === 'approved') certModules(who.email).forEach((m) => { if (modules.indexOf(m) < 0) modules.push(m); });
     } else {
       status = 'pending';
       sh.appendRow([who.email, safe(who.name), status, new Date(), new Date()]);
@@ -278,6 +280,24 @@ function saveSubmission(who, s) {
 
 const CERT_PASS = 0.6;
 
+// A valid (not revoked) certificate for one of these tests opens the next module for that student.
+const UNLOCK_BY_CERT = [
+  { module: '3', title: /^Module 2\b.*\bAdvanced quiz$/i }, // Module 2's Advanced quiz opens Module 3
+];
+
+/** The modules this student's certificates have opened, e.g. ['3']. */
+function certModules(email) {
+  const sh = book().getSheetByName('Certificates');
+  if (!sh || sh.getLastRow() < 2) return [];
+  const rows = sh.getRange(2, 1, sh.getLastRow() - 1, 9).getValues(), out = [];
+  rows.forEach((r) => {
+    if (String(r[2]).trim().toLowerCase() !== email || String(r[8] || 'valid').trim().toLowerCase() === 'revoked') return;
+    const title = String(r[4]).replace(/^'/, '');
+    UNLOCK_BY_CERT.forEach((u) => { if (u.title.test(title) && out.indexOf(u.module) < 0) out.push(u.module); });
+  });
+  return out;
+}
+
 /**
  * Issues a certificate for a result that is already recorded in the Sheet (60% or more).
  * c = { title, score, total, match: { kind: 'module', module, level } | { kind: 'ring', ring } }.
@@ -304,7 +324,7 @@ function issueCertificate(who, c) {
       for (let i = rows.length - 1; i >= 0; i--) {
         const r = rows[i];
         if (String(r[2]).toLowerCase() === who.email && r[4] === title && Number(r[5]) === c.score && Number(r[6]) === c.total && new Date(r[1]).getTime() > dayAgo) {
-          return { ok: true, id: String(r[0]), name: String(r[3]), issued: isoDate(r[1]) };
+          return { ok: true, id: String(r[0]), name: String(r[3]), issued: isoDate(r[1]), modules: certModules(who.email) };
         }
       }
     }
@@ -312,7 +332,7 @@ function issueCertificate(who, c) {
     const id = 'AIC-' + hex.slice(0, 5) + '-' + hex.slice(5, 10);
     const now = new Date();
     sh.appendRow([id, now, who.email, safe(who.name), title, c.score, c.total, c.score / c.total, 'valid']);
-    return { ok: true, id: id, name: who.name, issued: isoDate(now) };
+    return { ok: true, id: id, name: who.name, issued: isoDate(now), modules: certModules(who.email) };
   } finally {
     lock.releaseLock();
   }

@@ -41,6 +41,17 @@
     const cur = store.get("wb-module", "1");
     setModule(OPEN.includes(wanted) ? wanted : OPEN.includes(cur) ? cur : "1");
   };
+  // Opens more modules without leaving the page, e.g. Module 3 the moment a Module 2 certificate is issued
+  window.WB_addModules = (list) => {
+    const added = (list || []).map(String).filter((m) => ALL.includes(m) && !OPEN.includes(m));
+    if (!added.length) return added;
+    OPEN = OPEN.concat(added); applyLocks();
+    let n = $("locknote");
+    if (!n) { n = document.createElement("p"); n.id = "locknote"; n.className = "locknote"; n.setAttribute("role", "status"); document.querySelector(".modnav").after(n); }
+    n.textContent = `🎉 Well done! ${added.map((m) => "Module " + m).join(" and ")} ${added.length > 1 ? "are" : "is"} now open for you.`;
+    clearTimeout(lockedNote.t); lockedNote.t = setTimeout(() => n.remove(), 8000);
+    return added;
+  };
   window.WB_signedInAs = (email) => {
     if (!TEACHERS.includes(String(email || "").toLowerCase()) || OPEN.length === ALL.length) return;
     OPEN = ALL.slice(); applyLocks(); setModule(wanted);

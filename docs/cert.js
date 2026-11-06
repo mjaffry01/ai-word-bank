@@ -84,7 +84,10 @@
     if (pending.has(key) || !window.WB || !window.WB.call) return;
     errors.delete(key);
     pending.set(key, window.WB.call("issueCertificate", { cert: { title: t.title, score: t.score, total: t.total, match: t.match } })
-      .then((r) => { issued[key] = { id: r.id, name: r.name || "Student", date: r.issued }; store.set("wb-certs", issued); },
+      .then((r) => {
+        issued[key] = { id: r.id, name: r.name || "Student", date: r.issued }; store.set("wb-certs", issued);
+        if (r.modules && window.WB_addModules) window.WB_addModules(r.modules); // e.g. Module 2's Advanced certificate opens Module 3
+      },
             (err) => { errors.set(key, (err && err.error) || "failed"); })
       .then(() => { pending.delete(key); refresh(key); }));
   }
