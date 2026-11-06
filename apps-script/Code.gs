@@ -2,7 +2,8 @@
  * AI Word Bank backend: a Google Sheet plus this Apps Script web app.
  *
  * The Sheet is the teacher's admin panel:
- *   Students  - one row per student. Change "Status" to approved / rejected.
+ *   Students  - one row per student. Change "Status" to approved / rejected. Type module numbers in
+ *               "Extra modules" (e.g. 3, or 3, 4, or all) to open locked modules for just that student.
  *   Attempts  - one row per finished ring quiz (score and percent).
  *   Answers   - one row per question answered (what was chosen, the right answer).
  *   Summary   - best score per student per ring (formula, updates itself).
@@ -19,7 +20,7 @@ const CLIENT_ID = '767661169096-4l07sksuk11vfs4frk9s83jon9dc0cbe.apps.googleuser
 const SESSION_HOURS = 48;
 
 const HEADERS = {
-  Students: ['Email', 'Name', 'Status', 'Signed up', 'Last seen'],
+  Students: ['Email', 'Name', 'Status', 'Signed up', 'Last seen', 'Extra modules'],
   Attempts: ['Attempt ID', 'Date', 'Email', 'Name', 'Ring', 'Level', 'Score', 'Total', 'Percent'],
   Answers: ['Attempt ID', 'Date', 'Email', 'Name', 'Ring', 'Question no.', 'Type', 'Question', 'Student answer', 'Right answer', 'Correct'],
   // Later modules (Module 2 onward): one row per finished module quiz, and one per practice task handed in.
@@ -191,15 +192,19 @@ function me(who) {
   try {
     const sh = book().getSheetByName('Students');
     const row = findStudentRow(sh, who.email);
-    let status;
+    let status, modules = [];
+    // Sheets made before the "Extra modules" column existed get its heading added here
+    if (!sh.getRange(1, 6).getValue()) sh.getRange(1, 6).setValue('Extra modules').setFontWeight('bold').setBackground('#e8f1f0');
     if (row) {
       status = normalizeStatus(sh.getRange(row, 3).getValue());
       sh.getRange(row, 5).setValue(new Date());
+      modules = extraModules(sh.getRange(row, 6).getValue());
     } else {
       status = 'pending';
       sh.appendRow([who.email, safe(who.name), status, new Date(), new Date()]);
     }
-    return { ok: true, status: status, name: who.name, best: status === 'approved' ? bestByRing(who.email) : {} };
+    const ok = status === 'approved';
+    return { ok: true, status: status, name: who.name, best: ok ? bestByRing(who.email) : {}, modules: ok ? modules : [] };
   } finally {
     lock.releaseLock();
   }
@@ -360,6 +365,13 @@ function studentStatus(email) {
   const sh = book().getSheetByName('Students');
   const row = findStudentRow(sh, email);
   return row ? normalizeStatus(sh.getRange(row, 3).getValue()) : 'none';
+}
+
+/** "3", "3, 4" or "all" from the Extra modules column → ['3'], ['3', '4'] or ['all']. */
+function extraModules(v) {
+  const s = String(v || '').trim().toLowerCase();
+  if (s === 'all') return ['all'];
+  return s.match(/\d+/g) || [];
 }
 
 function normalizeStatus(v) {
