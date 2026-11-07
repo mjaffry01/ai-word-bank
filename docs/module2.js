@@ -21,6 +21,12 @@
   const BASE = ["1", "2"];
   let OPEN = BASE.slice();
   const TEACHERS = ["mjaffry02@gmail.com"];
+  // STUDENT_MODULES: extra modules for single students, keyed by the SHA-256 of their lower-case email so the
+  // addresses aren't published with the site. (The Students sheet's "Extra modules" column does the same.)
+  const STUDENT_MODULES = {
+    "3adb505ca81598a2a4c047f31e13d82e85a9629e3e056bda7ce6c67c55b808c8": ["3"],
+  };
+  const sha256 = async (t) => [...new Uint8Array(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(t)))].map((b) => b.toString(16).padStart(2, "0")).join("");
   const ALL = [...document.querySelectorAll("[data-module]")].map((b) => b.dataset.module), MODULES = ALL;
   const LOCK = `<svg class="lock" viewBox="0 0 24 24" width="13" height="13" aria-label="locked"><path fill="currentColor" d="M7 10V7a5 5 0 0110 0v3h1a1 1 0 011 1v10a1 1 0 01-1 1H6a1 1 0 01-1-1V11a1 1 0 011-1h1zm2 0h6V7a3 3 0 00-6 0v3z"/></svg>`;
   function applyLocks() {
@@ -53,7 +59,18 @@
     return added;
   };
   window.WB_signedInAs = (email) => {
-    if (!TEACHERS.includes(String(email || "").toLowerCase()) || OPEN.length === ALL.length) return;
+    const e = String(email || "").trim().toLowerCase();
+    if (!TEACHERS.includes(e)) {
+      if (!e || !window.crypto || !crypto.subtle) return;
+      sha256(e).then((h) => {
+        const extra = (STUDENT_MODULES[h] || []).filter((m) => ALL.includes(m) && !OPEN.includes(m));
+        if (!extra.length) return;
+        OPEN = OPEN.concat(extra); applyLocks();
+        if (extra.includes(wanted)) setModule(wanted);
+      }, () => {});
+      return;
+    }
+    if (OPEN.length === ALL.length) return;
     OPEN = ALL.slice(); applyLocks(); setModule(wanted);
   };
   function lockedNote(b) {
