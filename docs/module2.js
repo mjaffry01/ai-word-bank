@@ -24,7 +24,7 @@
   // STUDENT_MODULES: extra modules for single students, keyed by the SHA-256 of their lower-case email so the
   // addresses aren't published with the site. (The Students sheet's "Extra modules" column does the same.)
   const STUDENT_MODULES = {
-    "3adb505ca81598a2a4c047f31e13d82e85a9629e3e056bda7ce6c67c55b808c8": ["3"],
+    "3adb505ca81598a2a4c047f31e13d82e85a9629e3e056bda7ce6c67c55b808c8": ["3", "4"],
   };
   const sha256 = async (t) => [...new Uint8Array(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(t)))].map((b) => b.toString(16).padStart(2, "0")).join("");
   const ALL = [...document.querySelectorAll("[data-module]")].map((b) => b.dataset.module), MODULES = ALL;
